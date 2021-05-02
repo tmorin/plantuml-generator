@@ -1,0 +1,31 @@
+{% extends "package_bootstrap.tera" %}
+{% block content %}
+!procedure C4Element($shape, $stereotype, $type, $id, $name, $desc="")
+    !local $V="<b>" + $name + "</b>"
+    !if ($type)
+        !$V=$V + "\n" + "<size:" + $FONT_SIZE_XS + ">[" + $type + "]</size>"
+    !endif
+    !if ($desc)
+        !$V=$V + "\n\n" + $desc
+    !endif
+    $shape $id <<$stereotype>> as "$V"
+!endprocedure
+
+!global $C4_ELEMENT_COLOR_TEXT="White"
+!global $C4_PERSON_COLOR_BG="#08427B"
+!global $C4_PERSON_COLOR_BORDER="#05284A"
+
+hide stereotype
+
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+skinparam rectangle<<Person>> {
+    StereotypeFontColor $C4_ELEMENT_COLOR_TEXT
+    FontColor $C4_ELEMENT_COLOR_TEXT
+    BorderColor $C4_PERSON_COLOR_BORDER
+    BackgroundColor $C4_PERSON_COLOR_BG
+    roundCorner 40
+}
+{% endblock content %}

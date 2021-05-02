@@ -1,0 +1,7 @@
+{% extends "item_snippet.tera" -%}
+
+{%- block procedures %}
+{%- if data.element_shape == "Custom" %}
+{{ data.procedure_name }}('{{ data.variable_name }}')
+{% endif -%}
+{% endblock procedures -%}

@@ -1,0 +1,54 @@
+[package]
+name = "plantuml-generator"
+description = "A command line utility to generate stuff for and with PlantUML."
+readme = "README.md"
+homepage = "https://github.com/tmorin/plantuml-generator#readme"
+repository = "https://github.com/tmorin/plantuml-generator"
+version = "0.1.0-alpha.0"
+authors = ["Thibault Morin <thibault@morin.io>"]
+edition = "2018"
+license = "MIT"
+categories = ["command-line-utilities"]
+keywords = ["plantuml", "generator"]
+include = [
+    "build.rs",
+    "src/**/*",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+]
+
+[[bin]]
+name = "plantuml-generator"
+
+[build-dependencies]
+clap = "2"
+
+[dependencies]
+chrono = "0.4"
+clap = "2"
+env_logger = { version = "0.8", default_features = false }
+glob = "0.3"
+heck = "0.3"
+hyper = { version = "0.14", features = ["client", "http1", "libc"] }
+image = { version = "0.23" }
+log = "0.4"
+openssl = { version = "0.10", optional = true }
+reqwest = { version = "0.11", features = ["blocking"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.8"
+tera = "1"
+
+[features]
+# If compiling on a system without OpenSSL installed, or cross-compiling for a different
+# architecture, enable this feature to compile OpenSSL as part of the build.
+# See https://docs.rs/openssl/#vendored for more.
+vendored-openssl = ["openssl/vendored"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[package.metadata.deb]
+section = "utility"
+extended-description = """A command line utility to generate stuff for and with PlantUML."""

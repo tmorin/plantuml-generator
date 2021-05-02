@@ -1,0 +1,23 @@
+{% extends "package_bootstrap.tera" %}
+{% block content %}
+!procedure EsEntity($type, $stereotype, $id, $label="")
+  !if ($label)
+    $type "$label" as $id <<$stereotype>>
+  !else
+    $type $id <<$stereotype>>
+  !endif
+!endprocedure
+
+show stereotype
+
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+skinparam Arrow {
+    Color $FONT_COLOR
+    FontColor $FONT_COLOR
+    FontSize $FONT_SIZE_SM
+}
+
+{% endblock content %}

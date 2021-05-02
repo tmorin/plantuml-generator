@@ -1,0 +1,20 @@
+{% extends "item_source.tera" %}
+{% block elements %}
+{%- for element in data.elements %}
+{%- if element.type == "CustomElement" %}
+
+skinparam {{ element.properties.base_shape }}<<{{ element.procedure_name }}>> {
+    StereotypeFontSize $FONT_SIZE_SM
+    shadowing false
+    FontColor $FONT_COLOR
+    BorderColor $FONT_COLOR
+    BackgroundColor {{ element.properties.background_color }}
+}
+
+!procedure {{ element.procedure_name }}($id, $label="")
+  EsEntity('{{ element.properties.base_shape }}', '{{ element.procedure_name }}', $id, $label)
+!endprocedure
+
+{%- endif %}
+{% endfor -%}
+{% endblock elements %}

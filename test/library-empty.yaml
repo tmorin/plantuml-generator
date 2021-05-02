@@ -1,0 +1,12 @@
+---
+name: library-simple
+remote_url: http://localhost:3000/distribution
+tera_discovery_pattern: test/tera/**/*
+packages:
+  - urn: c4model
+    templates:
+      bootstrap: c4model_bootstrap.tera
+      documentation: c4model_documentation.tera
+    modules:
+      - urn: c4model/Element
+        items: []

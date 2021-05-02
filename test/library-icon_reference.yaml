@@ -1,0 +1,27 @@
+---
+name: testlib
+remote_url: http://localhost:3000/distribution
+tera_discovery_pattern: test/tera/**/*
+packages:
+  - urn: eip
+    templates:
+      bootstrap: package_bootstrap_bis.tera
+    modules:
+      - urn: eip/MessageConstruction
+        items:
+          - urn: eip/MessageConstruction/MessageReturnAddress
+            family: FamilyB
+            icon:
+              type: Source
+              source: test/raw/eip/MessageConstruction__MessageReturnAddress.svg
+            elements:
+              - shape:
+                  type: Icon
+          - urn: eip/MessageConstruction/GroupMessageReturnAddress
+            family: FamilyB
+            icon:
+              type: Reference
+              urn: eip/MessageConstruction/MessageReturnAddress
+            elements:
+              - shape:
+                  type: IconGroup

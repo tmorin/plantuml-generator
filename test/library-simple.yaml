@@ -1,0 +1,40 @@
+---
+name: library-simple
+remote_url: http://localhost:3000/distribution
+tera_discovery_pattern: test/tera/**/*
+packages:
+  - urn: c4model
+    templates:
+      bootstrap: c4model_bootstrap.tera
+      documentation: c4model_documentation.tera
+    modules:
+      - urn: c4model/Element
+        items:
+          - urn: c4model/Element/Person
+            elements:
+              - shape:
+                  type: Custom
+                  properties:
+                    base_procedure: C4Element
+                    base_shape: rectangle
+                    stereotype: Person
+                    type: Person
+            templates:
+              source: c4model_item_element.tera
+              snippet: c4model_item_snippet.tera
+  - urn: eventstorming
+    templates:
+      bootstrap: eventstorming_bootstrap.tera
+    modules:
+      - urn: eventstorming/Element
+        items:
+          - urn: eventstorming/Element/Message/FacadeCommand
+            elements:
+              - shape:
+                  type: Custom
+                  properties:
+                    base_shape: file
+                    background_color: "#779fae"
+            templates:
+              source: eventstorming_item_element.tera
+              snippet: eventstorming_item_snippet.tera

@@ -1,0 +1,13 @@
+{% extends "item_source.tera" %}
+{% block elements %}
+' in block elements
+{%- for element in data.elements %}
+{%- if element.type == "CustomElement" %}
+' {{ element.properties.keyA }}
+' {{ element.properties.keyB | join(sep=",") }}
+!procedure {{ element.procedure_name }}($id)
+  card <<CustomStereotype>> $id
+!endprocedure
+{%- endif %}
+{% endfor -%}
+{% endblock elements %}

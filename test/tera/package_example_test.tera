@@ -1,0 +1,10 @@
+{% extends "package_example.tera" %}
+
+{% block include %}{% endblock include %}
+{% block loader %}{% endblock loader %}
+
+{% block content %}
+note as note
+the content of the example
+end note
+{% endblock content -%}

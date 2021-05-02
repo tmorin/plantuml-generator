@@ -1,0 +1,33 @@
+pub const TEMPLATE: &str = r##"{% block header -%}
+' definition of the Item {{ data.item_urn }}
+{% endblock header -%}
+
+{%- block sprites %}
+{%- for sprite in sprites | default(value=[]) %}
+{{ sprite }}
+{% endfor -%}
+{% endblock sprites -%}
+
+{%- block elements %}
+{%- for element in data.elements %}
+{%- if element.type == "IconElement" %}
+!procedure {{ element.procedure_name }}($id, $name="", $tech="")
+  IconElement($id, '{{ element.stereotype_name }}', '{{ element.icon_urn }}', $name, $tech)
+!endprocedure
+{%- elif element.type == "IconCardElement" %}
+!procedure {{ element.procedure_name }}($id, $funcName="", $content="")
+  IconCardElement($id, '{{ element.stereotype_name }}', '<${{ element.sprite_name }}>', '{{ element.family_name }}', $funcName, $content)
+!endprocedure
+{%- elif element.type == "IconGroupElement" %}
+!procedure {{ element.procedure_name }}($id, $name='{{ element.default_label }}', $tech='')
+  IconGroupElement($id, '{{ element.stereotype_name }}', '<${{ element.sprite_name }}>', $name, $tech)
+!endprocedure
+{%- elif element.type == "GroupElement" %}
+!procedure {{ element.procedure_name }}($id, $name='{{ element.default_label }}', $tech='')
+  GroupElement($id, '{{ element.stereotype_name }}', $name, $tech)
+!endprocedure
+{%- endif %}
+{% endfor -%}
+{% endblock elements -%}
+
+{% block footer %}{% endblock footer -%}"##;

@@ -1,0 +1,10 @@
+{% extends "package_bootstrap.tera" -%}
+{% block header -%}
+' header
+{%- endblock header %}
+{% block content -%}
+' content
+{%- endblock footer -%}
+{% block footer -%}
+' footer
+{%- endblock footer %}
