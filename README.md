@@ -1,5 +1,7 @@
 # plantuml-generator
 
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/thibaultmorin/plantuml-generator?label=thibaultmorin%2Fplantuml-generator)](https://hub.docker.com/r/thibaultmorin/plantuml-generator)
+
 > A command line utility to generate stuff with and for PlantUML.
 
 ## Introduction
@@ -24,7 +26,7 @@ cargo install plantuml-generator
 
 By Docker
 ```shell
-docker run --rm tmorin/plantuml-generator --help
+docker run --rm thibaultmorin/plantuml-generator --help
 ```
 
 From the binaries available in the [GitHub Release]:
@@ -32,7 +34,7 @@ From the binaries available in the [GitHub Release]:
 plantuml-generator --help
 ```
 
-[GitHub Release](https://github.com/tmorin/plantuml-generator/releases)
+[GitHub Release]: https://github.com/tmorin/plantuml-generator/releases
 
 ## Commands
 
