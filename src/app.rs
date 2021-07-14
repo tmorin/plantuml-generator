@@ -17,13 +17,8 @@ where
     let app_matches = match app.clone().get_matches_from_safe(args) {
         Ok(app_matches) => app_matches,
         Err(e) => {
-            return if e.use_stderr() {
-                eprintln!("{}", e.message);
-                1
-            } else {
-                eprintln!("{}", e.message);
-                0
-            }
+            eprintln!("{}", e.message);
+            return if e.use_stderr() { 1 } else { 0 };
         }
     };
 
