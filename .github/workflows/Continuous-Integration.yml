@@ -206,6 +206,7 @@ jobs:
     needs: [ Lint, Test, Binary, DebianPackage ]
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
+      - uses: actions/checkout@v2
       - name: "Download all artifacts"
         uses: actions/download-artifact@v2
         with:
@@ -225,5 +226,5 @@ jobs:
           artifacts: "artifacts/**/*.tar.gz,artifacts/**/*.deb"
           omitName: true
           draft: false
-          body: ${{steps.github_release.outputs.changelog}}
+          body: ${{steps.build_changelog.outputs.changelog}}
           token: ${{ secrets.GITHUB_TOKEN }}
