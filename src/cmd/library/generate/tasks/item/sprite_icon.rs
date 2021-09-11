@@ -1,8 +1,6 @@
 use std::path::Path;
 
-use image::imageops::FilterType;
-use image::io::Reader;
-use image::GenericImageView;
+use raster::{BlendMode, Color, Image, PositionMode, ResizeMode};
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::generate::config::Config;
@@ -87,40 +85,71 @@ impl Task for SpriteIconTask {
         // create the destination directory
         create_parent_directory(destination_icon_path)?;
 
-        // get an handler on the source icon
-        let image = Reader::open(&self.full_source_icon)
-            .map_err(|e| {
-                Error::Cause(
-                    format!("unable to open {}", &self.full_source_icon),
-                    Box::from(e),
-                )
-            })?
-            .decode()
-            .map_err(|e| {
-                Error::Cause(
-                    format!("unable to decode {}", &self.full_source_icon),
-                    Box::from(e),
-                )
-            })?;
+        // create the source image
+        let mut source_image = raster::open(&self.full_source_icon).map_err(|e| {
+            Error::Simple(format!(
+                "unable to open {}: {:?}",
+                &self.full_source_icon, e
+            ))
+        })?;
 
         // compute the width of the sprite icon
-        let (width, height) = image.dimensions();
-        let destination_icon_width = self.destination_icon_height * width / height;
+        let destination_icon_width = self.destination_icon_height as i32
+            * source_image.width as i32
+            / source_image.height as i32;
+
+        // resize source image
+        raster::editor::resize(
+            &mut source_image,
+            destination_icon_width as i32,
+            self.destination_icon_height as i32,
+            ResizeMode::ExactHeight,
+        )
+        .map_err(|e| {
+            Error::Simple(format!(
+                "unable to resize {}: {:?}",
+                &self.full_source_icon, e
+            ))
+        })?;
+
+        // create the destination image
+        let mut background_image = Image::blank(
+            destination_icon_width as i32,
+            self.destination_icon_height as i32,
+        );
+
+        // fill destination image with white
+        raster::editor::fill(&mut background_image, Color::white()).map_err(|e| {
+            Error::Simple(format!(
+                "unable to fill {}: {:?}",
+                &self.full_destination_icon, e
+            ))
+        })?;
+
+        // blend resized source and destination
+        let destination_image = raster::editor::blend(
+            &background_image,
+            &source_image,
+            BlendMode::Normal,
+            1.0,
+            PositionMode::Center,
+            0,
+            0,
+        )
+        .map_err(|e| {
+            Error::Simple(format!(
+                "unable to blend {} in {}: {:?}",
+                &self.full_source_icon, &self.full_destination_icon, e
+            ))
+        })?;
 
         // generate the sprite icon
-        image
-            .resize(
-                destination_icon_width,
-                self.destination_icon_height,
-                FilterType::Triangle,
-            )
-            .save(&self.full_destination_icon)
-            .map_err(|e| {
-                Error::Cause(
-                    format!("unable to save {}", &self.full_destination_icon),
-                    Box::from(e),
-                )
-            })?;
+        raster::save(&destination_image, &self.full_destination_icon).map_err(|e| {
+            Error::Simple(format!(
+                "unable to save {}: {:?}",
+                &self.full_destination_icon, e
+            ))
+        })?;
         Ok(())
     }
 }
