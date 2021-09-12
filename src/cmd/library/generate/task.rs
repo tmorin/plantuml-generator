@@ -44,7 +44,7 @@ impl FromStr for CleanupScope {
 
 impl CleanupScope {
     pub fn is_included_in(&self, scopes: &[CleanupScope]) -> bool {
-        if scopes.contains(&self) {
+        if scopes.contains(self) {
             // true when the expected scope is part of the current
             return true;
         }

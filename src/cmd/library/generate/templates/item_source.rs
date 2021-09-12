@@ -10,19 +10,19 @@ pub const TEMPLATE: &str = r##"{% block header -%}
 
 {%- block elements %}
 {%- for element in data.elements %}
-{%- if element.type == "IconElement" %}
+{%- if element.type == "Icon" %}
 !procedure {{ element.procedure_name }}($id, $name="", $tech="")
   IconElement($id, '{{ element.stereotype_name }}', '{{ element.icon_urn }}', $name, $tech)
 !endprocedure
-{%- elif element.type == "IconCardElement" %}
+{%- elif element.type == "IconCard" %}
 !procedure {{ element.procedure_name }}($id, $funcName="", $content="")
   IconCardElement($id, '{{ element.stereotype_name }}', '<${{ element.sprite_name }}>', '{{ element.family_name }}', $funcName, $content)
 !endprocedure
-{%- elif element.type == "IconGroupElement" %}
+{%- elif element.type == "IconGroup" %}
 !procedure {{ element.procedure_name }}($id, $name='{{ element.default_label }}', $tech='')
   IconGroupElement($id, '{{ element.stereotype_name }}', '<${{ element.sprite_name }}>', $name, $tech)
 !endprocedure
-{%- elif element.type == "GroupElement" %}
+{%- elif element.type == "Group" %}
 !procedure {{ element.procedure_name }}($id, $name='{{ element.default_label }}', $tech='')
   GroupElement($id, '{{ element.stereotype_name }}', $name, $tech)
 !endprocedure

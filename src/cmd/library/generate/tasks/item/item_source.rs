@@ -18,7 +18,7 @@ use crate::utils::{create_parent_directory, delete_file};
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum Element {
-    IconElement {
+    Icon {
         /// The name of the PlantUML procedure.
         procedure_name: String,
         /// The URN of the icon.
@@ -28,7 +28,7 @@ pub enum Element {
         /// A set of custom properties.
         properties: HashMap<String, Value>,
     },
-    IconCardElement {
+    IconCard {
         /// The name of the PlantUML procedure.
         procedure_name: String,
         /// The name of the sprite.
@@ -40,7 +40,7 @@ pub enum Element {
         /// A set of custom properties.
         properties: HashMap<String, Value>,
     },
-    IconGroupElement {
+    IconGroup {
         /// The name of the PlantUML procedure.
         procedure_name: String,
         /// The name of the sprite.
@@ -52,7 +52,7 @@ pub enum Element {
         /// A set of custom properties.
         properties: HashMap<String, Value>,
     },
-    GroupElement {
+    Group {
         /// The name of the PlantUML procedure.
         procedure_name: String,
         /// The name of the stereotype.
@@ -62,7 +62,7 @@ pub enum Element {
         /// A set of custom properties.
         properties: HashMap<String, Value>,
     },
-    CustomElement {
+    Custom {
         /// The name of the PlantUML procedure.
         procedure_name: String,
         /// A set of custom properties.
@@ -125,7 +125,7 @@ impl ItemSourceTask {
                         Shape::Icon {
                             ref stereotype_name,
                             ref properties,
-                        } => Element::IconElement {
+                        } => Element::Icon {
                             procedure_name,
                             icon_urn: item.urn.value.clone(),
                             stereotype_name: stereotype_name.clone(),
@@ -134,7 +134,7 @@ impl ItemSourceTask {
                         Shape::IconCard {
                             ref stereotype_name,
                             ref properties,
-                        } => Element::IconCardElement {
+                        } => Element::IconCard {
                             procedure_name,
                             sprite_name,
                             family_name: item.family.clone().unwrap_or_default(),
@@ -144,7 +144,7 @@ impl ItemSourceTask {
                         Shape::IconGroup {
                             ref stereotype_name,
                             ref properties,
-                        } => Element::IconGroupElement {
+                        } => Element::IconGroup {
                             procedure_name,
                             sprite_name,
                             stereotype_name: stereotype_name.clone(),
@@ -154,13 +154,13 @@ impl ItemSourceTask {
                         Shape::Group {
                             ref stereotype_name,
                             ref properties,
-                        } => Element::GroupElement {
+                        } => Element::Group {
                             procedure_name,
                             stereotype_name: stereotype_name.clone(),
                             default_label: item.urn.label.clone(),
                             properties: properties.clone(),
                         },
-                        Shape::Custom { ref properties } => Element::CustomElement {
+                        Shape::Custom { ref properties } => Element::Custom {
                             procedure_name,
                             properties: properties.clone(),
                         },
@@ -259,34 +259,34 @@ mod test {
                 "test/sprite_value_B.puml".to_string(),
             ],
             elements: vec![
-                Element::IconElement {
+                Element::Icon {
                     procedure_name: "Item".to_string(),
                     icon_urn: "Package/Module/Family/BuiltInItem".to_string(),
                     stereotype_name: get_default_icon_element_stereotype(),
                     properties: HashMap::default(),
                 },
-                Element::IconCardElement {
+                Element::IconCard {
                     procedure_name: "ItemCard".to_string(),
                     sprite_name: "ItemLg".to_string(),
                     family_name: "Family".to_string(),
                     stereotype_name: get_default_icon_card_element_stereotype(),
                     properties: HashMap::default(),
                 },
-                Element::IconGroupElement {
+                Element::IconGroup {
                     procedure_name: "ItemGroup".to_string(),
                     sprite_name: "ItemLg".to_string(),
                     stereotype_name: get_default_icon_group_element_stereotype(),
                     default_label: "Item".to_string(),
                     properties: HashMap::default(),
                 },
-                Element::IconGroupElement {
+                Element::IconGroup {
                     procedure_name: "ItemBisGroup".to_string(),
                     sprite_name: "ItemBisLg".to_string(),
                     stereotype_name: "ItemBis".to_string(),
                     default_label: "Item Bis".to_string(),
                     properties: HashMap::default(),
                 },
-                Element::GroupElement {
+                Element::Group {
                     procedure_name: "SimpleGroup".to_string(),
                     stereotype_name: "SimpleGroup".to_string(),
                     default_label: "Simple Group".to_string(),
@@ -329,7 +329,7 @@ mod test {
         let generator = ItemSourceTask {
             item_urn: "Package/Module/Family/CustomItem".to_string(),
             cached_sprite_paths: vec![],
-            elements: vec![Element::CustomElement {
+            elements: vec![Element::Custom {
                 procedure_name: "CustomItem".to_string(),
                 properties,
             }],

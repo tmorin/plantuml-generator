@@ -37,7 +37,7 @@ pub fn parse_item(
         match icon {
             Icon::Source { source } => {
                 // create the task to generate the icon
-                let item_icon_task = ItemIconTask::create(_config, _library, &_item, icon, source)?;
+                let item_icon_task = ItemIconTask::create(_config, _library, _item, icon, source)?;
                 let sprite_icon_source = item_icon_task.full_destination_image.clone();
                 tasks.push(Box::from(item_icon_task));
                 // create the tasks to generate the sprite values
@@ -47,7 +47,7 @@ pub fn parse_item(
                     // create the task to generate the icon used as input of the sprite value
                     let sprite_icon_task = SpriteIconTask::create(
                         _config,
-                        &_item,
+                        _item,
                         icon,
                         &sprite_icon_source,
                         (sprite_size_name, sprite_size_value),
@@ -55,7 +55,7 @@ pub fn parse_item(
                     // create the task to generate ans cache the sprite value
                     let sprite_value_task = SpriteValueTask::create(
                         _config,
-                        &_item,
+                        _item,
                         icon,
                         &sprite_icon_task.full_destination_icon.clone(),
                         sprite_size_name,
@@ -76,7 +76,7 @@ pub fn parse_item(
             _library,
             _package,
             _item,
-            &element,
+            element,
             SnippetMode::Local,
         )?));
         // create the remote snippet
@@ -85,18 +85,18 @@ pub fn parse_item(
             _library,
             _package,
             _item,
-            &element,
+            element,
             SnippetMode::Remote,
         )?));
     }
 
     // create the task to generate the documentation
     tasks.push(Box::from(ItemDocumentationTask::create(
-        _config, _library, &_item,
+        _config, _library, _item,
     )?));
 
     // create the task to generate the puml file of the item
-    tasks.push(Box::from(ItemSourceTask::create(_config, &_item)?));
+    tasks.push(Box::from(ItemSourceTask::create(_config, _item)?));
 
     Ok(tasks)
 }
