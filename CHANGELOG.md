@@ -4,7 +4,7 @@
 
 ### ⚠ BREAKING CHANGE
 
-* in template `element.type` are no more suffix with `Element`, i.e. `{% if element.type == "CustomElement" -%}` becomes `{% if element.type == "Custom" -%}`
+* in templates, `element.type` are no more suffix with `Element`, i.e. `{% if element.type == "CustomElement" -%}` becomes `{% if element.type == "Custom" -%}`
 
 ### Fixes
 
