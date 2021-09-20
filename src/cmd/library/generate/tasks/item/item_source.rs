@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
-use crate::constants::{SPRITES, SPRITE_MD};
+use crate::constants::{SPRITES, SPRITE_LG};
 use crate::error::Error;
 use crate::manifest::element::Shape;
 use crate::manifest::item::Item;
@@ -119,7 +119,7 @@ impl ItemSourceTask {
                     let sprite_name = item
                         .icon
                         .clone()
-                        .map(|i| i.get_sprite_name(&item.urn, SPRITE_MD))
+                        .map(|i| i.get_sprite_name(&item.urn, SPRITE_LG))
                         .unwrap_or_default();
                     match element.shape {
                         Shape::Icon {
