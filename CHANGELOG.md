@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.0.0](https://github.com/tmorin/plantuml-generator/compare/v0.1.0...v1.0.0) (2021-09-14)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.0.0...HEAD) (2021-09-20)
+
+### Fixes
+
+* sprites for card elements are too small 072c571
+
+
+## [v1.0.0](https://github.com/tmorin/plantuml-generator/compare/v0.1.0...v1.0.0) (2021-09-14)
 
 ### ⚠ BREAKING CHANGE
 
