@@ -144,7 +144,7 @@ mod test {
             full_source_icon: "test/original_icon.png".to_string(),
             full_destination_text: "target/tests/sprite_value/test_generate.text".to_string(),
             java_binary: config.java_binary,
-            plantuml_jar: "test/plantuml-1.2021.3.jar".to_string(),
+            plantuml_jar: "test/plantuml-1.2021.15.jar".to_string(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
         generator.create_resources().unwrap();

@@ -122,7 +122,7 @@ mod test {
             "-u=c4model",
             "-O=target/tests/cmd/library/generate/urns/distribution",
             "-C=target/tests/cmd/library/generate/urns/cache",
-            "-P=test/plantuml-1.2021.3.jar",
+            "-P=test/plantuml-1.2021.15.jar",
         ]);
         execute_library_generate(
             &arg_matches
@@ -154,7 +154,7 @@ mod test {
             "--clean-cache",
             "-O=target/tests/cmd/library/generate/clean_cache/distribution",
             "-C=target/tests/cmd/library/generate/clean_cache/cache",
-            "-P=test/plantuml-1.2021.3.jar",
+            "-P=test/plantuml-1.2021.15.jar",
         ]);
         execute_library_generate(
             &arg_matches
@@ -183,7 +183,7 @@ mod test {
             "--clean-urn=a_package/a_module",
             "-O=target/tests/cmd/library/generate/clean_urns/distribution",
             "-C=target/tests/cmd/library/generate/clean_urns/cache",
-            "-P=test/plantuml-1.2021.3.jar",
+            "-P=test/plantuml-1.2021.15.jar",
         ]);
         execute_library_generate(
             &arg_matches
