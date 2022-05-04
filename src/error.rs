@@ -24,7 +24,7 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match &self {
             Error::Simple(_) => None,
             Error::Cause(_, ref e) => Some(e.deref()),

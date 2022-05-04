@@ -148,7 +148,7 @@ mod test {
             "generate",
             "-s=target/tests/cmd/diagram/generate/source",
             "-C=target/tests/cmd/diagram/generate/cache",
-            "-P=test/plantuml-1.2021.15.jar",
+            "-P=test/plantuml-1.2022.4.jar",
         ]);
         execute_diagram_generate(
             &arg_matches

@@ -141,7 +141,7 @@ mod tests {
             .unwrap_or_default();
         let config = &Config::default()
             .rebase_directories("target/tests/generator/library-full".to_string())
-            .update_plantuml_jar("test/plantuml-1.2021.15.jar".to_string());
+            .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
         let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
         let plantuml = &create_plantuml(
             &config.java_binary,
@@ -161,7 +161,7 @@ mod tests {
     fn test_icon_reference() {
         let config = &Config::default()
             .rebase_directories("target/tests/generator/library-icon_reference".to_string())
-            .update_plantuml_jar("test/plantuml-1.2021.15.jar".to_string());
+            .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
         let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
         let plantuml = &create_plantuml(
             &config.java_binary,

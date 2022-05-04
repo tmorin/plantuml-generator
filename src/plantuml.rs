@@ -49,8 +49,8 @@ impl PlantUML {
         Ok(())
     }
     pub fn download(&self) -> Result<()> {
-        // https://netcologne.dl.sourceforge.net/project/plantuml/1.2021.15/plantuml.1.2021.15.jar
-        // https://downloads.sourceforge.net/project/plantuml/1.2021.15/plantuml.1.2021.15.jar
+        // https://netcologne.dl.sourceforge.net/project/plantuml/1.2022.4/plantuml.1.2022.4.jar
+        // https://downloads.sourceforge.net/project/plantuml/1.2022.4/plantuml.1.2022.4.jar
         let url = format!(
             "https://downloads.sourceforge.net/project/plantuml/{}/plantuml.{}.jar",
             self.plantuml_version, self.plantuml_version,
