@@ -9,4 +9,4 @@ convco changelog > CHANGELOG.md
 git commit -am "chore(release): update changelog"
 
 # shellcheck disable=SC2068
-cargo release "$(convco version --bump)" --skip-publish --execute $@
+cargo release "$(convco version --bump)" --no-publish --execute $@
