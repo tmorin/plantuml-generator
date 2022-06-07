@@ -3,7 +3,7 @@ use std::fmt;
 use std::fs::File;
 use std::path::Path;
 
-use heck::{CamelCase, TitleCase};
+use heck::{ToTitleCase, ToUpperCamelCase};
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use tera::{Context, Tera};
@@ -84,7 +84,7 @@ impl ElementSnippetTask {
         snippet_mode: SnippetMode,
     ) -> Result<ElementSnippetTask> {
         let procedure_name = element.shape.get_element_name(&item.urn);
-        let variable_name = procedure_name.to_camel_case();
+        let variable_name = procedure_name.to_upper_camel_case();
         let primary_label = procedure_name.to_title_case();
 
         let full_destination_source_path = match snippet_mode {

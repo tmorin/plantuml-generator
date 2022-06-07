@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use heck::TitleCase;
+use heck::ToTitleCase;
 use serde::de::{Error, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 

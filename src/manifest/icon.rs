@@ -1,4 +1,4 @@
-use heck::CamelCase;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 
 use crate::urn::Urn;
@@ -25,20 +25,20 @@ impl Icon {
     }
     pub fn get_sprite_name(&self, urn: &Urn, size: &str) -> String {
         match &self {
-            Icon::Source { .. } => format!("{}{}", urn.name, size.to_camel_case()),
-            Icon::Reference { urn } => format!("{}{}", urn.name, size.to_camel_case()),
+            Icon::Source { .. } => format!("{}{}", urn.name, size.to_upper_camel_case()),
+            Icon::Reference { urn } => format!("{}{}", urn.name, size.to_upper_camel_case()),
         }
     }
     pub fn get_sprite_image_path(&self, urn: &Urn, size: &str) -> String {
         match &self {
-            Icon::Source { .. } => format!("{}{}.png", urn.value, size.to_camel_case()),
-            Icon::Reference { urn } => format!("{}{}.png", urn.value, size.to_camel_case()),
+            Icon::Source { .. } => format!("{}{}.png", urn.value, size.to_upper_camel_case()),
+            Icon::Reference { urn } => format!("{}{}.png", urn.value, size.to_upper_camel_case()),
         }
     }
     pub fn get_sprite_value_path(&self, urn: &Urn, size: &str) -> String {
         match &self {
-            Icon::Source { .. } => format!("{}{}.puml", urn.value, size.to_camel_case()),
-            Icon::Reference { urn } => format!("{}{}.puml", urn.value, size.to_camel_case()),
+            Icon::Source { .. } => format!("{}{}.puml", urn.value, size.to_upper_camel_case()),
+            Icon::Reference { urn } => format!("{}{}.puml", urn.value, size.to_upper_camel_case()),
         }
     }
 }

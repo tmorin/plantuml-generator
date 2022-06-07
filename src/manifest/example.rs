@@ -1,4 +1,4 @@
-use heck::SnakeCase;
+use heck::ToSnakeCase;
 use serde::{Deserialize, Serialize};
 
 use crate::urn::Urn;
