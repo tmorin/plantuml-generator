@@ -1,4 +1,6 @@
+use clap_complete::{generate, Shell};
 use std::ffi::OsString;
+use std::io;
 use std::str::FromStr;
 
 use crate::cli::build_cli;
@@ -14,10 +16,10 @@ where
 {
     let app = build_cli();
 
-    let app_matches = match app.clone().get_matches_from_safe(args) {
+    let app_matches = match app.clone().try_get_matches_from(args) {
         Ok(app_matches) => app_matches,
         Err(e) => {
-            eprintln!("{}", e.message);
+            eprintln!("{}", e);
             return if e.use_stderr() { 1 } else { 0 };
         }
     };
@@ -42,8 +44,8 @@ where
     }
 
     return match app_matches.subcommand() {
-        ("library", Some(m)) => match m.subcommand() {
-            ("generate", Some(m)) => {
+        Some(("library", m)) => match m.subcommand() {
+            Some(("generate", m)) => {
                 return match execute_library_generate(m) {
                     Ok(_) => 0,
                     Err(e) => {
@@ -55,14 +57,14 @@ where
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
                 app.clone()
-                    .write_help(&mut std::io::stderr())
+                    .write_help(&mut io::stderr())
                     .expect("unable to write help message");
                 eprintln!();
                 2
             }
         },
-        ("diagram", Some(m)) => match m.subcommand() {
-            ("generate", Some(m)) => {
+        Some(("diagram", m)) => match m.subcommand() {
+            Some(("generate", m)) => {
                 return match execute_diagram_generate(m) {
                     Ok(_) => 0,
                     Err(e) => {
@@ -74,16 +76,21 @@ where
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
                 app.clone()
-                    .write_help(&mut std::io::stderr())
+                    .write_help(&mut io::stderr())
                     .expect("unable to write help message");
                 eprintln!();
                 2
             }
         },
+        Some(("completion", m)) => {
+            let v: Shell = m.value_of_t("SHELL").unwrap();
+            generate(v, &mut build_cli(), "plantuml-generator", &mut io::stdout());
+            return 1;
+        }
         _ => {
             log::warn!("the SUBCOMMAND is missing");
             app.clone()
-                .write_help(&mut std::io::stderr())
+                .write_help(&mut io::stderr())
                 .expect("unable to write help message");
             eprintln!();
             2

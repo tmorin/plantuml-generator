@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate clap;
 
 use crate::app::start_app;

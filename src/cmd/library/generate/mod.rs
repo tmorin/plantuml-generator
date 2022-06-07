@@ -43,7 +43,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
 
     // clean the targeted output directories
     for urn_as_string in arg_matches
-        .values_of_lossy("urns_to_clean")
+        .values_of_t::<String>("urns_to_clean")
         .unwrap_or_default()
     {
         let path_to_delete = Path::new(&config.output_directory).join(&urn_as_string);
@@ -87,7 +87,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     };
 
     // fetch the targeted URNs
-    let urns = &values_t!(arg_matches, "urns", Urn).unwrap_or_default();
+    let urns = &arg_matches.values_of_t::<Urn>("urns").unwrap_or_default();
     log::info!(
         "targeted urns: {}",
         urns.iter().map(|u| u.value.clone()).collect::<String>()

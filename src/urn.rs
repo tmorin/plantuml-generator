@@ -1,5 +1,4 @@
 use std::fmt;
-use std::result;
 use std::str::FromStr;
 
 use heck::TitleCase;
@@ -63,7 +62,7 @@ impl Serialize for Urn {
 }
 
 impl<'de> Deserialize<'de> for Urn {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -90,7 +89,7 @@ impl<'de> Deserialize<'de> for Urn {
 impl FromStr for Urn {
     type Err = crate::error::Error;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Urn::from(s))
     }
 }
