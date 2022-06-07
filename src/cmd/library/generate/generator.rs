@@ -126,12 +126,13 @@ mod tests {
     use std::fs::read_to_string;
     use std::path::Path;
 
+    use log::LevelFilter;
+
+    use crate::cmd::library::generate::templates::TEMPLATES;
     use crate::plantuml::create_plantuml;
     use crate::tera::create_tera;
 
     use super::*;
-    use crate::cmd::library::generate::templates::TEMPLATES;
-    use log::LevelFilter;
 
     #[test]
     fn test_full_generation() {

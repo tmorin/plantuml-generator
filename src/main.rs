@@ -1,8 +1,9 @@
 extern crate clap;
 
-use crate::app::start_app;
 use std::env::args;
 use std::process::exit;
+
+use crate::app::start_app;
 
 mod app;
 mod cli;

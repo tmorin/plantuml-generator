@@ -1,13 +1,13 @@
-use clap_complete::{generate, Shell};
 use std::ffi::OsString;
 use std::io;
 use std::str::FromStr;
 
-use crate::cli::build_cli;
+use clap_complete::{generate, Shell};
+use log::LevelFilter;
 
+use crate::cli::build_cli;
 use crate::cmd::execute_diagram_generate;
 use crate::cmd::execute_library_generate;
-use log::LevelFilter;
 
 pub fn start_app<I, T>(args: I) -> i32
 where

@@ -100,12 +100,12 @@ impl Task for LibraryDocumentationTask {
 mod test {
     use std::fs::read_to_string;
 
+    use crate::cmd::library::generate::templates::TEMPLATES;
     use crate::constants::get_default_template_library_documentation;
     use crate::tera::create_tera;
     use crate::urn::Urn;
 
     use super::*;
-    use crate::cmd::library::generate::templates::TEMPLATES;
 
     #[test]
     fn test_template() {

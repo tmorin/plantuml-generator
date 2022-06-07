@@ -112,11 +112,11 @@ impl Task for LibraryBootstrapTask {
 mod test {
     use std::fs::read_to_string;
 
+    use crate::cmd::library::generate::templates::TEMPLATES;
     use crate::constants::get_default_template_library_bootstrap;
     use crate::tera::create_tera;
 
     use super::*;
-    use crate::cmd::library::generate::templates::TEMPLATES;
 
     #[test]
     fn test_template() {

@@ -117,10 +117,10 @@ impl Task for PackageExampleTask {
 mod test {
     use std::fs::read_to_string;
 
+    use crate::cmd::library::generate::templates::TEMPLATES;
     use crate::tera::create_tera;
 
     use super::*;
-    use crate::cmd::library::generate::templates::TEMPLATES;
 
     #[test]
     fn test_template() {
