@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.2.0](https://github.com/tmorin/plantuml-generator/compare/v1.1.0...v1.2.0) (2022-05-04)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.2.0...HEAD) (2022-06-07)
+
+### Features
+
+* add the completion sub-command
+  ([f0a9549](https://github.com/tmorin/plantuml-generator/commit/f0a9549ac8b372fe5ac9a11657b44ef6b1cfa01a))
+
+## [v1.2.0](https://github.com/tmorin/plantuml-generator/compare/v1.1.0...v1.2.0) (2022-05-04)
 
 ### Features
 
