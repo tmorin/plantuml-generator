@@ -21,7 +21,7 @@ include('{{ data.item_urn }}')
 {%- block procedures %}
 ' renders the element
 {%- if data.element_shape == "Icon" %}
-{{ data.procedure_name }}('{{ data.variable_name }}', '{{ data.primary_label }}', '{{ data.technical_label | default(value="an optional tech label") }}')
+{{ data.procedure_name }}('{{ data.variable_name }}', '{{ data.primary_label }}', '{{ data.technical_label | default(value="an optional tech label"), '{{ data.description_label | default(value="an optional description") }}')
 {% elif data.element_shape == "IconCard" %}
 {{ data.procedure_name }}('{{ data.variable_name }}', '{{ data.primary_label }}', '{{ data.description_label | default(value="an optional description") }}')
 {% elif data.element_shape == "IconGroup" %}

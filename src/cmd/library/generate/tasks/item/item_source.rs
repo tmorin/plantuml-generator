@@ -306,7 +306,7 @@ mod test {
         .unwrap();
         assert!(content.contains("LX_6N8UPcPbT0G"));
         assert!(content.contains(
-            r"IconElement($id, 'IconElement', 'Package/Module/Family/BuiltInItem', $name, $tech)"
+            r"IconElement($id, 'IconElement', 'Package/Module/Family/BuiltInItem', $name, $tech, $desc)"
         ));
         assert!(content.contains(
             r"IconCardElement($id, 'IconCardElement', '<$ItemLg>', 'Family', $funcName, $content)"
