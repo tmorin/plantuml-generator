@@ -24,6 +24,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          override: true
           components: clippy
       - name: "Check with clippy"
         uses: actions-rs/cargo@v1
@@ -38,9 +39,11 @@ jobs:
       - uses: actions/checkout@v2
       - name: "Install dependencies"
         run: |
+          sudo add-apt-repository ppa:inkscape.dev/stable -y
           sudo apt update
-          sudo apt-get install pkg-config libssl-dev openjdk-11-jre graphviz
-          sudo snap install inkscape
+          sudo apt-get install pkg-config libssl-dev openjdk-11-jre graphviz inkscape
+          inkscape --version
+          inkscape --help
         shell: bash
       - name: "Cache cargo stuff"
         uses: actions/cache@v2
@@ -57,6 +60,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          override: true
       - name: "Perform the tests"
         uses: actions-rs/cargo@v1
         with:
@@ -92,8 +96,8 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          target: ${{ matrix.target }}
           override: true
+          target: ${{ matrix.target }}
       - name: "Build the binary"
         uses: actions-rs/cargo@v1
         with:
@@ -143,8 +147,8 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          target: ${{ matrix.target }}
           override: true
+          target: ${{ matrix.target }}
       - name: "Install cargo-deb"
         run: cargo install cargo-deb -q || true
       - name: "Build the deb package"

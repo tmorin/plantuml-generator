@@ -15,7 +15,9 @@ It provides commands to generate the stuff for PlantUML diagrams like library of
 
 - `libssl-dev`
 - `java`, version > 11
-- `inkscape`, version > 1, required only if used to generate a library
+- `inkscape`, version > 1.2
+  - tested with `Inkscape 1.2 (1:1.2.1+202207142221+cd75a1ee6d)`
+  - only required if used to generate a library
 
 ## Install
 
