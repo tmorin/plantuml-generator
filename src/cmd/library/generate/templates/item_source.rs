@@ -11,8 +11,8 @@ pub const TEMPLATE: &str = r##"{% block header -%}
 {%- block elements %}
 {%- for element in data.elements %}
 {%- if element.type == "Icon" %}
-!procedure {{ element.procedure_name }}($id, $name="", $tech="")
-  IconElement($id, '{{ element.stereotype_name }}', '{{ element.icon_urn }}', $name, $tech)
+!procedure {{ element.procedure_name }}($id, $name="", $tech="", $desc="")
+  IconElement($id, '{{ element.stereotype_name }}', '{{ element.icon_urn }}', $name, $tech, $desc)
 !endprocedure
 {%- elif element.type == "IconCard" %}
 !procedure {{ element.procedure_name }}($id, $funcName="", $content="")
