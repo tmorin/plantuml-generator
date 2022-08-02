@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.3.0](https://github.com/tmorin/plantuml-generator/compare/v1.2.0...v1.3.0) (2022-06-07)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.3.0...HEAD) (2022-08-02)
+
+### Features
+
+* added optional description to Icon Items (#1)
+  ([bc9f6d9](https://github.com/tmorin/plantuml-generator/commit/bc9f6d9ebc425fa800fc75a40ec3aa23ec708ddf))
+
+## [v1.3.0](https://github.com/tmorin/plantuml-generator/compare/v1.2.0...v1.3.0) (2022-06-07)
 
 ### Features
 
