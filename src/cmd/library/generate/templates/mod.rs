@@ -2,6 +2,7 @@ use crate::constants::{
     TEMPLATE_ITEM_DOCUMENTATION, TEMPLATE_ITEM_SNIPPET, TEMPLATE_ITEM_SOURCE,
     TEMPLATE_LIBRARY_BOOTSTRAP, TEMPLATE_LIBRARY_DOCUMENTATION, TEMPLATE_MODULE_DOCUMENTATION,
     TEMPLATE_PACKAGE_BOOTSTRAP, TEMPLATE_PACKAGE_DOCUMENTATION, TEMPLATE_PACKAGE_EXAMPLE,
+    TEMPLATE_PACKAGE_FULL,
 };
 
 mod item_documentation;
@@ -13,8 +14,9 @@ mod module_documentation;
 mod package_bootstrap;
 mod package_documentation;
 mod package_example;
+mod package_full;
 
-pub const TEMPLATES: &[(&str, &str); 9] = &[
+pub const TEMPLATES: &[(&str, &str); 10] = &[
     (TEMPLATE_ITEM_DOCUMENTATION, item_documentation::TEMPLATE),
     (TEMPLATE_ITEM_SNIPPET, item_snippet::TEMPLATE),
     (TEMPLATE_ITEM_SOURCE, item_source::TEMPLATE),
@@ -28,6 +30,7 @@ pub const TEMPLATES: &[(&str, &str); 9] = &[
         module_documentation::TEMPLATE,
     ),
     (TEMPLATE_PACKAGE_BOOTSTRAP, package_bootstrap::TEMPLATE),
+    (TEMPLATE_PACKAGE_FULL, package_full::TEMPLATE),
     (
         TEMPLATE_PACKAGE_DOCUMENTATION,
         package_documentation::TEMPLATE,

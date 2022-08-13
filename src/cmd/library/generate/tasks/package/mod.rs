@@ -3,6 +3,7 @@ use crate::cmd::library::generate::task::Task;
 use crate::cmd::library::generate::tasks::package::package_bootstrap::PackageBootstrapTask;
 use crate::cmd::library::generate::tasks::package::package_documentation::PackageDocumentationTask;
 use crate::cmd::library::generate::tasks::package::package_example::PackageExampleTask;
+use crate::cmd::library::generate::tasks::package::package_full::PackageFullTask;
 use crate::manifest::library::Library;
 use crate::manifest::package::Package;
 use crate::result::Result;
@@ -10,6 +11,7 @@ use crate::result::Result;
 mod package_bootstrap;
 mod package_documentation;
 mod package_example;
+mod package_full;
 
 pub fn parse_package(
     _config: &Config,
@@ -26,6 +28,7 @@ pub fn parse_package(
     }
 
     tasks.push(Box::from(PackageBootstrapTask::create(_config, _package)?));
+    tasks.push(Box::from(PackageFullTask::create(_config, _package)?));
     tasks.push(Box::from(PackageDocumentationTask::create(
         _config, _library, _package,
     )?));
