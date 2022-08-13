@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.4.0](https://github.com/tmorin/plantuml-generator/compare/v1.3.0...v1.4.0) (2022-08-02)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.4.0...HEAD) (2022-08-13)
+
+### Features
+
+* add a "full" template for package in order to get every thing from a single a  
+file
+  ([63ae6ec](https://github.com/tmorin/plantuml-generator/commit/63ae6ec7d28cdc08ab37fdfc94ef13de6c7398e0))
+
+## [v1.4.0](https://github.com/tmorin/plantuml-generator/compare/v1.3.0...v1.4.0) (2022-08-02)
 
 ### Features
 
