@@ -69,7 +69,7 @@ impl Config {
             cache_directory: self.cache_directory.clone(),
             tera_discovery_pattern: self.tera_discovery_pattern.clone(),
             plantuml_version: self.plantuml_version.clone(),
-            plantuml_jar: plantuml_jar.clone(),
+            plantuml_jar,
             java_binary: self.java_binary.clone(),
             inkscape_binary: self.inkscape_binary.clone(),
         }

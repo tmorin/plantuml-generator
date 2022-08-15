@@ -196,10 +196,10 @@ mod test {
             destination_icon_height: 50,
             inkscape_binary: config.inkscape_binary,
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.create_resources().unwrap();
         assert!(Path::new("target/tests/item_icon/output.png").exists());
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         assert!(!Path::new("target/tests/item_icon/output.png").exists());
         generator.create_resources().unwrap();
         assert!(Path::new("target/tests/item_icon/output.png").exists());
@@ -215,10 +215,10 @@ mod test {
             destination_icon_height: 50,
             inkscape_binary: config.inkscape_binary,
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.create_resources().unwrap();
         assert!(Path::new("target/tests/item_icon/output_with_builtin.png").exists());
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         assert!(!Path::new("target/tests/item_icon/output_with_builtin.png").exists());
         generator.create_resources().unwrap();
         assert!(Path::new("target/tests/item_icon/output_with_builtin.png").exists());

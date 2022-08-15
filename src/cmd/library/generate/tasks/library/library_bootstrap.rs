@@ -136,7 +136,7 @@ mod test {
             output_directory: "target/tests/library_bootstrap_generator".to_string(),
             template: get_default_template_library_bootstrap(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content =
             read_to_string(format!("{}/bootstrap.puml", generator.output_directory)).unwrap();

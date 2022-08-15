@@ -191,11 +191,11 @@ mod test {
                     full_snippet_remote_path: "test/full_snippet_remote_path.puml".to_string(),
                 },
             ],
-            path_to_base: urn.get_parent().path_to_base.clone(),
+            path_to_base: urn.get_parent().path_to_base,
             output_directory: "target/tests/item_documentation".to_string(),
             template: get_default_template_item_documentation(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(&tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.md",

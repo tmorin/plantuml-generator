@@ -293,7 +293,7 @@ mod test {
                     ),
                     properties: HashMap::default(),
                 };
-                generator.cleanup(&vec![CleanupScope::All]).unwrap();
+                generator.cleanup(&[CleanupScope::All]).unwrap();
                 generator.render_atomic_templates(tera).unwrap();
                 let content = read_to_string(generator.full_destination_source_path).unwrap();
                 if snippet_mode.eq(&Remote) {
@@ -317,23 +317,19 @@ mod test {
                 package_urn: "PackageA".to_string(),
                 item_urn: String::from(&item_urn.value),
                 path_to_base: String::from(&item_urn.path_to_base),
-                element_shape: format!("Custom"),
+                element_shape: "Custom".to_string(),
                 snippet_mode: snippet_mode.clone(),
-                procedure_name: format!("ItemCustom"),
+                procedure_name: "ItemCustom".to_string(),
                 variable_name: "item".to_string(),
                 primary_label: "Item".to_string(),
                 technical_label: None,
                 description_label: None,
                 template: "custom_item_snippet.tera".to_string(),
-                full_destination_source_path: format!(
-                    "target/tests/element_snippet/source.Custom.puml"
-                ),
-                full_destination_image_path: format!(
-                    "target/tests/element_snippet/source.Custom.png"
-                ),
+                full_destination_source_path: "target/tests/element_snippet/source.Custom.puml".to_string(),
+                full_destination_image_path: "target/tests/element_snippet/source.Custom.png".to_string(),
                 properties: HashMap::default(),
             };
-            generator.cleanup(&vec![CleanupScope::All]).unwrap();
+            generator.cleanup(&[CleanupScope::All]).unwrap();
             generator.render_atomic_templates(tera).unwrap();
             let content = read_to_string(generator.full_destination_source_path).unwrap();
             if snippet_mode.eq(&Remote) {

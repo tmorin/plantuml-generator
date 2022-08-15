@@ -151,71 +151,33 @@ mod tests {
 
     #[test]
     fn test_urn_is_included_in_c4model() {
-        assert_eq!(
-            Urn::from("c4model").is_included_in(&[Urn::from("c4model/Element")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("c4model/Element/Person/External")
-                .is_included_in(&[Urn::from("c4model/Element/Person")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("c4model/Element/Person").is_included_in(&[Urn::from("c4model/Element")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("c4model/Category").is_included_in(&[Urn::from("c4model/Element")]),
-            false
-        );
+        assert!(Urn::from("c4model").is_included_in(&[Urn::from("c4model/Element")]));
+        assert!(Urn::from("c4model/Element/Person/External")
+            .is_included_in(&[Urn::from("c4model/Element/Person")]));
+        assert!(Urn::from("c4model/Element/Person").is_included_in(&[Urn::from("c4model/Element")]));
+        assert!(!Urn::from("c4model/Category").is_included_in(&[Urn::from("c4model/Element")]));
     }
 
     #[test]
     fn test_urn_is_included_in() {
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD").is_included_in(&[Urn::from("PackageA")]),
-            true
+        assert!(
+            Urn::from("PackageA/ModuleB/FamilyC/ItemD").is_included_in(&[Urn::from("PackageA")])
         );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD")
-                .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC")]),
-            true
+        assert!(Urn::from("PackageA/ModuleB/FamilyC/ItemD")
+            .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC")]));
+        assert!(Urn::from("PackageA/ModuleB/FamilyC/ItemD")
+            .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemD")]));
+        assert!(
+            !Urn::from("PackageA/ModuleB/FamilyC/ItemD").is_included_in(&[Urn::from("PackageBis")])
         );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD")
-                .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemD")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD").is_included_in(&[Urn::from("PackageBis")]),
-            false
-        );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD")
-                .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyBis")]),
-            false
-        );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD")
-                .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemBis")]),
-            false
-        );
-        assert_eq!(
-            Urn::from("PackageA/ModuleB/FamilyC/ItemD")
-                .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemD/Bis")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("PackageA").is_included_in(&[Urn::from("PackageA")]),
-            true
-        );
-        assert_eq!(
-            Urn::from("PackageB").is_included_in(&[Urn::from("PackageA")]),
-            false
-        );
-        assert_eq!(
-            Urn::from("PackageA").is_included_in(&[Urn::from("PackageA")]),
-            true
-        );
+        assert!(!Urn::from("PackageA/ModuleB/FamilyC/ItemD")
+            .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyBis")]));
+        assert!(!Urn::from("PackageA/ModuleB/FamilyC/ItemD")
+            .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemBis")]));
+        assert!(Urn::from("PackageA/ModuleB/FamilyC/ItemD")
+            .is_included_in(&[Urn::from("PackageA/ModuleB/FamilyC/ItemD/Bis")]));
+        assert!(Urn::from("PackageA").is_included_in(&[Urn::from("PackageA")]));
+        assert!(!Urn::from("PackageB").is_included_in(&[Urn::from("PackageA")]));
+        assert!(Urn::from("PackageA").is_included_in(&[Urn::from("PackageA")]));
     }
 }

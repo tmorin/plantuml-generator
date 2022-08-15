@@ -146,10 +146,10 @@ mod test {
             java_binary: config.java_binary,
             plantuml_jar: "test/plantuml-1.2022.4.jar".to_string(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.create_resources().unwrap();
         assert!(Path::new(&generator.full_destination_text).exists());
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         assert!(!Path::new(&generator.full_destination_text).exists());
         generator.create_resources().unwrap();
         assert!(Path::new(&generator.full_destination_text).exists());

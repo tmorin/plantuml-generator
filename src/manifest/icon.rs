@@ -53,10 +53,10 @@ mod tests {
             type: Source
             source: the_source_path
         "#;
-        let icon: Icon = serde_yaml::from_str(&yaml).unwrap();
+        let icon: Icon = serde_yaml::from_str(yaml).unwrap();
         match icon {
             Icon::Source { source } => assert_eq!(source, "the_source_path"),
-            Icon::Reference { .. } => assert!(false),
+            Icon::Reference { .. } => unreachable!(),
         }
     }
 
@@ -66,9 +66,9 @@ mod tests {
             type: Reference
             urn: the_reference
         "#;
-        let icon: Icon = serde_yaml::from_str(&yaml).unwrap();
+        let icon: Icon = serde_yaml::from_str(yaml).unwrap();
         match icon {
-            Icon::Source { .. } => assert!(false),
+            Icon::Source { .. } => unreachable!(),
             Icon::Reference { urn } => assert_eq!(urn.value, "the_reference"),
         }
     }

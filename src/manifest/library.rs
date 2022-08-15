@@ -140,7 +140,7 @@ mod tests {
             customization:
                 icon_format: svg
         "#;
-        let library: Library = serde_yaml::from_str(&yaml).unwrap();
+        let library: Library = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert!(library.packages.is_empty());
         assert_eq!(library.templates.bootstrap, "library_bootstrap.tera");
@@ -160,7 +160,7 @@ mod tests {
             templates:
                 bootstrap: dummy_path
         "#;
-        let library: Library = serde_yaml::from_str(&yaml).unwrap();
+        let library: Library = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert!(library.packages.is_empty());
         assert_eq!(library.templates.bootstrap, "dummy_path");
@@ -179,7 +179,7 @@ mod tests {
                 - urn: testlib/packagetest0
                 - urn: testlib/packagetest1
         "#;
-        let library: Library = serde_yaml::from_str(&yaml).unwrap();
+        let library: Library = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert_eq!(library.packages.len(), 2);
     }

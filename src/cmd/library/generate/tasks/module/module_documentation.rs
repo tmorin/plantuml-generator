@@ -184,7 +184,7 @@ mod test {
             output_directory: "target/tests/module_documentation_generator".to_string(),
             template: get_default_template_module_documentation(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/Package/Module/README.md",

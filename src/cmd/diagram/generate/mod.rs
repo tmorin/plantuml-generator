@@ -151,7 +151,7 @@ mod test {
             "-P=test/plantuml-1.2022.4.jar",
         ]);
         execute_diagram_generate(
-            &arg_matches
+            arg_matches
                 .subcommand_matches("diagram")
                 .unwrap()
                 .subcommand_matches("generate")
@@ -182,13 +182,13 @@ mod test {
             .open(path_diagram_a_0_src)
             .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(100));
-        file_diagram_a_0_src.write("' test".as_bytes()).unwrap();
+        file_diagram_a_0_src.write_all("' test".as_bytes()).unwrap();
         // delete path_diagram_b_0_png
         delete_file(path_diagram_b_0_png).unwrap();
         assert!(!path_diagram_b_0_png.exists());
         // execute generate diagrams
         execute_diagram_generate(
-            &arg_matches
+            arg_matches
                 .subcommand_matches("diagram")
                 .unwrap()
                 .subcommand_matches("generate")

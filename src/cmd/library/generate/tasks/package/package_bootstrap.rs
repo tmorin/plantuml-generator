@@ -97,7 +97,7 @@ mod test {
             output_directory: "target/tests/package_bootstrap_generator".to_string(),
             template: "package_bootstrap_bis.tera".to_string(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/Package/bootstrap.puml",

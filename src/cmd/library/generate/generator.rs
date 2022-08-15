@@ -191,9 +191,9 @@ mod tests {
             .unwrap();
         let yaml = &read_to_string(Path::new("test/library-icon_reference.yaml")).unwrap();
         let library: &Library = &serde_yaml::from_str(yaml).unwrap();
-        let generator = &Generator::create(config, library, &vec![]).unwrap();
+        let generator = &Generator::create(config, library, &[]).unwrap();
         generator
-            .generate(&vec![CleanupScope::All], tera, plantuml)
+            .generate(&[CleanupScope::All], tera, plantuml)
             .unwrap();
     }
 }

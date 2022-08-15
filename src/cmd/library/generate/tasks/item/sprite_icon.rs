@@ -166,10 +166,10 @@ mod test {
             full_destination_icon: "target/tests/sprite_icon/test_generate.png".to_string(),
             destination_icon_height: 16,
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.create_resources().unwrap();
         assert!(Path::new(&generator.full_destination_icon).exists());
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         assert!(!Path::new(&generator.full_destination_icon).exists());
         generator.create_resources().unwrap();
         assert!(Path::new(&generator.full_destination_icon).exists());

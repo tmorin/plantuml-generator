@@ -132,7 +132,7 @@ mod test {
             full_source_path: "target/tests/package_examples/source.puml".to_string(),
             full_image_path: "target/tests/package_examples/source.png".to_string(),
         };
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string("target/tests/package_examples/source.puml").unwrap();
         assert!(content.trim().contains("the content of the example"));

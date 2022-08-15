@@ -125,7 +125,7 @@ mod test {
             "-P=test/plantuml-1.2022.4.jar",
         ]);
         execute_library_generate(
-            &arg_matches
+            arg_matches
                 .subcommand_matches("library")
                 .unwrap()
                 .subcommand_matches("generate")
@@ -157,7 +157,7 @@ mod test {
             "-P=test/plantuml-1.2022.4.jar",
         ]);
         execute_library_generate(
-            &arg_matches
+            arg_matches
                 .subcommand_matches("library")
                 .unwrap()
                 .subcommand_matches("generate")
@@ -186,7 +186,7 @@ mod test {
             "-P=test/plantuml-1.2022.4.jar",
         ]);
         execute_library_generate(
-            &arg_matches
+            arg_matches
                 .subcommand_matches("library")
                 .unwrap()
                 .subcommand_matches("generate")

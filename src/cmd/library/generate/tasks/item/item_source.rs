@@ -297,7 +297,7 @@ mod test {
             template: get_default_template_item_source(),
         };
         let tera = &create_tera(TEMPLATES.to_vec(), None).unwrap();
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.puml",
@@ -337,7 +337,7 @@ mod test {
             template: "custom_item_source.tera".to_string(),
         };
         let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
-        generator.cleanup(&vec![CleanupScope::All]).unwrap();
+        generator.cleanup(&[CleanupScope::All]).unwrap();
         generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.puml",

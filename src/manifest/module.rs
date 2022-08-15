@@ -48,7 +48,7 @@ mod tests {
             templates:
                 documentation: templates_documentation_path
         "#;
-        let module: Module = serde_yaml::from_str(&yaml).unwrap();
+        let module: Module = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(module.urn.value, "module/urn");
         assert!(module.items.is_empty());
         assert_eq!(
