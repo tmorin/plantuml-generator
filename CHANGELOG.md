@@ -1,8 +1,21 @@
 # Changelog
 
-## [1.5.1](https://github.com/tmorin/plantuml-generator/compare/v1.5.0...v1.5.1) (2022-08-15)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.5.1...HEAD) (2022-08-15)
+
+### Features
+
+* add a new loader to load the library bootstrap, the package bootstrap and all  
+package's items in one `!include` statement
+  ([d32ea1e](https://github.com/tmorin/plantuml-generator/commit/d32ea1ed20b1344313d383185b3a274af780198f))
 
 ### Fixes
+
+* remove useless `@startuml` and `@enduml` directives
+  ([f8e554b](https://github.com/tmorin/plantuml-generator/commit/f8e554bcfbbee18a7345871cdc8c1b9d6c3c8cd3))
+
+### [v1.5.1](https://github.com/tmorin/plantuml-generator/compare/v1.5.0...v1.5.1) (2022-08-15)
+
+#### Fixes
 
 * add the documentation about the full loader
   ([83a97b4](https://github.com/tmorin/plantuml-generator/commit/83a97b41571261c79dcf0ffd26d557d9ac83decc))
