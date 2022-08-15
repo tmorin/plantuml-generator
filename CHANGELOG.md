@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.6.0](https://github.com/tmorin/plantuml-generator/compare/v1.5.1...v1.6.0) (2022-08-15)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.6.0...HEAD) (2022-08-15)
+
+### Features
+
+* add a SUMMARY.md for the library
+  ([29b46f1](https://github.com/tmorin/plantuml-generator/commit/29b46f1cf7f116f3e1ca234a49ec262d46a12423))
+
+## [v1.6.0](https://github.com/tmorin/plantuml-generator/compare/v1.5.1...v1.6.0) (2022-08-15)
 
 ### Features
 
