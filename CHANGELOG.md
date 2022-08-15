@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.5.0](https://github.com/tmorin/plantuml-generator/compare/v1.4.0...v1.5.0) (2022-08-13)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.5.0...HEAD) (2022-08-15)
+
+### Fixes
+
+* add the documentation about the full loader
+  ([83a97b4](https://github.com/tmorin/plantuml-generator/commit/83a97b41571261c79dcf0ffd26d557d9ac83decc))
+
+## [v1.5.0](https://github.com/tmorin/plantuml-generator/compare/v1.4.0...v1.5.0) (2022-08-13)
 
 ### Features
 
