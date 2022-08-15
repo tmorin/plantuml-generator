@@ -1,5 +1,4 @@
-pub const TEMPLATE: &str = r##"@startuml
-{%- block header %}{% endblock header %}
+pub const TEMPLATE: &str = r##"{%- block header %}{% endblock header %}
 
 ' by default the inclusion mode is remote
 !if (%not(%variable_exists("$INCLUSION_MODE")))
@@ -177,5 +176,4 @@ skinparam DefaultFontColor $FONT_COLOR
 !endprocedure
 {% endblock procedure_GroupElement -%}
 
-{%- block footer %}{% endblock footer %}
-@enduml"##;
+{%- block footer %}{% endblock footer %}"##;
