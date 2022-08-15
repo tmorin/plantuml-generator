@@ -86,6 +86,7 @@ mod templates {
 
     use crate::constants::{
         get_default_template_library_bootstrap, get_default_template_library_documentation,
+        get_default_template_library_summary,
     };
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -96,6 +97,9 @@ mod templates {
         /// The template name used to generate `<library>/README.md`. */
         #[serde(default = "get_default_template_library_documentation")]
         pub documentation: String,
+        /// The template name used to generate `<library>/SUMMARY.md`. */
+        #[serde(default = "get_default_template_library_summary")]
+        pub summary: String,
     }
 
     impl Default for LibraryTemplates {
@@ -103,6 +107,7 @@ mod templates {
             LibraryTemplates {
                 bootstrap: get_default_template_library_bootstrap(),
                 documentation: get_default_template_library_documentation(),
+                summary: get_default_template_library_summary(),
             }
         }
     }

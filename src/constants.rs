@@ -166,6 +166,12 @@ pub fn get_default_template_library_documentation() -> String {
     TEMPLATE_LIBRARY_DOCUMENTATION.to_string()
 }
 
+pub const TEMPLATE_LIBRARY_SUMMARY: &str = "library_summary.tera";
+
+pub fn get_default_template_library_summary() -> String {
+    TEMPLATE_LIBRARY_SUMMARY.to_string()
+}
+
 pub const TEMPLATE_MODULE_DOCUMENTATION: &str = "module_documentation.tera";
 
 pub fn get_default_template_module_documentation() -> String {
