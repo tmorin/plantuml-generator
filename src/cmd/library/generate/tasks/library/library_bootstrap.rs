@@ -76,7 +76,7 @@ impl Task for LibraryBootstrapTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - LibraryBootstrapTask - render templates",
             self.library_name
@@ -137,7 +137,7 @@ mod test {
             template: get_default_template_library_bootstrap(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content =
             read_to_string(format!("{}/bootstrap.puml", generator.output_directory)).unwrap();
         assert!(content.contains(r##"!global $LIB_BASE_LOCATION="a remote url""##));

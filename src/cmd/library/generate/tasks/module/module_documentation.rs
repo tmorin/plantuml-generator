@@ -87,7 +87,7 @@ impl ModuleDocumentationTask {
     }
     fn get_relative_destination_path(&self) -> Box<Path> {
         Box::from(Path::new(
-            format!("{}/README.md", self.module_urn,).as_str(),
+            format!("{}/README.md", self.module_urn, ).as_str(),
         ))
     }
     fn get_full_destination_path(&self) -> Box<Path> {
@@ -104,7 +104,7 @@ impl Task for ModuleDocumentationTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - ModuleDocumentationTask - render templates",
             self.module_urn
@@ -185,12 +185,12 @@ mod test {
             template: get_default_template_module_documentation(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/Package/Module/README.md",
             generator.output_directory
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("The module contains 4 items."));
         assert!(content.contains("[Package/Module/itemD](../../Package/Module/itemD.md)"));
         assert!(content.contains("## FamilyA"));

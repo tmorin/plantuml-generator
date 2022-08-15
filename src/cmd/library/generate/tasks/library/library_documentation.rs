@@ -64,7 +64,7 @@ impl Task for LibraryDocumentationTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - LibraryDocumentationTask - render templates",
             self.library_name
@@ -128,7 +128,7 @@ mod test {
             template: get_default_template_library_documentation(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!("{}/README.md", generator.output_directory)).unwrap();
         assert!(content.contains(r##"The library provides 3 packages."##));
         assert!(content.contains(r##"- [PackageA](PackageA/README.md)"##));

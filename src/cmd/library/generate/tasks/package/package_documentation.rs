@@ -38,6 +38,10 @@ pub struct PackageDocumentationTask {
     package_urn: String,
     /// The name of the package.
     package_name: String,
+    /// True when the package is embedded.
+    is_embedded_enabled: bool,
+    /// True when the package is embedded.
+    remote_url: String,
     /// The relative path to the library base path.
     path_to_base: String,
     /// The modules of the package.
@@ -60,6 +64,8 @@ impl PackageDocumentationTask {
             package_urn: package.urn.value.clone(),
             package_name: package.urn.name.clone(),
             path_to_base: package.urn.path_to_base.clone(),
+            is_embedded_enabled: !package.rendering.skip_embedded,
+            remote_url: library.remote_url.clone(),
             modules: package
                 .modules
                 .iter()
@@ -102,7 +108,7 @@ impl Task for PackageDocumentationTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - PackageDocumentationTask - render templates",
             self.package_urn
@@ -155,6 +161,8 @@ mod test {
             package_urn: package_urn.value,
             package_name: package_urn.name,
             path_to_base: package_urn.path_to_base,
+            is_embedded_enabled: true,
+            remote_url: "http://test.local".to_string(),
             modules: vec![
                 Module {
                     module_urn: module_a_urn.value,
@@ -183,11 +191,13 @@ mod test {
             template: get_default_template_package_documentation(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content =
             read_to_string(format!("{}/Package/README.md", generator.output_directory)).unwrap();
         assert!(content.contains("# Package"));
         assert!(content.contains("include('Package/bootstrap')"));
+        assert!(content.contains("include('Package/full')"));
+        assert!(content.contains("http://test.local"));
         assert!(content.contains("The package provides 2 modules."));
         assert!(content.contains("[Package/ModuleA]"));
         assert!(content.contains("[Package/ModuleB]"));

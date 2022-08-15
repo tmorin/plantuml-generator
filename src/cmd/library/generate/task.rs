@@ -87,7 +87,10 @@ pub trait Task {
     fn create_resources(&self) -> Result<()> {
         Ok(())
     }
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
+        Ok(())
+    }
+    fn render_composed_templates(&self, _tera: &Tera) -> Result<()> {
         Ok(())
     }
     fn render_sources(&self, _plantuml: &PlantUML) -> Result<()> {

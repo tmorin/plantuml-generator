@@ -192,7 +192,7 @@ impl Task for ElementSnippetTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - render templates",
             &self.item_urn,
@@ -294,7 +294,7 @@ mod test {
                     properties: HashMap::default(),
                 };
                 generator.cleanup(&vec![CleanupScope::All]).unwrap();
-                generator.render_templates(tera).unwrap();
+                generator.render_atomic_templates(tera).unwrap();
                 let content = read_to_string(generator.full_destination_source_path).unwrap();
                 if snippet_mode.eq(&Remote) {
                     assert!(content.contains(r##"!global $LIB_BASE_LOCATION="a remote url""##));
@@ -334,7 +334,7 @@ mod test {
                 properties: HashMap::default(),
             };
             generator.cleanup(&vec![CleanupScope::All]).unwrap();
-            generator.render_templates(tera).unwrap();
+            generator.render_atomic_templates(tera).unwrap();
             let content = read_to_string(generator.full_destination_source_path).unwrap();
             if snippet_mode.eq(&Remote) {
                 assert!(content.contains(r##"!global $LIB_BASE_LOCATION="a remote url""##));

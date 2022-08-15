@@ -48,7 +48,7 @@ impl Task for PackageBootstrapTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - PackageBootstrapTask - render templates",
             self.package_urn
@@ -98,14 +98,14 @@ mod test {
             template: "package_bootstrap_bis.tera".to_string(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/Package/bootstrap.puml",
             generator.output_directory
         ))
-        .unwrap();
-        assert!(content
-            .trim()
-            .contains("@startuml\n' header\n' content\n' footer\n@enduml"));
+            .unwrap();
+        assert!(content.trim().contains("header"));
+        assert!(content.trim().contains("content"));
+        assert!(content.trim().contains("footer"));
     }
 }

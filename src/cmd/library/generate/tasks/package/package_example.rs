@@ -67,7 +67,7 @@ impl Task for PackageExampleTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!("{} - PackageExampleTask - render templates", self.template);
 
         let destination_path = Path::new(&self.full_source_path);
@@ -133,7 +133,7 @@ mod test {
             full_image_path: "target/tests/package_examples/source.png".to_string(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string("target/tests/package_examples/source.puml").unwrap();
         assert!(content.trim().contains("the content of the example"));
     }

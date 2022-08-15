@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, remove_dir_all, remove_file};
+use std::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file};
 use std::path::Path;
 
 use crate::error::Error;
@@ -31,6 +31,33 @@ pub fn delete_file(file_path: &Path) -> Result<()> {
         })?;
     }
     Ok(())
+}
+
+pub fn read_file(file_path: &Path) -> Result<Option<String>> {
+    if file_path.exists() {
+        let option = read_to_string(file_path).map(Some).map_err(|e| {
+            Error::Cause(
+                format!("unable to read {}", file_path.display()),
+                Box::from(e),
+            )
+        })?;
+        Ok(option)
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn read_file_to_string(optional_file_path: &Option<String>) -> String {
+    match optional_file_path.clone() {
+        Some(file_path_as_string) => {
+            let file_path = Path::new(&file_path_as_string);
+            match file_path.exists() {
+                true => read_file(file_path).unwrap_or_default().unwrap_or_default(),
+                false => String::default(),
+            }
+        }
+        None => String::default(),
+    }
 }
 
 pub fn delete_file_or_directory(path: &Path) -> Result<()> {

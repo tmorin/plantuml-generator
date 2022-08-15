@@ -86,11 +86,21 @@ impl Generator {
         counter.stop();
         Ok(())
     }
-    fn render_templates(&self, tera: &Tera) -> Result<()> {
-        log::info!("Start the Render Templates phase.");
+    fn render_atomic_templates(&self, tera: &Tera) -> Result<()> {
+        log::info!("Start the Render Atomic Templates phase.");
         let mut counter = Counter::start(self.tasks.len());
         for task in &self.tasks {
-            task.render_templates(tera)?;
+            task.render_atomic_templates(tera)?;
+            counter.increase();
+        }
+        counter.stop();
+        Ok(())
+    }
+    fn render_composed_templates(&self, tera: &Tera) -> Result<()> {
+        log::info!("Start the Render Composed Templates phase.");
+        let mut counter = Counter::start(self.tasks.len());
+        for task in &self.tasks {
+            task.render_composed_templates(tera)?;
             counter.increase();
         }
         counter.stop();
@@ -115,7 +125,8 @@ impl Generator {
     ) -> Result<()> {
         self.cleanup(cleanup_scopes)?;
         self.create_resources()?;
-        self.render_templates(tera)?;
+        self.render_atomic_templates(tera)?;
+        self.render_composed_templates(tera)?;
         self.render_sources(plantuml)?;
         Ok(())
     }
@@ -136,10 +147,7 @@ mod tests {
 
     #[test]
     fn test_full_generation() {
-        env_logger::builder()
-            .filter_level(LevelFilter::Info)
-            .try_init()
-            .unwrap_or_default();
+        env_logger::builder().filter_level(LevelFilter::Info).init();
         let config = &Config::default()
             .rebase_directories("target/tests/generator/library-full".to_string())
             .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
@@ -149,13 +157,24 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-        .unwrap();
+            .unwrap();
         let yaml = &read_to_string(Path::new("test/library-full.yaml")).unwrap();
         let library: &Library = &serde_yaml::from_str(yaml).unwrap();
-        let generator = &Generator::create(config, library, &vec![]).unwrap();
+        let generator = &Generator::create(config, library, &[]).unwrap();
         generator
-            .generate(&vec![CleanupScope::All], tera, plantuml)
+            .generate(&[CleanupScope::All], tera, plantuml)
             .unwrap();
+
+        let c4model_single_content =
+            read_to_string("target/tests/generator/library-full/distribution/c4model/single.puml")
+                .unwrap();
+        assert!(c4model_single_content
+            .trim()
+            .contains("!global $INCLUSION_MODE"));
+        assert!(c4model_single_content
+            .trim()
+            .contains("!procedure C4Element("));
+        assert!(c4model_single_content.trim().contains("!procedure Person("));
     }
 
     #[test]
@@ -169,7 +188,7 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-        .unwrap();
+            .unwrap();
         let yaml = &read_to_string(Path::new("test/library-icon_reference.yaml")).unwrap();
         let library: &Library = &serde_yaml::from_str(yaml).unwrap();
         let generator = &Generator::create(config, library, &vec![]).unwrap();

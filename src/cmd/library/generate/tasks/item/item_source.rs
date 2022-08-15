@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{read_to_string, File};
+use std::fs::{File, read_to_string};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
-use crate::constants::{SPRITES, SPRITE_LG};
+use crate::constants::{SPRITE_LG, SPRITES};
 use crate::error::Error;
 use crate::manifest::element::Shape;
 use crate::manifest::item::Item;
@@ -172,7 +172,7 @@ impl ItemSourceTask {
         })
     }
     fn get_relative_source_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.puml", self.item_urn,).as_str()))
+        Box::from(Path::new(format!("{}.puml", self.item_urn, ).as_str()))
     }
     fn get_full_source_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -190,7 +190,7 @@ impl Task for ItemSourceTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!("{} - ItemIconTask - render templates", &self.item_urn);
 
         let destination_path = self.get_full_source_path();
@@ -298,12 +298,12 @@ mod test {
         };
         let tera = &create_tera(TEMPLATES.to_vec(), None).unwrap();
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("LX_6N8UPcPbT0G"));
         assert!(content.contains(
             r"IconElement($id, 'IconElement', 'Package/Module/Family/BuiltInItem', $name, $tech, $desc)"
@@ -325,7 +325,7 @@ mod test {
             keyB: [ itemA, itemB ]
         "#,
         )
-        .unwrap();
+            .unwrap();
         let generator = ItemSourceTask {
             item_urn: "Package/Module/Family/CustomItem".to_string(),
             cached_sprite_paths: vec![],
@@ -338,12 +338,12 @@ mod test {
         };
         let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(tera).unwrap();
+        generator.render_atomic_templates(tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("' valueA"));
         assert!(content.contains("' itemA,itemB"));
         assert!(content.contains("!procedure CustomItem($id)"));

@@ -100,7 +100,7 @@ impl ItemDocumentationTask {
         })
     }
     pub fn get_relative_documentation_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.md", self.item_urn,).as_str()))
+        Box::from(Path::new(format!("{}.md", self.item_urn, ).as_str()))
     }
     fn get_full_documentation_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -116,7 +116,7 @@ impl Task for ItemDocumentationTask {
         Ok(())
     }
 
-    fn render_templates(&self, _tera: &Tera) -> Result<()> {
+    fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - ItemDocumentationTask - render templates",
             &self.item_urn
@@ -196,12 +196,12 @@ mod test {
             template: get_default_template_item_documentation(),
         };
         generator.cleanup(&vec![CleanupScope::All]).unwrap();
-        generator.render_templates(&tera).unwrap();
+        generator.render_atomic_templates(&tera).unwrap();
         let content = read_to_string(format!(
             "{}/{}.md",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains(r"# Item"));
         assert!(content.contains(r"| Illustration | Icon | Card | Group |"));
         assert!(content.contains(r"| ![illustration for Illustration](../../.././Icon.png) | ![illustration for Icon](../../.././Item.png) | ![illustration for Card](../../.././ItemCard.png) | ![illustration for Group](../../.././ItemGroup.png) |"));

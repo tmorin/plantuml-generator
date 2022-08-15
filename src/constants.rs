@@ -178,10 +178,10 @@ pub fn get_default_template_package_bootstrap() -> String {
     TEMPLATE_PACKAGE_BOOTSTRAP.to_string()
 }
 
-pub const TEMPLATE_PACKAGE_FULL: &str = "package_full.tera";
+pub const TEMPLATE_PACKAGE_EMBEDDED: &str = "package_embedded.tera";
 
-pub fn get_default_template_package_full() -> String {
-    TEMPLATE_PACKAGE_FULL.to_string()
+pub fn get_default_template_package_embedded() -> String {
+    TEMPLATE_PACKAGE_EMBEDDED.to_string()
 }
 
 pub const TEMPLATE_PACKAGE_DOCUMENTATION: &str = "package_documentation.tera";

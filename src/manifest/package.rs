@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::manifest::example::Example;
 use crate::manifest::module::Module;
+use crate::manifest::package::rendering::PackageRendering;
 use crate::manifest::package::templates::PackageTemplates;
 use crate::urn::Urn;
 
@@ -10,7 +11,7 @@ mod templates {
 
     use crate::constants::{
         get_default_template_package_bootstrap, get_default_template_package_documentation,
-        get_default_template_package_full,
+        get_default_template_package_embedded,
     };
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -18,9 +19,9 @@ mod templates {
         /// The template used to generate `<library>/<package>/bootstrap.puml`.
         #[serde(default = "get_default_template_package_bootstrap")]
         pub bootstrap: String,
-        /// The template name used to generate `<library>/<package>/full.puml`. */
-        #[serde(default = "get_default_template_package_full")]
-        pub full: String,
+        /// The template name used to generate `<library>/<package>/{single,full}.puml`.
+        #[serde(default = "get_default_template_package_embedded")]
+        pub embedded: String,
         /// The template used to generate `<library>/<package>/README.md`.
         #[serde(default = "get_default_template_package_documentation")]
         pub documentation: String,
@@ -30,10 +31,21 @@ mod templates {
         fn default() -> Self {
             PackageTemplates {
                 bootstrap: get_default_template_package_bootstrap(),
-                full: get_default_template_package_full(),
+                embedded: get_default_template_package_embedded(),
                 documentation: get_default_template_package_documentation(),
             }
         }
+    }
+}
+
+mod rendering {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize, Debug, Default)]
+    pub struct PackageRendering {
+        /// When true skip the generation of `<library>/<package>/{single,full}.puml`.
+        #[serde(default)]
+        pub skip_embedded: bool,
     }
 }
 
@@ -50,6 +62,9 @@ pub struct Package {
     /// The definition of the templates.
     #[serde(default)]
     pub templates: PackageTemplates,
+    /// The customization of the rendered resources.
+    #[serde(default)]
+    pub rendering: PackageRendering,
 }
 
 #[cfg(test)]
@@ -62,14 +77,26 @@ mod tests {
             urn: package/urn
             templates:
                 bootstrap: templates_bootstrap_path
-                full: templates_full_path
+                embedded: templates_embedded_path
         "#;
-        let package: Package = serde_yaml::from_str(&yaml).unwrap();
+        let package: Package = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(package.urn.value, "package/urn");
         assert!(package.modules.is_empty());
         assert!(package.examples.is_empty());
         assert_eq!(package.templates.bootstrap, "templates_bootstrap_path");
-        assert_eq!(package.templates.full, "templates_full_path");
+        assert_eq!(package.templates.embedded, "templates_embedded_path");
         assert!(!package.templates.documentation.is_empty());
+        assert!(!package.rendering.skip_embedded);
+    }
+
+    #[test]
+    fn test_deserialized_rendering() {
+        let yaml = r#"
+            urn: package/urn
+            rendering:
+                skip_embedded: true
+        "#;
+        let package: Package = serde_yaml::from_str(yaml).unwrap();
+        assert!(package.rendering.skip_embedded);
     }
 }
