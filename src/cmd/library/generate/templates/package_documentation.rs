@@ -10,6 +10,15 @@ The bootstrap may provide PlantUML artifacts like constants, procedures or style
 ' loads the {{ data.package_name }} bootstrap
 include('{{ data.package_urn }}/bootstrap')
 ```
+
+An additional include can be used to load all items in one shot.
+ ```plantuml
+' loads the {{ data.package_name }} bootstrap
+include('{{ data.package_urn }}/bootstrap')
+' loads all items of {{ data.package_name }}
+include('{{ data.package_urn }}/full')
+```
+
 {% endblock bootstrap %}
 
 {% block modules %}
