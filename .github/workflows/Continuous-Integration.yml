@@ -8,9 +8,9 @@ jobs:
     name: Lint
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Cache cargo stuff"
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -36,7 +36,7 @@ jobs:
     name: Test
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Install dependencies"
         run: |
           sudo add-apt-repository ppa:inkscape.dev/stable -y
@@ -46,7 +46,7 @@ jobs:
           inkscape --help
         shell: bash
       - name: "Cache cargo stuff"
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -77,12 +77,12 @@ jobs:
           - architecture: x86_64
             target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Install the dependencies"
         run: sudo apt-get install pkg-config libssl-dev
         shell: bash
       - name: "Cache cargo stuff"
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -107,7 +107,7 @@ jobs:
       - name: "Archive the binary"
         run: tar czf ${{ matrix.architecture }}_plantuml-generator.tar.gz target/${{ matrix.target }}/release/plantuml-generator
       - name: "Upload the binary"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.architecture }}_plantuml-generator
           path: ${{ matrix.architecture }}_plantuml-generator.tar.gz
@@ -128,12 +128,12 @@ jobs:
           - architecture: x86_64
             target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Install the dependencies"
         run: sudo apt-get install build-essential pkg-config dpkg libc-bin libssl-dev liblzma-dev
         shell: bash
       - name: "Cache cargo stuff"
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -154,7 +154,7 @@ jobs:
       - name: "Build the deb package"
         run: cargo deb --target=${{ matrix.target }} -- --features vendored-openssl
       - name: "Upload the deb package"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.architecture }}_plantuml-generator
           path: target/${{ matrix.target }}/debian/*.deb
@@ -165,7 +165,7 @@ jobs:
     needs: [ Lint, Test ]
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: "Set up QEMU"
         uses: docker/setup-qemu-action@v1
       - name: "Login to Docker Hub"
@@ -212,9 +212,9 @@ jobs:
     needs: [ Lint, Test, Binary, DebianPackage ]
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Download all artifacts"
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
       - name: "List artifacts"
