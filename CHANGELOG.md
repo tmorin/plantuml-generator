@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.8.0...HEAD) (2023-03-18)
+## [1.8.1](https://github.com/tmorin/plantuml-generator/compare/v1.8.0...v1.8.1) (2023-03-18)
 
 ### Fixes
 
