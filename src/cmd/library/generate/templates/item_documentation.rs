@@ -19,16 +19,16 @@ include('{{ data.item_urn }}')
 {% endif -%}
 {% endblock objects %}
 
-{% set icons = data.objects | filter(attribute="type", value="Icon") -%}
 {% block sprites %}
+{% set icons = data.objects | filter(attribute="type", value="Icon") -%}
 {% if icons | length > 0 -%}
 ## Sprites
-The item provides the following stipes
+The item provides the following sriptes:
 {% for icon in icons %}
-- `${{ icon.name }}Xs`
-- `${{ icon.name }}Sm`
-- `${{ icon.name }}Md`
-- `${{ icon.name }}Lg`
+- `<${{ icon.name }}Xs>`
+- `<${{ icon.name }}Sm>`
+- `<${{ icon.name }}Md>`
+- `<${{ icon.name }}Lg>`
 {% endfor %}
 {% endif -%}
 {% endblock sprites %}
