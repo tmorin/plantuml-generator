@@ -25,10 +25,10 @@ include('{{ data.item_urn }}')
 ## Sprites
 The item provides the following sriptes:
 {% for icon in icons %}
-- `<${{ icon.name }}Xs>`
-- `<${{ icon.name }}Sm>`
-- `<${{ icon.name }}Md>`
-- `<${{ icon.name }}Lg>`
+- `<${{ data.item_name }}Xs>`
+- `<${{ data.item_name }}Sm>`
+- `<${{ data.item_name }}Md>`
+- `<${{ data.item_name }}Lg>`
 {% endfor %}
 {% endif -%}
 {% endblock sprites %}
