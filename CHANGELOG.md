@@ -1,8 +1,15 @@
 # Changelog
 
-## [1.8.1](https://github.com/tmorin/plantuml-generator/compare/v1.8.0...v1.8.1) (2023-03-18)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.8.1...HEAD) (2023-03-18)
 
 ### Fixes
+
+* the names of the sprites were wrong in the documentation
+([71e0dfe](https://github.com/tmorin/plantuml-generator/commit/71e0dfe54cac5523d81c5cba01b57ff83620f54a))
+
+### [v1.8.1](https://github.com/tmorin/plantuml-generator/compare/v1.8.0...v1.8.1) (2023-03-18)
+
+#### Fixes
 
 * the sprite word was badly typed
 ([45fc689](https://github.com/tmorin/plantuml-generator/commit/45fc689d1bfacba3f5e5b055dd417a0357ff29ca))
