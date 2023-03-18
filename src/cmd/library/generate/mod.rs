@@ -35,7 +35,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     }
 
     // clean the cache directory
-    if arg_matches.is_present("do_clean_cache") {
+    if arg_matches.contains_id("do_clean_cache") {
         let path_to_delete = Path::new(&config.cache_directory);
         log::info!("clean the cache directory: {}", path_to_delete.display());
         delete_file_or_directory(path_to_delete)?
@@ -43,10 +43,10 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
 
     // clean the targeted output directories
     for urn_as_string in arg_matches
-        .values_of_t::<String>("urns_to_clean")
+        .get_many::<String>("urns_to_clean")
         .unwrap_or_default()
     {
-        let path_to_delete = Path::new(&config.output_directory).join(&urn_as_string);
+        let path_to_delete = Path::new(&config.output_directory).join(urn_as_string);
         log::info!(
             "clean the output sub-directory: {}",
             path_to_delete.display()
@@ -56,7 +56,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
 
     // resolve the manifest path
     let manifest_file = arg_matches
-        .value_of("MANIFEST")
+        .get_one::<String>("MANIFEST")
         .ok_or_else(|| Error::Simple("MANIFEST is required".to_string()))?;
 
     // create the YAML parser
@@ -76,18 +76,19 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     )?;
     plantuml.download()?;
 
-    // compute the cleanup scopes
-    let cleanup_scopes = &match arg_matches.values_of_lossy("cleanup_scopes") {
-        None => vec![],
-        Some(v) => v
-            .iter()
-            .map(|v| CleanupScope::from_str(v))
-            .map(|r| r.unwrap())
-            .collect(),
-    };
+    let cleanup_scopes: &Vec<CleanupScope> = &arg_matches
+        .get_many::<String>("cleanup_scopes")
+        .unwrap_or_default()
+        .map(|v| CleanupScope::from_str(v))
+        .map(|r| r.unwrap())
+        .collect();
 
     // fetch the targeted URNs
-    let urns = &arg_matches.values_of_t::<Urn>("urns").unwrap_or_default();
+    let urns: &Vec<Urn> = &arg_matches
+        .get_many::<String>("urns")
+        .unwrap_or_default()
+        .map(|c| Urn::from(c.as_str()))
+        .collect();
     log::info!(
         "targeted urns: {}",
         urns.iter().map(|u| u.value.clone()).collect::<String>()

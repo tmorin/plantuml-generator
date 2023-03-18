@@ -82,7 +82,7 @@ fn get_puml_paths(config: &Config) -> Result<Paths> {
 pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     // resolve the config
     let config = &Config::default().update_from_args(arg_matches);
-    let force_generation = arg_matches.is_present("do_force_generation");
+    let force_generation = arg_matches.contains_id("do_force_generation");
     if log::log_enabled!(log::Level::Info) {
         log::info!("source_directory: {}", &config.source_directory);
         log::info!("cache_directory: {}", &config.cache_directory);

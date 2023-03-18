@@ -23,8 +23,7 @@ where
             return if e.use_stderr() { 1 } else { 0 };
         }
     };
-
-    let level_filter = match app_matches.value_of("log_level") {
+    let level_filter = match app_matches.get_one::<String>("log_level") {
         None => LevelFilter::Info,
         Some(v) => match LevelFilter::from_str(v) {
             Ok(v) => v,
@@ -83,8 +82,16 @@ where
             }
         },
         Some(("completion", m)) => {
-            let v: Shell = m.value_of_t("SHELL").unwrap();
-            generate(v, &mut build_cli(), "plantuml-generator", &mut io::stdout());
+            let shell = m
+                .get_one::<String>("SHELL")
+                .map(|v| Shell::from_str(v).unwrap())
+                .unwrap();
+            generate(
+                shell,
+                &mut build_cli(),
+                "plantuml-generator",
+                &mut io::stdout(),
+            );
             return 1;
         }
         _ => {

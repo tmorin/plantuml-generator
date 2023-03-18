@@ -79,16 +79,16 @@ impl Config {
 impl Config {
     pub fn update_from_args(&self, args: &ArgMatches) -> Config {
         let cache_directory = args
-            .value_of("cache_directory")
+            .get_one::<String>("cache_directory")
             .map(|v| v.to_string())
             .unwrap_or_else(|| self.cache_directory.clone());
 
-        let plantuml_version = match args.value_of("plantuml_version").map(|v| v.to_string()) {
+        let plantuml_version = match args.get_one::<String>("plantuml_version").map(|v| v.to_string()) {
             None => self.plantuml_version.clone(),
             Some(v) => v,
         };
 
-        let plantuml_jar = match args.value_of("plantuml_jar") {
+        let plantuml_jar = match args.get_one::<String>("plantuml_jar") {
             None => match Path::new(&cache_directory)
                 .join(format!("plantuml-{}.jar", plantuml_version))
                 .as_path()
@@ -102,7 +102,7 @@ impl Config {
 
         Config {
             output_directory: args
-                .value_of("output_directory")
+                .get_one::<String>("output_directory")
                 .map(|v| v.to_string())
                 .unwrap_or_else(|| self.output_directory.clone()),
             cache_directory,
@@ -110,11 +110,11 @@ impl Config {
             plantuml_version,
             plantuml_jar,
             java_binary: args
-                .value_of("java_binary")
+                .get_one::<String>("java_binary")
                 .map(|v| v.to_string())
                 .unwrap_or_else(|| self.java_binary.clone()),
             inkscape_binary: args
-                .value_of("inkscape_binary")
+                .get_one::<String>("inkscape_binary")
                 .map(|v| v.to_string())
                 .unwrap_or_else(|| self.inkscape_binary.clone()),
         }

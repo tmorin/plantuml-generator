@@ -81,7 +81,7 @@ impl Task for PackageExampleTask {
         create_parent_directory(destination_path)?;
 
         // create the destination file
-        let destination_file = File::create(&destination_path).map_err(|e| {
+        let destination_file = File::create(destination_path).map_err(|e| {
             Error::Cause(
                 "unable to create the destination file".to_string(),
                 Box::from(e),

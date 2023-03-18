@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
-
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::error::Error;
 use crate::manifest::library::Library;

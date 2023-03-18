@@ -94,14 +94,13 @@ impl Task for SpriteIconTask {
         })?;
 
         // compute the width of the sprite icon
-        let destination_icon_width = self.destination_icon_height as i32
-            * source_image.width as i32
-            / source_image.height as i32;
+        let destination_icon_width =
+            self.destination_icon_height as i32 * source_image.width / source_image.height;
 
         // resize source image
         raster::editor::resize(
             &mut source_image,
-            destination_icon_width as i32,
+            destination_icon_width,
             self.destination_icon_height as i32,
             ResizeMode::ExactHeight,
         )
@@ -113,10 +112,8 @@ impl Task for SpriteIconTask {
         })?;
 
         // create the destination image
-        let mut background_image = Image::blank(
-            destination_icon_width as i32,
-            self.destination_icon_height as i32,
-        );
+        let mut background_image =
+            Image::blank(destination_icon_width, self.destination_icon_height as i32);
 
         // fill destination image with white
         raster::editor::fill(&mut background_image, Color::white()).map_err(|e| {

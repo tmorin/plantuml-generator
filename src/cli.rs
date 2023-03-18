@@ -1,4 +1,7 @@
-use clap::{crate_authors, crate_description, crate_version, Arg, Command};
+use clap::builder::{PossibleValuesParser, ValueParser};
+use clap::{
+    crate_authors, crate_description, crate_version, value_parser, Arg, ArgAction, Command,
+};
 use clap_complete::Shell;
 
 pub fn build_cli() -> Command<'static> {
@@ -51,7 +54,7 @@ pub fn build_cli() -> Command<'static> {
                 .long("log-level")
                 .takes_value(true)
                 .default_value("Info")
-                .possible_values(&["Off", "Trace", "Debug", "Info", "Warn", "Error"])
+                .value_parser(PossibleValuesParser::new(["Off", "Trace", "Debug", "Info", "Warn", "Error"]))
                 .help("Set the verbosity of the logs."),
         )
         .subcommand(
@@ -80,8 +83,8 @@ pub fn build_cli() -> Command<'static> {
                             .short('u')
                             .long("urn")
                             .takes_value(true)
-                            .multiple_occurrences(true)
-                            .allow_invalid_utf8(false)
+                            .action(ArgAction::Append)
+                            .value_parser(ValueParser::string())
                         )
                         .arg(Arg::new("do_clean_cache")
                             .long("clean-cache")
@@ -90,8 +93,8 @@ pub fn build_cli() -> Command<'static> {
                             .help("Delete the given URN in the output directory before the generation.")
                             .long("clean-urn")
                             .takes_value(true)
-                            .multiple_occurrences(true)
-                            .allow_invalid_utf8(false)
+                            .action(ArgAction::Append)
+                            .value_parser(ValueParser::string())
                         )
                         .arg(Arg::new("cleanup_scopes")
                             .help("The scopes to cleanup before the generation.")
@@ -99,8 +102,8 @@ pub fn build_cli() -> Command<'static> {
                             .short('c')
                             .long("cleanup-scope")
                             .takes_value(true)
-                            .multiple_occurrences(true)
-                            .possible_values([
+                            .action(ArgAction::Append)
+                            .value_parser(PossibleValuesParser::new([
                                 "All",
                                 "Example",
                                 "Item",
@@ -112,7 +115,7 @@ pub fn build_cli() -> Command<'static> {
                                 "Sprite",
                                 "SpriteIcon",
                                 "SpriteValue",
-                            ])
+                            ]))
                         )
                         .arg(&arg_cache_directory)
                         .arg(&arg_plantuml_version)
@@ -155,7 +158,7 @@ pub fn build_cli() -> Command<'static> {
                     .index(1)
                     .takes_value(true)
                     .required(true)
-                    .possible_values(Shell::possible_values())
+                    .value_parser(value_parser!(Shell))
             )
         )
 }
