@@ -19,6 +19,20 @@ include('{{ data.item_urn }}')
 {% endif -%}
 {% endblock objects %}
 
+{% set icons = data.objects | filter(attribute="type", value="Icon") -%}
+{% block sprites %}
+{% if icons | length > 0 -%}
+## Sprites
+The item provides the following stipes
+{% for icon in icons %}
+- `${{ icon.name }}Xs`
+- `${{ icon.name }}Sm`
+- `${{ icon.name }}Md`
+- `${{ icon.name }}Lg`
+{% endfor %}
+{% endif -%}
+{% endblock sprites %}
+
 {% set elements = data.objects | filter(attribute="type", value="Element") -%}
 {% block elements %}
 {% if elements | length > 0 -%}
