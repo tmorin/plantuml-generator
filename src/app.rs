@@ -2,10 +2,10 @@ use std::ffi::OsString;
 use std::io;
 use std::str::FromStr;
 
-use clap_complete::{generate, Shell};
 use log::LevelFilter;
 
 use crate::cli::build_cli;
+use crate::cmd::execute_completion;
 use crate::cmd::execute_diagram_generate;
 use crate::cmd::execute_library_generate;
 
@@ -80,17 +80,13 @@ where
             }
         },
         Some(("completion", m)) => {
-            let shell = m
-                .get_one::<String>("SHELL")
-                .map(|v| Shell::from_str(v).unwrap())
-                .unwrap();
-            generate(
-                shell,
-                &mut build_cli(),
-                "plantuml-generator",
-                &mut io::stdout(),
-            );
-            return 1;
+            return match execute_completion(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            };
         }
         _ => {
             log::warn!("the SUBCOMMAND is missing");
