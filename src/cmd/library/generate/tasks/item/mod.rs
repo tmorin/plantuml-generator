@@ -8,12 +8,12 @@ use crate::cmd::library::generate::tasks::item::item_icon::ItemIconTask;
 use crate::cmd::library::generate::tasks::item::item_source::ItemSourceTask;
 use crate::cmd::library::generate::tasks::item::sprite_icon::SpriteIconTask;
 use crate::cmd::library::generate::tasks::item::sprite_value::SpriteValueTask;
+use crate::cmd::library::manifest::icon::Icon;
+use crate::cmd::library::manifest::item::Item;
+use crate::cmd::library::manifest::library::Library;
+use crate::cmd::library::manifest::module::Module;
+use crate::cmd::library::manifest::package::Package;
 use crate::error::Error;
-use crate::manifest::icon::Icon;
-use crate::manifest::item::Item;
-use crate::manifest::library::Library;
-use crate::manifest::module::Module;
-use crate::manifest::package::Package;
 
 mod element_snippet;
 mod item_documentation;
@@ -28,7 +28,7 @@ pub fn parse_item(
     _package: &Package,
     _module: &Module,
     _item: &Item,
-) -> std::result::Result<Vec<Box<dyn Task>>, Error> {
+) -> Result<Vec<Box<dyn Task>>, Error> {
     log::debug!("parse item {}", &_item.urn);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];

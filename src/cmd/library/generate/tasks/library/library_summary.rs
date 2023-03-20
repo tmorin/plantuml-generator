@@ -6,8 +6,8 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::library::Library;
 use crate::error::Error;
-use crate::manifest::library::Library;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 

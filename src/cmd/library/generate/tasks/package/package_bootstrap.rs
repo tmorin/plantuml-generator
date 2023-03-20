@@ -6,8 +6,8 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::package::Package;
 use crate::error::Error;
-use crate::manifest::package::Package;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
@@ -103,7 +103,7 @@ mod test {
             "{}/Package/bootstrap.puml",
             generator.output_directory
         ))
-            .unwrap();
+        .unwrap();
         assert!(content.trim().contains("header"));
         assert!(content.trim().contains("content"));
         assert!(content.trim().contains("footer"));

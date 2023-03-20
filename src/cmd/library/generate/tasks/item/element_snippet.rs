@@ -10,11 +10,11 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::element::{Element, Shape};
+use crate::cmd::library::manifest::item::Item;
+use crate::cmd::library::manifest::library::Library;
+use crate::cmd::library::manifest::package::Package;
 use crate::error::Error;
-use crate::manifest::element::{Element, Shape};
-use crate::manifest::item::Item;
-use crate::manifest::library::Library;
-use crate::manifest::package::Package;
 use crate::plantuml::PlantUML;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
@@ -325,8 +325,10 @@ mod test {
                 technical_label: None,
                 description_label: None,
                 template: "custom_item_snippet.tera".to_string(),
-                full_destination_source_path: "target/tests/element_snippet/source.Custom.puml".to_string(),
-                full_destination_image_path: "target/tests/element_snippet/source.Custom.png".to_string(),
+                full_destination_source_path: "target/tests/element_snippet/source.Custom.puml"
+                    .to_string(),
+                full_destination_image_path: "target/tests/element_snippet/source.Custom.png"
+                    .to_string(),
                 properties: HashMap::default(),
             };
             generator.cleanup(&[CleanupScope::All]).unwrap();

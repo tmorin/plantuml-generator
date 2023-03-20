@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::icon::Icon;
+use crate::cmd::library::manifest::item::Item;
 use crate::error::Error;
-use crate::manifest::icon::Icon;
-use crate::manifest::item::Item;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 

@@ -1,9 +1,9 @@
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::Task;
 use crate::cmd::library::generate::tasks::module::module_documentation::ModuleDocumentationTask;
-use crate::manifest::library::Library;
-use crate::manifest::module::Module;
-use crate::manifest::package::Package;
+use crate::cmd::library::manifest::library::Library;
+use crate::cmd::library::manifest::module::Module;
+use crate::cmd::library::manifest::package::Package;
 use crate::result::Result;
 
 mod module_documentation;

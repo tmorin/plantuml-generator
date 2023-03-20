@@ -6,8 +6,8 @@ use crate::cmd::library::generate::tasks::package::package_embedded::{
     EmbeddedMode, PackageEmbeddedTask,
 };
 use crate::cmd::library::generate::tasks::package::package_example::PackageExampleTask;
-use crate::manifest::library::Library;
-use crate::manifest::package::Package;
+use crate::cmd::library::manifest::library::Library;
+use crate::cmd::library::manifest::package::Package;
 use crate::result::Result;
 
 mod package_bootstrap;

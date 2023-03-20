@@ -3,7 +3,7 @@ use crate::cmd::library::generate::task::Task;
 use crate::cmd::library::generate::tasks::library::library_bootstrap::LibraryBootstrapTask;
 use crate::cmd::library::generate::tasks::library::library_documentation::LibraryDocumentationTask;
 use crate::cmd::library::generate::tasks::library::library_summary::LibrarySummaryTask;
-use crate::manifest::library::Library;
+use crate::cmd::library::manifest::library::Library;
 use crate::result::Result;
 
 mod library_bootstrap;

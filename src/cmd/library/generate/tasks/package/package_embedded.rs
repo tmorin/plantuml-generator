@@ -6,8 +6,8 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::package::Package;
 use crate::error::Error;
-use crate::manifest::package::Package;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file, read_file_to_string};
 
@@ -109,7 +109,7 @@ impl PackageEmbeddedTask {
                     EmbeddedMode::Full => "full",
                 }
             )
-                .as_str(),
+            .as_str(),
         ))
     }
     fn get_embedded_destination_path(&self) -> Box<Path> {

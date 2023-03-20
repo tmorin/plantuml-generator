@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::library::customization::Customization;
-use crate::manifest::library::templates::LibraryTemplates;
-use crate::manifest::package::Package;
+use crate::cmd::library::manifest::library::customization::Customization;
+use crate::cmd::library::manifest::library::templates::LibraryTemplates;
+use crate::cmd::library::manifest::package::Package;
 
 pub mod customization {
     use serde::{Deserialize, Serialize};

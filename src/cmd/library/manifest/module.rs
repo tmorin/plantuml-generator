@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::item::Item;
-use crate::manifest::module::templates::ModuleTemplates;
+use crate::cmd::library::manifest::item::Item;
+use crate::cmd::library::manifest::module::templates::ModuleTemplates;
 use crate::urn::Urn;
 
 mod templates {

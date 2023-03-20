@@ -9,10 +9,10 @@ use image::GenericImageView;
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::icon::Icon;
+use crate::cmd::library::manifest::item::Item;
+use crate::cmd::library::manifest::library::Library;
 use crate::error::Error;
-use crate::manifest::icon::Icon;
-use crate::manifest::item::Item;
-use crate::manifest::library::Library;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 

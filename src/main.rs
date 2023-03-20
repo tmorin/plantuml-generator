@@ -11,7 +11,6 @@ mod cmd;
 mod constants;
 mod counter;
 mod error;
-mod manifest;
 mod plantuml;
 mod result;
 mod tera;

@@ -6,13 +6,13 @@ use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
+use crate::cmd::library::manifest::library::Library;
+use crate::cmd::library::manifest::module::Module;
 use crate::error::Error;
-use crate::manifest::library::Library;
-use crate::manifest::module::Module;
 use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
-type ItemManifest = crate::manifest::item::Item;
+type ItemManifest = crate::cmd::library::manifest::item::Item;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Item {
@@ -87,7 +87,7 @@ impl ModuleDocumentationTask {
     }
     fn get_relative_destination_path(&self) -> Box<Path> {
         Box::from(Path::new(
-            format!("{}/README.md", self.module_urn, ).as_str(),
+            format!("{}/README.md", self.module_urn,).as_str(),
         ))
     }
     fn get_full_destination_path(&self) -> Box<Path> {
@@ -190,7 +190,7 @@ mod test {
             "{}/Package/Module/README.md",
             generator.output_directory
         ))
-            .unwrap();
+        .unwrap();
         assert!(content.contains("The module contains 4 items."));
         assert!(content.contains("[Package/Module/itemD](../../Package/Module/itemD.md)"));
         assert!(content.contains("## FamilyA"));

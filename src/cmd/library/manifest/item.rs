@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::element::Element;
-use crate::manifest::icon::Icon;
-use crate::manifest::item::templates::ItemTemplates;
+use crate::cmd::library::manifest::element::Element;
+use crate::cmd::library::manifest::icon::Icon;
+use crate::cmd::library::manifest::item::templates::ItemTemplates;
 use crate::urn::Urn;
 
 mod templates {
