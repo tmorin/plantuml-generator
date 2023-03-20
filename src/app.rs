@@ -14,7 +14,7 @@ where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
-    let app = build_cli();
+    let mut app = build_cli();
 
     let app_matches = match app.clone().try_get_matches_from(args) {
         Ok(app_matches) => app_matches,
@@ -55,8 +55,7 @@ where
             }
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
-                app.clone()
-                    .write_help(&mut io::stderr())
+                app.write_help(&mut io::stderr())
                     .expect("unable to write help message");
                 eprintln!();
                 2
@@ -74,8 +73,7 @@ where
             }
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
-                app.clone()
-                    .write_help(&mut io::stderr())
+                app.write_help(&mut io::stderr())
                     .expect("unable to write help message");
                 eprintln!();
                 2
@@ -96,8 +94,7 @@ where
         }
         _ => {
             log::warn!("the SUBCOMMAND is missing");
-            app.clone()
-                .write_help(&mut io::stderr())
+            app.write_help(&mut io::stderr())
                 .expect("unable to write help message");
             eprintln!();
             2

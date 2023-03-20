@@ -141,7 +141,7 @@ mod test {
             create_parent_directory(&to_path).unwrap();
             std::fs::copy(&from_path, &to_path).unwrap();
         }
-        let arg_matches = build_cli().get_matches_from(&[
+        let arg_matches = build_cli().get_matches_from([
             "plantuml-generator",
             "-l=Debug",
             "diagram",

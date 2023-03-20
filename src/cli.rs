@@ -4,11 +4,12 @@ use clap::{
 };
 use clap_complete::Shell;
 
-pub fn build_cli() -> Command<'static> {
+pub fn build_cli() -> Command {
     let arg_cache_directory: Arg = Arg::new("cache_directory")
         .short('C')
         .long("cache")
-        .takes_value(true)
+        .action(ArgAction::Set)
+        .num_args(1)
         .env("PLANTUML_GENERATOR_OUTPUT_CACHE")
         .help("The cache directory.");
 
@@ -16,7 +17,8 @@ pub fn build_cli() -> Command<'static> {
         .conflicts_with("plantuml_jar")
         .short('V')
         .long("plantuml-version")
-        .takes_value(true)
+        .action(ArgAction::Set)
+        .num_args(1)
         .env("PLANTUML_GENERATOR_PLANTUML_VERSION")
         .help("The PlantUML version.");
 
@@ -24,21 +26,24 @@ pub fn build_cli() -> Command<'static> {
         .conflicts_with("plantuml_version")
         .short('P')
         .long("plantuml")
-        .takes_value(true)
+        .action(ArgAction::Set)
+        .num_args(1)
         .env("PLANTUML_GENERATOR_PLANTUML_JAR")
         .help("The PlantUML version.");
 
     let arg_java_binary: Arg = Arg::new("java_binary")
         .short('J')
         .long("java")
-        .takes_value(true)
+        .action(ArgAction::Set)
+        .num_args(1)
         .env("PLANTUML_GENERATOR_JAVA_BINARY")
         .help("The java binary path or command line.");
 
     let arg_inkscape_binary: Arg = Arg::new("inkscape_binary")
         .short('I')
         .long("inkscape")
-        .takes_value(true)
+        .action(ArgAction::Set)
+        .num_args(1)
         .env("PLANTUML_GENERATOR_INKSCAPE_BINARY")
         .help("The inkscape binary path or command line.");
 
@@ -52,7 +57,8 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("log_level")
                 .short('l')
                 .long("log-level")
-                .takes_value(true)
+                .action(ArgAction::Set)
+                .num_args(1)
                 .default_value("Info")
                 .value_parser(PossibleValuesParser::new(["Off", "Trace", "Debug", "Info", "Warn", "Error"]))
                 .help("Set the verbosity of the logs."),
@@ -68,31 +74,36 @@ pub fn build_cli() -> Command<'static> {
                         .arg(Arg::new("MANIFEST")
                             .index(1)
                             .required(true)
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .help("The manifest of the library.")
                         )
                         .arg(Arg::new("output_directory")
                             .short('O')
                             .long("output")
                             .env("PLANTUML_GENERATOR_OUTPUT_DIRECTORY")
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .help("The output directory.")
                         )
                         .arg(Arg::new("urns")
                             .help("Handle only artifacts included in the URN.")
                             .short('u')
                             .long("urn")
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .action(ArgAction::Append)
                             .value_parser(ValueParser::string())
                         )
                         .arg(Arg::new("do_clean_cache")
                             .long("clean-cache")
+                            .action(ArgAction::SetTrue)
                             .help("Delete the cache directory before the generation-"))
                         .arg(Arg::new("urns_to_clean")
                             .help("Delete the given URN in the output directory before the generation.")
                             .long("clean-urn")
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .action(ArgAction::Append)
                             .value_parser(ValueParser::string())
                         )
@@ -101,7 +112,8 @@ pub fn build_cli() -> Command<'static> {
                             .long_help("By default, artifacts which are already generated won't be generated again. The cleanup-scope option helps to target artifacts which will be re-generated.")
                             .short('c')
                             .long("cleanup-scope")
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .action(ArgAction::Append)
                             .value_parser(PossibleValuesParser::new([
                                 "All",
@@ -136,7 +148,8 @@ pub fn build_cli() -> Command<'static> {
                             .short('s')
                             .long("source")
                             .default_value(".")
-                            .takes_value(true)
+                            .action(ArgAction::Set)
+                            .num_args(1)
                             .env("PLANTUML_GENERATOR_SOURCE_DIRECTORY")
                             .help("The directory where the .puml will be discovered."))
                         .arg(Arg::new("do_force_generation")
@@ -156,7 +169,8 @@ pub fn build_cli() -> Command<'static> {
                 Arg::new("SHELL")
                     .help("set the shell")
                     .index(1)
-                    .takes_value(true)
+                    .action(ArgAction::Set)
+                    .num_args(1)
                     .required(true)
                     .value_parser(value_parser!(Shell))
             )
