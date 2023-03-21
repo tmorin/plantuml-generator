@@ -1,8 +1,22 @@
 # Changelog
 
-## [1.8.2](https://github.com/tmorin/plantuml-generator/compare/v1.8.1...v1.8.2) (2023-03-18)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.8.2...HEAD) (2023-03-21)
+
+### Features
+
+* **release:** include only the binary in tarballs
+([47e989c](https://github.com/tmorin/plantuml-generator/commit/47e989ce7818cb44340dbbacb562bd50f1e5f01a))
+* **docker:** upgrade the jdk version
+([7a77180](https://github.com/tmorin/plantuml-generator/commit/7a77180ce56e62abbb7e9f6380e2911c6759e1e6))
 
 ### Fixes
+
+* **completion:** fix the generation of completion for shells
+([7d2472e](https://github.com/tmorin/plantuml-generator/commit/7d2472e2ad685e902c31c3c878d8cc4e19d9f7ba))
+
+### [v1.8.2](https://github.com/tmorin/plantuml-generator/compare/v1.8.1...v1.8.2) (2023-03-18)
+
+#### Fixes
 
 * the names of the sprites were wrong in the documentation
 ([71e0dfe](https://github.com/tmorin/plantuml-generator/commit/71e0dfe54cac5523d81c5cba01b57ff83620f54a))
