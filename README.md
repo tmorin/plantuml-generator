@@ -7,7 +7,7 @@
 ## Introduction
 
 `plantuml-generator` is a re-write of the crafted NodeJS app provided by [tmorin/plantuml-libs].
-It provides commands to generate the stuff for PlantUML diagrams like library of PlantUML resources or jut PlantUML diagrams rendering.
+It provides commands to generate the stuff for PlantUML diagrams like library of PlantUML resources or just PlantUML diagrams rendering.
 
 [tmorin/plantuml-libs]: https://github.com/tmorin/plantuml-libs
 
