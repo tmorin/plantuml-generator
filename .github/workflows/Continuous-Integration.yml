@@ -105,7 +105,7 @@ jobs:
           command: build
           args: --release --target=${{ matrix.target }} --features vendored-openssl
       - name: "Archive the binary"
-        run: tar czf ${{ matrix.architecture }}_plantuml-generator.tar.gz target/${{ matrix.target }}/release/plantuml-generator
+        run: tar -C target/${{ matrix.target }}/release/ -czf ${{ matrix.architecture }}_plantuml-generator.tar.gz plantuml-generator
       - name: "Upload the binary"
         uses: actions/upload-artifact@v3
         with:
