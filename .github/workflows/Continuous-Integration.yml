@@ -222,7 +222,13 @@ jobs:
         working-directory: artifacts
       - name: "Create the changelog"
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v1
+        uses: mikepenz/release-changelog-builder-action@v3
+        with:
+          configurationJson: |
+            {
+              "ignorePreReleases": true,
+              "commitMode": true
+            }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Create the release"
