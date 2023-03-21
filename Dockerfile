@@ -1,4 +1,4 @@
-FROM rust AS builder
+FROM docker.io/rust AS builder
 RUN apt-get update -y && \
     apt-get install -y pkg-config libssl-dev
 WORKDIR /usr/src/plantuml-generator
@@ -6,7 +6,7 @@ COPY Cargo.toml Cargo.lock /usr/src/plantuml-generator/
 COPY src /usr/src/plantuml-generator/src
 RUN cargo build --release --features vendored-openssl
 
-FROM ubuntu:focal
+FROM docker.io/ubuntu:focal
 ARG git_sha=""
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="tmorin" \
@@ -16,7 +16,7 @@ LABEL org.label-schema.schema-version="1.0" \
 RUN apt-get update -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:inkscape.dev/stable -y && \
-    apt-get install -y openjdk-11-jre graphviz inkscape && \
+    apt-get install -y openjdk-17-jre graphviz inkscape && \
     apt-get purge -y software-properties-common && \
     apt-get autoremove -y --purge && \
     rm -rf /var/lib/apt/lists/*
