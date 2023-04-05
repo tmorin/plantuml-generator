@@ -3,7 +3,7 @@ use std::fs::{read_to_string, File};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use serde_yaml::Value;
+use serde_json::Value;
 use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;

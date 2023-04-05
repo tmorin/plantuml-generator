@@ -22,21 +22,23 @@ include = [
 name = "plantuml-generator"
 
 [dependencies]
-chrono = "0.4"
-clap_complete = "4.1"
-clap = { version = "4.1", features = ["env", "cargo"] }
-env_logger = { version = "0.10.0", default_features = false }
-glob = "0.3"
-heck = "0.4"
+chrono = { version = "0.4" }
+clap_complete = { version = "4" }
+clap = { version = "4", features = ["env", "cargo"] }
+env_logger = { version = "0.10", default_features = false }
+glob = { version = "0.3" }
+heck = { version = "0.4" }
 hyper = { version = "0.14", features = ["client", "http1", "libc"] }
 image = { version = "0.24" }
-log = "0.4"
+log = { version = "0.4" }
 openssl = { version = "0.10", optional = true }
-raster = "0.2"
+raster = { version = "0.2" }
 reqwest = { version = "0.11", features = ["blocking"] }
 serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.9"
-tera = "1"
+serde_json = { version = "1" }
+serde_yaml = { version = "0.9" }
+schemars = { version = "0.8", features = ["impl_json_schema"] }
+tera = { version = "1" }
 
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different

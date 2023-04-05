@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Value;
+use serde_json::Value;
 
 use crate::constants::get_default_group_element_stereotype;
 use crate::constants::get_default_icon_card_element_stereotype;
@@ -9,7 +10,7 @@ use crate::constants::get_default_icon_element_stereotype;
 use crate::constants::get_default_icon_group_element_stereotype;
 use crate::urn::Urn;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(tag = "type")]
 pub enum Shape {
     Icon {
@@ -102,7 +103,7 @@ impl Shape {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct Element {
     /// The shape of the element and its related configuration.
     pub shape: Shape,

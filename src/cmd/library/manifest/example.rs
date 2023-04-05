@@ -1,9 +1,10 @@
 use heck::ToSnakeCase;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::urn::Urn;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct Example {
     /// The name of the example.
     pub name: String,

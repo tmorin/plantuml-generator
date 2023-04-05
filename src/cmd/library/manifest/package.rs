@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::manifest::example::Example;
@@ -7,6 +8,7 @@ use crate::cmd::library::manifest::package::templates::PackageTemplates;
 use crate::urn::Urn;
 
 mod templates {
+    use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
     use crate::constants::{
@@ -14,7 +16,7 @@ mod templates {
         get_default_template_package_embedded,
     };
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct PackageTemplates {
         /// The template used to generate `<library>/<package>/bootstrap.puml`.
         #[serde(default = "get_default_template_package_bootstrap")]
@@ -39,9 +41,10 @@ mod templates {
 }
 
 mod rendering {
+    use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize, Debug, Default)]
+    #[derive(Serialize, Deserialize, Debug, Default, JsonSchema)]
     pub struct PackageRendering {
         /// When true skip the generation of `<library>/<package>/{single,full}.puml`.
         #[serde(default)]
@@ -49,7 +52,7 @@ mod rendering {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct Package {
     /// The URN of the package.
     pub urn: Urn,

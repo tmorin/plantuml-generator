@@ -134,7 +134,11 @@ pub fn build_cli() -> Command {
                         .arg(&arg_plantuml_jar)
                         .arg(&arg_java_binary)
                         .arg(&arg_inkscape_binary),
+                )
+                .subcommand(
+                Command::new("schema").about("Generate the JSON Schema of the library manifest.")
                 ),
+
         )
         .subcommand(
             Command::new("diagram")

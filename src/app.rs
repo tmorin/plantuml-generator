@@ -5,9 +5,9 @@ use std::str::FromStr;
 use log::LevelFilter;
 
 use crate::cli::build_cli;
-use crate::cmd::execute_completion;
 use crate::cmd::execute_diagram_generate;
 use crate::cmd::execute_library_generate;
+use crate::cmd::{execute_completion, execute_library_schema};
 
 pub fn start_app<I, T>(args: I) -> i32
 where
@@ -46,6 +46,15 @@ where
         Some(("library", m)) => match m.subcommand() {
             Some(("generate", m)) => {
                 return match execute_library_generate(m) {
+                    Ok(_) => 0,
+                    Err(e) => {
+                        log::error!("the command failed: {}", e);
+                        2
+                    }
+                };
+            }
+            Some(("schema", m)) => {
+                return match execute_library_schema(m) {
                     Ok(_) => 0,
                     Err(e) => {
                         log::error!("the command failed: {}", e);

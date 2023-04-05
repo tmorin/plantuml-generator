@@ -40,7 +40,10 @@ impl Config {
             .map(|v| v.to_string())
             .unwrap_or_else(|| self.cache_directory.clone());
 
-        let plantuml_version = match args.get_one::<String>("plantuml_version").map(|v| v.to_string()) {
+        let plantuml_version = match args
+            .get_one::<String>("plantuml_version")
+            .map(|v| v.to_string())
+        {
             None => self.plantuml_version.clone(),
             Some(v) => v,
         };

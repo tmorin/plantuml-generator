@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::manifest::element::Element;
@@ -6,6 +7,7 @@ use crate::cmd::library::manifest::item::templates::ItemTemplates;
 use crate::urn::Urn;
 
 mod templates {
+    use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
     use crate::constants::{
@@ -13,7 +15,7 @@ mod templates {
         get_default_template_item_source,
     };
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct ItemTemplates {
         /// The template used to generate `<library>/<package>/<module>/<Item>.md`.
         #[serde(default = "get_default_template_item_documentation")]
@@ -37,7 +39,7 @@ mod templates {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct Item {
     /// The URN of the Item.
     pub urn: Urn,

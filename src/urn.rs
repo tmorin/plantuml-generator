@@ -2,10 +2,11 @@ use std::fmt;
 use std::str::FromStr;
 
 use heck::ToTitleCase;
+use schemars::JsonSchema;
 use serde::de::{Error, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, JsonSchema)]
 pub struct Urn {
     /// The URN value.
     pub value: String,

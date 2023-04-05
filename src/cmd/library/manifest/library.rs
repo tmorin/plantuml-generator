@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::manifest::library::customization::Customization;
@@ -5,6 +6,7 @@ use crate::cmd::library::manifest::library::templates::LibraryTemplates;
 use crate::cmd::library::manifest::package::Package;
 
 pub mod customization {
+    use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
     use crate::constants::get_default_font_color_light;
@@ -18,7 +20,7 @@ pub mod customization {
     use crate::constants::get_default_text_width_max;
     use crate::constants::{get_default_font_color, SPRITE_LG, SPRITE_MD, SPRITE_SM, SPRITE_XS};
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct Customization {
         /// The image format used to generate icons.
         #[serde(default = "get_default_icon_format")]
@@ -82,6 +84,7 @@ pub mod customization {
 }
 
 mod templates {
+    use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
     use crate::constants::{
@@ -89,7 +92,7 @@ mod templates {
         get_default_template_library_summary,
     };
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct LibraryTemplates {
         /// The template name used to generate `<library>/bootstrap.puml`. */
         #[serde(default = "get_default_template_library_bootstrap")]
@@ -113,7 +116,7 @@ mod templates {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 pub struct Library {
     /// The name of the library.
     pub name: String,

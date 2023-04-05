@@ -1,9 +1,10 @@
 use heck::ToUpperCamelCase;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::urn::Urn;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(tag = "type")]
 pub enum Icon {
     Source {

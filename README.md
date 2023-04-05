@@ -43,6 +43,7 @@ plantuml-generator --help
 The tool provides two commands:
 
 - `library generate` generates a PlantUML library based on a provided manifest
+- `library schema` Generate the JSON Schema of the library manifest
 - `diagram generate` generates `.puml` discovered recursively in the file system
 
 ## Release
