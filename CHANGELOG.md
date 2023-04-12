@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.9.0](https://github.com/tmorin/plantuml-generator/compare/v1.8.2...v1.9.0) (2023-03-21)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.9.0...HEAD) (2023-04-12)
+
+### Features
+
+* add a command to generate the JSON Schema of the library manifest
+([5f88b6f](https://github.com/tmorin/plantuml-generator/commit/5f88b6f2f9a30006d057323fd910ed92503030eb))
+
+## [v1.9.0](https://github.com/tmorin/plantuml-generator/compare/v1.8.2...v1.9.0) (2023-03-21)
 
 ### Features
 
