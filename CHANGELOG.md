@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.10.0](https://github.com/tmorin/plantuml-generator/compare/v1.9.0...v1.10.0) (2023-04-12)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.10.0...HEAD) (2023-04-15)
+
+### Features
+
+* **docker:** make the Docker Image rootless
+([46fd232](https://github.com/tmorin/plantuml-generator/commit/46fd2322751727c1358b80337400f9d774828917))
+
+## [v1.10.0](https://github.com/tmorin/plantuml-generator/compare/v1.9.0...v1.10.0) (2023-04-12)
 
 ### Features
 
