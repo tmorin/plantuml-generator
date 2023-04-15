@@ -19,7 +19,11 @@ RUN apt-get update -y && \
     apt-get install -y openjdk-17-jre graphviz inkscape && \
     apt-get purge -y software-properties-common && \
     apt-get autoremove -y --purge && \
+    useradd --create-home guser && \
+    mkdir -p /workdir && \
+    chown guser:guser /workdir && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/src/plantuml-generator/target/release/plantuml-generator /usr/local/bin/plantuml-generator
+USER guser
 WORKDIR /workdir
 CMD ["/usr/local/bin/plantuml-generator"]
