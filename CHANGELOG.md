@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.11.0](https://github.com/tmorin/plantuml-generator/compare/v1.10.0...v1.11.0) (2023-04-15)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.11.0...HEAD) (2023-04-20)
+
+### Features
+
+* add support the targets `powerpc64le-unknown-linux-gnu` and
+`s390x-unknown-linux-gnu`
+([80aaf8c](https://github.com/tmorin/plantuml-generator/commit/80aaf8c0a7ed785fc87c2df264d1b0d388dde81d))
+
+## [v1.11.0](https://github.com/tmorin/plantuml-generator/compare/v1.10.0...v1.11.0) (2023-04-15)
 
 ### Features
 
