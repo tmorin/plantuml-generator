@@ -21,14 +21,19 @@ It provides commands to generate the stuff for PlantUML diagrams like library of
 
 ## Install
 
-By cargo
+By Script
 ```shell
-cargo install plantuml-generator
+curl -s "https://raw.githubusercontent.com/tmorin/plantuml-generator/master/scripts/install_pgen.sh"  | bash
 ```
 
 By Docker
 ```shell
 docker run --rm thibaultmorin/plantuml-generator --help
+```
+
+By cargo
+```shell
+cargo install plantuml-generator
 ```
 
 From the binaries available in the [GitHub Release]:
