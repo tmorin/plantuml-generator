@@ -197,3 +197,9 @@ pub fn get_default_template_package_documentation() -> String {
 }
 
 pub const TEMPLATE_PACKAGE_EXAMPLE: &str = "package_example.tera";
+
+pub const WORKSPACE_MANIFEST: &str = ".pgen-workspace.yaml";
+
+pub fn get_default_workspace_manifest() -> String {
+    WORKSPACE_MANIFEST.to_string()
+}

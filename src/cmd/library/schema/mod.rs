@@ -20,7 +20,7 @@ mod test {
     #[test]
     fn test_generation() {
         let arg_matches =
-            build_cli().get_matches_from(&["plantuml-generator", "-l=Off", "library", "schema"]);
+            build_cli().get_matches_from(["plantuml-generator", "-l=Off", "library", "schema"]);
         execute_library_schema(
             arg_matches
                 .subcommand_matches("library")

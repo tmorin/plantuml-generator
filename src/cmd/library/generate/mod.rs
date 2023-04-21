@@ -114,7 +114,7 @@ mod test {
     fn test_urns() {
         delete_file_or_directory("target/tests/cmd/library/generate/urns/distribution".as_ref())
             .unwrap();
-        let arg_matches = build_cli().get_matches_from(&[
+        let arg_matches = build_cli().get_matches_from([
             "plantuml-generator",
             "-l=Off",
             "library",
@@ -146,7 +146,7 @@ mod test {
             Path::new("target/tests/cmd/library/generate/clean_cache/cache/a_package");
         create_dir_all(path_in_cache).unwrap();
         assert!(path_in_cache.exists());
-        let arg_matches = build_cli().get_matches_from(&[
+        let arg_matches = build_cli().get_matches_from([
             "plantuml-generator",
             "-l=Off",
             "library",
@@ -175,7 +175,7 @@ mod test {
         );
         create_dir_all(path_in_output).unwrap();
         assert!(path_in_output.exists());
-        let arg_matches = build_cli().get_matches_from(&[
+        let arg_matches = build_cli().get_matches_from([
             "plantuml-generator",
             "-l=Off",
             "library",

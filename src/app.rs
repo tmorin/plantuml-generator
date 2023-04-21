@@ -5,9 +5,10 @@ use std::str::FromStr;
 use log::LevelFilter;
 
 use crate::cli::build_cli;
-use crate::cmd::execute_diagram_generate;
-use crate::cmd::execute_library_generate;
-use crate::cmd::{execute_completion, execute_library_schema};
+use crate::cmd::{
+    execute_completion, execute_diagram_generate, execute_library_generate, execute_library_schema,
+    execute_workspace_init,
+};
 
 pub fn start_app<I, T>(args: I) -> i32
 where
@@ -55,6 +56,24 @@ where
             }
             Some(("schema", m)) => {
                 return match execute_library_schema(m) {
+                    Ok(_) => 0,
+                    Err(e) => {
+                        log::error!("the command failed: {}", e);
+                        2
+                    }
+                };
+            }
+            _ => {
+                log::warn!("the SUBCOMMAND is missing");
+                app.write_help(&mut io::stderr())
+                    .expect("unable to write help message");
+                eprintln!();
+                2
+            }
+        },
+        Some(("workspace", m)) => match m.subcommand() {
+            Some(("init", m)) => {
+                return match execute_workspace_init(m) {
                     Ok(_) => 0,
                     Err(e) => {
                         log::error!("the command failed: {}", e);

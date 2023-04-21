@@ -4,19 +4,24 @@ use std::path::Path;
 use crate::error::Error;
 use crate::result::Result;
 
+pub fn create_directory(directory_path: &Path) -> Result<()> {
+    if !directory_path.exists() {
+        create_dir_all(directory_path).map_err(|e| {
+            Error::Cause(
+                format!(
+                    "unable to create {}",
+                    directory_path.to_str().unwrap_or_default()
+                ),
+                Box::from(e),
+            )
+        })?;
+    }
+    Ok(())
+}
+
 pub fn create_parent_directory(file_path: &Path) -> Result<()> {
     if let Some(path) = file_path.parent() {
-        if !path.exists() {
-            create_dir_all(path).map_err(|e| {
-                Error::Cause(
-                    format!(
-                        "unable to create {}",
-                        file_path.to_str().unwrap_or_default()
-                    ),
-                    Box::from(e),
-                )
-            })?;
-        }
+        create_directory(path)?
     }
     Ok(())
 }
