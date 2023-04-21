@@ -19,7 +19,7 @@
 #
 # Fails if the file already exists.
 
-set -ex
+set -e
 
 # Unset CDPATH to restore default cd behavior. An exported CDPATH can
 # cause cd to output the current directory to STDOUT.
