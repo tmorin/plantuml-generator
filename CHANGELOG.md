@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.12.0](https://github.com/tmorin/plantuml-generator/compare/v1.11.0...v1.12.0) (2023-04-20)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.12.0...HEAD) (2023-04-21)
+
+### Fixes
+
+* remove the display of the executed command during the execution of
+`scripts/install_pgen.sh`
+([5d29de4](https://github.com/tmorin/plantuml-generator/commit/5d29de41640dace78137a0a1842154d04ae0bf75))
+
+## [v1.12.0](https://github.com/tmorin/plantuml-generator/compare/v1.11.0...v1.12.0) (2023-04-20)
 
 ### Features
 
