@@ -2,6 +2,7 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::str::FromStr;
 
+use anyhow::Result;
 use clap::ArgMatches;
 
 use crate::cmd::library::generate::config::Config;
@@ -9,9 +10,7 @@ use crate::cmd::library::generate::generator::Generator;
 use crate::cmd::library::generate::task::CleanupScope;
 use crate::cmd::library::generate::templates::TEMPLATES;
 use crate::cmd::library::manifest::library::Library;
-use crate::error::Error;
 use crate::plantuml::create_plantuml;
-use crate::result::Result;
 use crate::tera::create_tera;
 use crate::urn::Urn;
 use crate::utils::delete_file_or_directory;
@@ -57,15 +56,15 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     // resolve the manifest path
     let manifest_file = arg_matches
         .get_one::<String>("MANIFEST")
-        .ok_or_else(|| Error::Simple("MANIFEST is required".to_string()))?;
+        .ok_or_else(|| anyhow::Error::msg("MANIFEST is required".to_string()))?;
 
     // create the YAML parser
     let yaml = &read_to_string(Path::new(manifest_file))
-        .map_err(|e| Error::Cause(format!("unable to read {}", manifest_file), Box::from(e)))?;
+        .map_err(|e| anyhow::Error::new(e).context(format!("unable to read {}", manifest_file)))?;
 
     // parse the manifest
     let library: &Library = &serde_yaml::from_str(yaml)
-        .map_err(|e| Error::Cause(format!("unable to parse {}", manifest_file), Box::from(e)))?;
+        .map_err(|e| anyhow::Error::new(e).context(format!("unable to parse {}", manifest_file)))?;
 
     // create side utilities
     let tera = &create_tera(TEMPLATES.to_vec(), library.tera_discovery_pattern.clone())?;
@@ -132,7 +131,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         assert!(Path::new("target/tests/cmd/library/generate/urns/distribution/c4model").exists());
         assert!(
             !Path::new("target/tests/cmd/library/generate/urns/distribution/eventstorming")
@@ -164,7 +163,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         assert!(!path_in_cache.exists());
     }
 
@@ -193,7 +192,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         assert!(!path_in_output.exists());
         assert!(path_in_output.parent().unwrap().exists());
     }

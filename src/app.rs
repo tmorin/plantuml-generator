@@ -11,9 +11,9 @@ use crate::cmd::{
 };
 
 pub fn start_app<I, T>(args: I) -> i32
-where
-    I: IntoIterator<Item = T>,
-    T: Into<OsString> + Clone,
+    where
+        I: IntoIterator<Item=T>,
+        T: Into<OsString> + Clone,
 {
     let mut app = build_cli();
 

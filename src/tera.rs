@@ -2,10 +2,8 @@ use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::path::Path;
 
+use anyhow::Result;
 use tera::{Function, Tera, Value};
-
-use crate::error::Error;
-use crate::result::Result;
 
 struct ReadFileContentFunction {}
 
@@ -45,28 +43,19 @@ pub fn create_tera(
 ) -> Result<Tera> {
     let mut primary = Tera::default();
 
-    primary.add_raw_templates(templates).map_err(|e| {
-        Error::Cause(
-            "unable to create the primary Tera instance".to_string(),
-            Box::from(e),
-        )
-    })?;
+    primary
+        .add_raw_templates(templates)
+        .map_err(|e| anyhow::Error::new(e).context("unable to create the primary Tera instance"))?;
     primary.register_function("read_file_content", ReadFileContentFunction {});
 
     let tera = match additional_directory {
         None => primary,
         Some(directory) => {
             let secondary = Tera::parse(&directory).map_err(|e| {
-                Error::Cause(
-                    "unable to create the secondary Tera instance".to_string(),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e).context("unable to create the secondary Tera instance")
             })?;
             primary.extend(&secondary).map_err(|e| {
-                Error::Cause(
-                    "unable to extend the primary tera instance".to_string(),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e).context("unable to extend the primary tera instance")
             })?;
             primary
         }

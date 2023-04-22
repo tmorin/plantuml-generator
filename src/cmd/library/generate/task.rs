@@ -1,10 +1,9 @@
 use std::str::FromStr;
 
+use anyhow::Result;
 use tera::Tera;
 
-use crate::error::Error;
 use crate::plantuml::PlantUML;
-use crate::result::Result;
 
 #[derive(Eq, PartialEq)]
 pub enum CleanupScope {
@@ -22,7 +21,7 @@ pub enum CleanupScope {
 }
 
 impl FromStr for CleanupScope {
-    type Err = Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
@@ -37,7 +36,10 @@ impl FromStr for CleanupScope {
             "Sprite" => Ok(CleanupScope::Sprite),
             "SpriteIcon" => Ok(CleanupScope::SpriteIcon),
             "SpriteValue" => Ok(CleanupScope::SpriteValue),
-            _ => Err(Error::Simple(format!("unable to find a match for {}", s))),
+            _ => Err(anyhow::Error::msg(format!(
+                "unable to find a match for {}",
+                s
+            ))),
         }
     }
 }

@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
+use anyhow::Result;
 use tera::Tera;
 
 use crate::cmd::library::generate::config::Config;
@@ -11,7 +12,6 @@ use crate::cmd::library::generate::tasks::package::parse_package;
 use crate::cmd::library::manifest::library::Library;
 use crate::counter::Counter;
 use crate::plantuml::PlantUML;
-use crate::result::Result;
 use crate::urn::Urn;
 
 pub struct Generator {
@@ -157,7 +157,7 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-        .unwrap();
+            .unwrap();
         let yaml = &read_to_string(Path::new("test/library-full.yaml")).unwrap();
         let library: &Library = &serde_yaml::from_str(yaml).unwrap();
         let generator = &Generator::create(config, library, &[]).unwrap();
@@ -188,7 +188,7 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-        .unwrap();
+            .unwrap();
         let yaml = &read_to_string(Path::new("test/library-icon_reference.yaml")).unwrap();
         let library: &Library = &serde_yaml::from_str(yaml).unwrap();
         let generator = &Generator::create(config, library, &[]).unwrap();

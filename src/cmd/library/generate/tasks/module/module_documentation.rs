@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
@@ -8,8 +9,6 @@ use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::library::Library;
 use crate::cmd::library::manifest::module::Module;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 type ItemManifest = crate::cmd::library::manifest::item::Item;
@@ -87,7 +86,7 @@ impl ModuleDocumentationTask {
     }
     fn get_relative_destination_path(&self) -> Box<Path> {
         Box::from(Path::new(
-            format!("{}/README.md", self.module_urn,).as_str(),
+            format!("{}/README.md", self.module_urn, ).as_str(),
         ))
     }
     fn get_full_destination_path(&self) -> Box<Path> {
@@ -122,17 +121,16 @@ impl Task for ModuleDocumentationTask {
 
         // create the destination file
         let destination_file = File::create(&destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         let mut context = Context::new();
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 }
 
@@ -190,7 +188,7 @@ mod test {
             "{}/Package/Module/README.md",
             generator.output_directory
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("The module contains 4 items."));
         assert!(content.contains("[Package/Module/itemD](../../Package/Module/itemD.md)"));
         assert!(content.contains("## FamilyA"));

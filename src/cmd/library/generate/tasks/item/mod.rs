@@ -13,7 +13,6 @@ use crate::cmd::library::manifest::item::Item;
 use crate::cmd::library::manifest::library::Library;
 use crate::cmd::library::manifest::module::Module;
 use crate::cmd::library::manifest::package::Package;
-use crate::error::Error;
 
 mod element_snippet;
 mod item_documentation;
@@ -28,7 +27,7 @@ pub fn parse_item(
     _package: &Package,
     _module: &Module,
     _item: &Item,
-) -> Result<Vec<Box<dyn Task>>, Error> {
+) -> anyhow::Result<Vec<Box<dyn Task>>> {
     log::debug!("parse item {}", &_item.urn);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
@@ -42,7 +41,7 @@ pub fn parse_item(
                 tasks.push(Box::from(item_icon_task));
                 // create the tasks to generate the sprite values
                 for (sprite_size_name, sprite_size_value) in
-                    _library.customization.list_sprite_sizes()
+                _library.customization.list_sprite_sizes()
                 {
                     // create the task to generate the icon used as input of the sprite value
                     let sprite_icon_task = SpriteIconTask::create(

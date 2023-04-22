@@ -1,20 +1,24 @@
 use std::io;
 
+use anyhow::Result;
 use clap::ArgMatches;
 use clap_complete::{generate, Shell};
 
 use crate::cli::build_cli;
-use crate::result::Result;
 
 pub fn execute_completion(arg_matches: &ArgMatches) -> Result<()> {
-    let shell = arg_matches.get_one::<Shell>("SHELL").unwrap();
-    generate(
-        *shell,
-        &mut build_cli(),
-        "plantuml-generator",
-        &mut io::stdout(),
-    );
-    Ok(())
+    match arg_matches.get_one::<Shell>("SHELL") {
+        None => Err(anyhow::Error::msg("unable to get the SHELL")),
+        Some(shell) => {
+            generate(
+                *shell,
+                &mut build_cli(),
+                "plantuml-generator",
+                &mut io::stdout(),
+            );
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]

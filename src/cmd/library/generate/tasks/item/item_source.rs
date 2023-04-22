@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::fs::{read_to_string, File};
+use std::fs::{File, read_to_string};
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tera::{Context, Tera};
@@ -10,9 +11,7 @@ use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::element::Shape;
 use crate::cmd::library::manifest::item::Item;
-use crate::constants::{SPRITES, SPRITE_LG};
-use crate::error::Error;
-use crate::result::Result;
+use crate::constants::{SPRITE_LG, SPRITES};
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -98,7 +97,7 @@ impl ItemSourceTask {
                         .to_str()
                     {
                         None => {
-                            return Err(Error::Simple(
+                            return Err(anyhow::Error::msg(
                                 "unable to get the sprite cached path".to_string(),
                             ));
                         }
@@ -172,7 +171,7 @@ impl ItemSourceTask {
         })
     }
     fn get_relative_source_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.puml", self.item_urn,).as_str()))
+        Box::from(Path::new(format!("{}.puml", self.item_urn, ).as_str()))
     }
     fn get_full_source_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -205,10 +204,7 @@ impl Task for ItemSourceTask {
 
         // create the destination file
         let destination_file = File::create(&destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         // get the sprite value from the cached files
@@ -217,13 +213,10 @@ impl Task for ItemSourceTask {
             let cached_sprite_value = read_to_string(cached_sprite_path)
                 .map(|c| c.trim().to_string())
                 .map_err(|e| {
-                    Error::Cause(
-                        format!(
-                            "unable to read the cached sprite file {}",
-                            cached_sprite_path
-                        ),
-                        Box::from(e),
-                    )
+                    anyhow::Error::new(e).context(format!(
+                        "unable to read the cached sprite file {}",
+                        cached_sprite_path
+                    ))
                 })?;
             sprites.push(cached_sprite_value);
         }
@@ -233,7 +226,9 @@ impl Task for ItemSourceTask {
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 }
 
@@ -303,7 +298,7 @@ mod test {
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("LX_6N8UPcPbT0G"));
         assert!(content.contains(
             r"IconElement($id, 'IconElement', 'Package/Module/Family/BuiltInItem', $name, $tech, $desc)"
@@ -325,7 +320,7 @@ mod test {
             keyB: [ itemA, itemB ]
         "#,
         )
-        .unwrap();
+            .unwrap();
         let generator = ItemSourceTask {
             item_urn: "Package/Module/Family/CustomItem".to_string(),
             cached_sprite_paths: vec![],
@@ -343,7 +338,7 @@ mod test {
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("' valueA"));
         assert!(content.contains("' itemA,itemB"));
         assert!(content.contains("!procedure CustomItem($id)"));

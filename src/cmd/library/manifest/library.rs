@@ -9,6 +9,7 @@ pub mod customization {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
+    use crate::constants::{get_default_font_color, SPRITE_LG, SPRITE_MD, SPRITE_SM, SPRITE_XS};
     use crate::constants::get_default_font_color_light;
     use crate::constants::get_default_font_size_lg;
     use crate::constants::get_default_font_size_md;
@@ -18,7 +19,6 @@ pub mod customization {
     use crate::constants::get_default_icon_height;
     use crate::constants::get_default_msg_width_max;
     use crate::constants::get_default_text_width_max;
-    use crate::constants::{get_default_font_color, SPRITE_LG, SPRITE_MD, SPRITE_SM, SPRITE_XS};
 
     #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct Customization {

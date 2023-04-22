@@ -1,7 +1,7 @@
-use clap::builder::{PossibleValuesParser, ValueParser};
 use clap::{
-    crate_authors, crate_description, crate_version, value_parser, Arg, ArgAction, Command,
+    Arg, ArgAction, Command, crate_authors, crate_description, crate_version, value_parser,
 };
+use clap::builder::{PossibleValuesParser, ValueParser};
 use clap_complete::Shell;
 
 pub fn build_cli() -> Command {

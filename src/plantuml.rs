@@ -4,8 +4,8 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-use crate::error::Error;
-use crate::result::Result;
+use anyhow::Result;
+
 use crate::utils::create_parent_directory;
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl PlantUML {
         //get the source
         let source = match source_path.to_str() {
             None => {
-                return Err(Error::Simple(format!(
+                return Err(anyhow::Error::msg(format!(
                     "unable to get the string value of {:?}",
                     source_path
                 )));
@@ -36,14 +36,14 @@ impl PlantUML {
             .arg(&self.plantuml_jar)
             .arg(source)
             .output()
-            .map_err(|e| Error::Cause(format!("unable to render {}", source), Box::from(e)))?;
+            .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
         io::stdout().write_all(&output.stdout).unwrap();
-        // .map_err(|e| Error::Cause(format!("unable to write stdout"), Box::from(e)))?;
+        // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stdout"), Box::from(e)))?;
         io::stderr().write_all(&output.stderr).unwrap();
         // check the generation
         if !output.status.success() {
-            // .map_err(|e| Error::Cause(format!("unable to write stderr"), Box::from(e)))?;
-            return Err(Error::Simple(format!("failed to render {}", source)));
+            // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stderr"), Box::from(e)))?;
+            return Err(anyhow::Error::msg(format!("failed to render {}", source)));
         }
 
         Ok(())
@@ -67,20 +67,14 @@ impl PlantUML {
         create_parent_directory(destination_path)?;
 
         let mut destination_file = File::create(destination_path).map_err(|e| {
-            Error::Cause(
-                format!("unable to open {}", &self.plantuml_jar),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context(format!("unable to open {}", &self.plantuml_jar))
         })?;
 
         reqwest::blocking::get(&url)
-            .map_err(|e| Error::Cause(format!("unable to download {}", &url), Box::from(e)))?
+            .map_err(|e| anyhow::Error::new(e).context(format!("unable to download {}", &url)))?
             .copy_to(&mut destination_file)
             .map_err(|e| {
-                Error::Cause(
-                    format!("unable to write {}", &self.plantuml_jar),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e).context(format!("unable to write {}", &self.plantuml_jar))
             })?;
 
         Ok(())

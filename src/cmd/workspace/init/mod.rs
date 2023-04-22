@@ -1,9 +1,10 @@
-use clap::ArgMatches;
 use std::path::Path;
+
+use anyhow::Result;
+use clap::ArgMatches;
 
 use crate::cmd::workspace::init::config::Config;
 use crate::cmd::workspace::manifest::workspace::Workspace;
-use crate::result::Result;
 use crate::utils::{create_directory, create_parent_directory};
 
 mod config;
@@ -46,7 +47,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_completion() {
+    fn test_init() {
         delete_file_or_directory("target/tests/cmd/workspace/init".as_ref()).unwrap();
         let arg_matches = build_cli().get_matches_from([
             "plantuml-generator",
@@ -63,7 +64,7 @@ mod test {
                 .subcommand_matches("init")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         let path_workspace_manifest =
             Path::new("target/tests/cmd/workspace/init/source/.pgen-workspace.yaml");
         assert!(path_workspace_manifest.exists());

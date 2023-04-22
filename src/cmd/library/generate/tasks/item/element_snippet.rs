@@ -3,6 +3,7 @@ use std::fmt;
 use std::fs::File;
 use std::path::Path;
 
+use anyhow::Result;
 use heck::{ToTitleCase, ToUpperCamelCase};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -14,9 +15,7 @@ use crate::cmd::library::manifest::element::{Element, Shape};
 use crate::cmd::library::manifest::item::Item;
 use crate::cmd::library::manifest::library::Library;
 use crate::cmd::library::manifest::package::Package;
-use crate::error::Error;
 use crate::plantuml::PlantUML;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Clone, Eq, Deserialize, Serialize)]
@@ -94,7 +93,7 @@ impl ElementSnippetTask {
                 .to_str()
             {
                 None => {
-                    return Err(Error::Simple(
+                    return Err(anyhow::Error::msg(
                         "unable to get the full path of get_local_snippet_puml_path".to_string(),
                     ));
                 }
@@ -106,7 +105,7 @@ impl ElementSnippetTask {
                 .to_str()
             {
                 None => {
-                    return Err(Error::Simple(
+                    return Err(anyhow::Error::msg(
                         "unable to get the full path of get_remote_snippet_puml_path".to_string(),
                     ));
                 }
@@ -125,7 +124,7 @@ impl ElementSnippetTask {
                     .to_str()
                 {
                     None => {
-                        return Err(Error::Simple(
+                        return Err(anyhow::Error::msg(
                             "unable to get the full path of get_local_snippet_puml_path"
                                 .to_string(),
                         ));
@@ -141,7 +140,7 @@ impl ElementSnippetTask {
                     .to_str()
                 {
                     None => {
-                        return Err(Error::Simple(
+                        return Err(anyhow::Error::msg(
                             "unable to get the full path of get_remote_snippet_puml_path"
                                 .to_string(),
                         ));
@@ -212,17 +211,16 @@ impl Task for ElementSnippetTask {
 
         // create the destination file
         let destination_file = File::create(destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         let mut context = Context::new();
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 
     fn render_sources(&self, plantuml: &PlantUML) -> Result<()> {

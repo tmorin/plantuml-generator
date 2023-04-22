@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use anyhow::Result;
 use raster::{BlendMode, Color, Image, PositionMode, ResizeMode};
 use serde::{Deserialize, Serialize};
 
@@ -7,8 +8,6 @@ use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::icon::Icon;
 use crate::cmd::library::manifest::item::Item;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -38,7 +37,7 @@ impl SpriteIconTask {
             .to_str()
         {
             None => {
-                return Err(Error::Simple(format!(
+                return Err(anyhow::Error::msg(format!(
                     "unable to get full_destination_icon for {}/{}",
                     item.urn, sprite_size_name
                 )));
@@ -87,7 +86,7 @@ impl Task for SpriteIconTask {
 
         // create the source image
         let mut source_image = raster::open(&self.full_source_icon).map_err(|e| {
-            Error::Simple(format!(
+            anyhow::Error::msg(format!(
                 "unable to open {}: {:?}",
                 &self.full_source_icon, e
             ))
@@ -104,12 +103,12 @@ impl Task for SpriteIconTask {
             self.destination_icon_height as i32,
             ResizeMode::ExactHeight,
         )
-        .map_err(|e| {
-            Error::Simple(format!(
-                "unable to resize {}: {:?}",
-                &self.full_source_icon, e
-            ))
-        })?;
+            .map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "unable to resize {}: {:?}",
+                    &self.full_source_icon, e
+                ))
+            })?;
 
         // create the destination image
         let mut background_image =
@@ -117,7 +116,7 @@ impl Task for SpriteIconTask {
 
         // fill destination image with white
         raster::editor::fill(&mut background_image, Color::white()).map_err(|e| {
-            Error::Simple(format!(
+            anyhow::Error::msg(format!(
                 "unable to fill {}: {:?}",
                 &self.full_destination_icon, e
             ))
@@ -133,16 +132,16 @@ impl Task for SpriteIconTask {
             0,
             0,
         )
-        .map_err(|e| {
-            Error::Simple(format!(
-                "unable to blend {} in {}: {:?}",
-                &self.full_source_icon, &self.full_destination_icon, e
-            ))
-        })?;
+            .map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "unable to blend {} in {}: {:?}",
+                    &self.full_source_icon, &self.full_destination_icon, e
+                ))
+            })?;
 
         // generate the sprite icon
         raster::save(&destination_image, &self.full_destination_icon).map_err(|e| {
-            Error::Simple(format!(
+            anyhow::Error::msg(format!(
                 "unable to save {}: {:?}",
                 &self.full_destination_icon, e
             ))

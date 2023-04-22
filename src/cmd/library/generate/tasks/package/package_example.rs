@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
@@ -9,9 +10,7 @@ use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::example::Example;
 use crate::cmd::library::manifest::library::Library;
 use crate::cmd::library::manifest::package::Package;
-use crate::error::Error;
 use crate::plantuml::PlantUML;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -40,13 +39,13 @@ impl PackageExampleTask {
             .as_path()
             .to_str()
             .map(|v| v.to_string())
-            .ok_or_else(|| Error::Simple("unable to get full_source_path".to_string()))?;
+            .ok_or_else(|| anyhow::Error::msg("unable to get full_source_path".to_string()))?;
         let full_image_path = Path::new(&config.output_directory)
             .join(example.get_destination_path(&package.urn, &library.customization.icon_format))
             .as_path()
             .to_str()
             .map(|v| v.to_string())
-            .ok_or_else(|| Error::Simple("unable to get full_image_path".to_string()))?;
+            .ok_or_else(|| anyhow::Error::msg("unable to get full_image_path".to_string()))?;
         Ok(PackageExampleTask {
             package_urn: package.urn.value.clone(),
             template: example.template.clone(),
@@ -82,17 +81,16 @@ impl Task for PackageExampleTask {
 
         // create the destination file
         let destination_file = File::create(destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         let mut context = Context::new();
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 
     fn render_sources(&self, plantuml: &PlantUML) -> Result<()> {

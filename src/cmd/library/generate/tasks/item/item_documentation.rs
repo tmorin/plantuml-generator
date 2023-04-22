@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
@@ -8,8 +9,6 @@ use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::item::Item;
 use crate::cmd::library::manifest::library::Library;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -77,7 +76,7 @@ impl ItemDocumentationTask {
                     .to_str()
                     .map(|v| v.to_string())
                     .ok_or_else(|| {
-                        Error::Simple("unable to get full_snippet_local_path".to_string())
+                        anyhow::Error::msg("unable to get full_snippet_local_path".to_string())
                     })?,
                 full_snippet_remote_path: Path::new(&config.output_directory)
                     .join(element.shape.get_remote_snippet_puml_path(&item.urn))
@@ -85,7 +84,7 @@ impl ItemDocumentationTask {
                     .to_str()
                     .map(|v| v.to_string())
                     .ok_or_else(|| {
-                        Error::Simple("unable to get full_snippet_remote_path".to_string())
+                        anyhow::Error::msg("unable to get full_snippet_remote_path".to_string())
                     })?,
             });
         }
@@ -100,7 +99,7 @@ impl ItemDocumentationTask {
         })
     }
     pub fn get_relative_documentation_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.md", self.item_urn,).as_str()))
+        Box::from(Path::new(format!("{}.md", self.item_urn, ).as_str()))
     }
     fn get_full_documentation_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -134,17 +133,16 @@ impl Task for ItemDocumentationTask {
 
         // create the destination file
         let destination_file = File::create(&destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         let mut context = Context::new();
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 }
 
@@ -201,7 +199,7 @@ mod test {
             "{}/{}.md",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains(r"# Item"));
         assert!(content.contains(r"| Illustration | Icon | Card | Group |"));
         assert!(content.contains(r"| ![illustration for Illustration](../../.././Icon.png) | ![illustration for Icon](../../.././Item.png) | ![illustration for Card](../../.././ItemCard.png) | ![illustration for Group](../../.././ItemGroup.png) |"));

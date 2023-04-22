@@ -1,3 +1,5 @@
+use anyhow::Result;
+
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::Task;
 use crate::cmd::library::generate::tasks::package::package_bootstrap::PackageBootstrapTask;
@@ -8,7 +10,6 @@ use crate::cmd::library::generate::tasks::package::package_embedded::{
 use crate::cmd::library::generate::tasks::package::package_example::PackageExampleTask;
 use crate::cmd::library::manifest::library::Library;
 use crate::cmd::library::manifest::package::Package;
-use crate::result::Result;
 
 mod package_bootstrap;
 mod package_documentation;

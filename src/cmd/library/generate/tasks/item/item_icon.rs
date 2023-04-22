@@ -3,17 +3,16 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+use anyhow::Result;
+use image::GenericImageView;
 use image::imageops::FilterType;
 use image::io::Reader;
-use image::GenericImageView;
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::icon::Icon;
 use crate::cmd::library::manifest::item::Item;
 use crate::cmd::library::manifest::library::Library;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 pub struct ItemIconTask {
@@ -42,7 +41,11 @@ impl ItemIconTask {
             .as_path()
             .to_str()
         {
-            None => return Err(Error::Simple("unable to get destination path".to_string())),
+            None => {
+                return Err(anyhow::Error::msg(
+                    "unable to get destination path".to_string(),
+                ));
+            }
             Some(v) => v.to_string(),
         };
         Ok(ItemIconTask {
@@ -70,10 +73,10 @@ impl ItemIconTask {
             .arg(format!("--export-height={}", &self.destination_icon_height))
             .output()
             .map_err(|e| {
-                Error::Cause(
-                    format!("unable to generate {}", &self.full_destination_image),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e).context(format!(
+                    "unable to generate {}",
+                    &self.full_destination_image
+                ))
             })?;
 
         // check generation worked
@@ -81,12 +84,12 @@ impl ItemIconTask {
             true => Ok(()),
             false => {
                 io::stdout().write_all(&output.stdout).map_err(|e| {
-                    Error::Cause("unable to write stdout".to_string(), Box::from(e))
+                    anyhow::Error::new(e).context("unable to write stdout".to_string())
                 })?;
                 io::stderr().write_all(&output.stderr).map_err(|e| {
-                    Error::Cause("unable to write stderr".to_string(), Box::from(e))
+                    anyhow::Error::new(e).context("unable to write stderr".to_string())
                 })?;
-                Err(Error::Simple("failed to create the icon".to_string()))
+                Err(anyhow::Error::msg("failed to create the icon".to_string()))
             }
         }
     }
@@ -100,17 +103,12 @@ impl ItemIconTask {
         // get an handler on the source icon
         let image = Reader::open(&self.full_source_image)
             .map_err(|e| {
-                Error::Cause(
-                    format!("unable to open {}", &self.full_source_image),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e).context(format!("unable to open {}", &self.full_source_image))
             })?
             .decode()
             .map_err(|e| {
-                Error::Cause(
-                    format!("unable to decode {}", &self.full_source_image),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e)
+                    .context(format!("unable to decode {}", &self.full_source_image))
             })?;
 
         // compute the width of the sprite icon
@@ -126,10 +124,8 @@ impl ItemIconTask {
             )
             .save(&self.full_destination_image)
             .map_err(|e| {
-                Error::Cause(
-                    format!("unable to save {}", &self.full_destination_image),
-                    Box::from(e),
-                )
+                anyhow::Error::new(e)
+                    .context(format!("unable to save {}", &self.full_destination_image))
             })?;
 
         Ok(())
@@ -160,7 +156,7 @@ impl Task for ItemIconTask {
 
         // resolve the icon source extension
         let icon_source_extension = match Path::new(&self.full_source_image).extension() {
-            None => Err(Error::Simple(
+            None => Err(anyhow::Error::msg(
                 "unable to get the extension of the icon source".to_string(),
             )),
             Some(s) => Ok(s.to_str().unwrap_or_default().to_string()),

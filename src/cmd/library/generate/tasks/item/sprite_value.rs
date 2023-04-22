@@ -4,14 +4,13 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::icon::Icon;
 use crate::cmd::library::manifest::item::Item;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,7 +42,7 @@ impl SpriteValueTask {
             .to_str()
         {
             None => {
-                return Err(Error::Simple(format!(
+                return Err(anyhow::Error::msg(format!(
                     "unable to get full_destination_text for {}/{}",
                     item.urn, sprite_size_name
                 )));
@@ -99,31 +98,31 @@ impl Task for SpriteValueTask {
             .arg("16z")
             .arg(&self.full_source_icon)
             .output()
-            .map_err(|e| Error::Cause("unable to generate the sprite".to_string(), Box::from(e)))?;
+            .map_err(|e| {
+                anyhow::Error::new(e).context("unable to generate the sprite".to_string())
+            })?;
 
         // check the generation
         if !output.status.success() {
             io::stdout()
                 .write_all(&output.stdout)
-                .map_err(|e| Error::Cause("unable to write stdout".to_string(), Box::from(e)))?;
+                .map_err(|e| anyhow::Error::new(e).context("unable to write stdout".to_string()))?;
             io::stderr()
                 .write_all(&output.stderr)
-                .map_err(|e| Error::Cause("unable to write stderr".to_string(), Box::from(e)))?;
-            return Err(Error::Simple(String::from("failed to create the sprite")));
+                .map_err(|e| anyhow::Error::new(e).context("unable to write stderr".to_string()))?;
+            return Err(anyhow::Error::msg(String::from(
+                "failed to create the sprite",
+            )));
         }
 
         // write the sprite value
         let mut writer = fs::File::create(&self.full_destination_text).map_err(|e| {
-            Error::Cause(
-                format!("unable to create {}", &self.full_destination_text),
-                Box::from(e),
-            )
+            anyhow::Error::new(e)
+                .context(format!("unable to create {}", &self.full_destination_text))
         })?;
         writer.write_all(&output.stdout).map_err(|e| {
-            Error::Cause(
-                format!("unable to write {}", &self.full_destination_text),
-                Box::from(e),
-            )
+            anyhow::Error::new(e)
+                .context(format!("unable to write {}", &self.full_destination_text))
         })?;
 
         Ok(())

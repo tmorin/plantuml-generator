@@ -1,8 +1,8 @@
+use anyhow::Result;
 use clap::ArgMatches;
 use schemars::schema_for;
 
 use crate::cmd::library::manifest::library::Library;
-use crate::result::Result;
 
 pub fn execute_library_schema(_arg_matches: &ArgMatches) -> Result<()> {
     log::info!("generate the JSON schema of the library");
@@ -28,6 +28,6 @@ mod test {
                 .subcommand_matches("schema")
                 .unwrap(),
         )
-        .unwrap()
+            .unwrap()
     }
 }

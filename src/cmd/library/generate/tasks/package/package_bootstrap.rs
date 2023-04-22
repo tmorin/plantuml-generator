@@ -1,14 +1,13 @@
 use std::fs::File;
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::package::Package;
-use crate::error::Error;
-use crate::result::Result;
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -66,17 +65,16 @@ impl Task for PackageBootstrapTask {
 
         // create the destination file
         let destination_file = File::create(&destination_path).map_err(|e| {
-            Error::Cause(
-                "unable to create the destination file".to_string(),
-                Box::from(e),
-            )
+            anyhow::Error::new(e).context("unable to create the destination file".to_string())
         })?;
 
         let mut context = Context::new();
         context.insert("data", &self);
         _tera
             .render_to(&self.template, &context, destination_file)
-            .map_err(|e| Error::Cause(format!("unable to render {}", &self.template), Box::from(e)))
+            .map_err(|e| {
+                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+            })
     }
 }
 
@@ -103,7 +101,7 @@ mod test {
             "{}/Package/bootstrap.puml",
             generator.output_directory
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.trim().contains("header"));
         assert!(content.trim().contains("content"));
         assert!(content.trim().contains("footer"));

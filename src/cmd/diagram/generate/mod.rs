@@ -1,16 +1,15 @@
-use std::fs::{read_to_string, OpenOptions};
+use std::fs::{OpenOptions, read_to_string};
 use std::io::Write;
 use std::path::Path;
 use std::time::SystemTime;
 
+use anyhow::Result;
 use chrono::prelude::*;
 use clap::ArgMatches;
 use glob::{glob, Paths};
 
 use crate::cmd::diagram::generate::config::Config;
-use crate::error::Error;
 use crate::plantuml::create_plantuml;
-use crate::result::Result;
 use crate::utils::create_parent_directory;
 
 mod config;
@@ -21,14 +20,17 @@ fn get_last_modified(path: &Path) -> Result<i64> {
             let modified = path
                 .metadata()
                 .map_err(|e| {
-                    Error::Cause(format!("unable to get metadata for {}", e), Box::from(e))
+                    anyhow::Error::new(e).context(format!(
+                        "unable to get metadata for {}",
+                        path.to_str().unwrap()
+                    ))
                 })?
                 .modified()
                 .map_err(|e| {
-                    Error::Cause(
-                        format!("unable to get modified value for {}", e),
-                        Box::from(e),
-                    )
+                    anyhow::Error::new(e).context(format!(
+                        "unable to get modified value for {}",
+                        path.to_str().unwrap()
+                    ))
                 })?;
             let date_time: DateTime<Local> = DateTime::from(modified);
             Ok(date_time.timestamp_nanos())
@@ -41,7 +43,7 @@ fn get_last_generation_timestamp(last_gen_path: &Path) -> Result<i64> {
     match last_gen_path.exists() {
         true => {
             let timestamp_as_string = read_to_string(last_gen_path).map_err(|e| {
-                Error::Cause(format!("unable to read {:?}", last_gen_path), Box::from(e))
+                anyhow::Error::new(e).context(format!("unable to read {:?}", last_gen_path))
             })?;
             match timestamp_as_string.is_empty() {
                 true => Ok(0),
@@ -62,20 +64,22 @@ fn save_last_generation_timestamp(last_gen_path: &Path) -> Result<()> {
         .truncate(true)
         .append(false)
         .open(last_gen_path)
-        .map_err(|e| Error::Cause(format!("unable to open {:?}", &last_gen_path), Box::from(e)))?;
-    last_gen_file
-        .write_all(value.as_bytes())
-        .map_err(|e| Error::Cause(format!("unable to write {:?}", last_gen_file), Box::from(e)))?;
+        .map_err(|e| {
+            anyhow::Error::new(e).context(format!("unable to open {:?}", &last_gen_path))
+        })?;
+    last_gen_file.write_all(value.as_bytes()).map_err(|e| {
+        anyhow::Error::new(e).context(format!("unable to write {:?}", last_gen_file))
+    })?;
     Ok(())
 }
 
 fn get_puml_paths(config: &Config) -> Result<Paths> {
     let glob_pattern = format!("{}/**/*.puml", config.source_directory);
     glob(&glob_pattern).map_err(|e| {
-        Error::Cause(
-            format!("unable to parse the glob pattern ({})", &glob_pattern),
-            Box::from(e),
-        )
+        anyhow::Error::new(e).context(format!(
+            "unable to parse the glob pattern ({})",
+            &glob_pattern
+        ))
     })
 }
 
@@ -157,7 +161,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         let path_diagram_a_0_png =
             Path::new("target/tests/cmd/diagram/generate/source/diagram_a_0.png");
         assert!(path_diagram_a_0_png.exists());
@@ -194,7 +198,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-        .unwrap();
+            .unwrap();
         // check path_diagram_a_0_png has been generated again
         let path_diagram_a_0_png_modified_after =
             path_diagram_a_0_png.metadata().unwrap().modified().unwrap();
