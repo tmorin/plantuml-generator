@@ -1,7 +1,7 @@
-use clap::{
-    Arg, ArgAction, Command, crate_authors, crate_description, crate_version, value_parser,
-};
 use clap::builder::{PossibleValuesParser, ValueParser};
+use clap::{
+    crate_authors, crate_description, crate_version, value_parser, Arg, ArgAction, Command,
+};
 use clap_complete::Shell;
 
 pub fn build_cli() -> Command {
@@ -57,7 +57,7 @@ pub fn build_cli() -> Command {
         .help("The inkscape binary path or command line.");
 
     let arg_workspace_manifest = Arg::new("workspace_manifest")
-        .short('w')
+        .short('m')
         .long("manifest")
         .action(ArgAction::Set)
         .num_args(1)
@@ -150,6 +150,19 @@ pub fn build_cli() -> Command {
                 .arg(&arg_workspace_manifest)
                 .arg(&arg_source_directory)
                 .arg(&arg_cache_directory),
+        )
+        .subcommand(
+            Command::new("install")
+                .about("Install the artifacts")
+                .arg(&arg_workspace_manifest)
+                .arg(&arg_source_directory)
+                .arg(
+                    Arg::new("do_force_install")
+                        .short('f')
+                        .long("force")
+                        .action(ArgAction::SetTrue)
+                        .help("Force the installation of artifacts."),
+                ),
         );
 
     let command_diagram = Command::new("diagram")
@@ -163,6 +176,7 @@ pub fn build_cli() -> Command {
                 .arg(Arg::new("do_force_generation")
                     .short('f')
                     .long("force")
+                    .action(ArgAction::SetTrue)
                     .help("Force the rendering of discovered .puml file."))
                 .arg(&arg_cache_directory)
                 .arg(&arg_plantuml_version)

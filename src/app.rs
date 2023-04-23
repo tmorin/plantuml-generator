@@ -7,7 +7,7 @@ use log::LevelFilter;
 use crate::cli::build_cli;
 use crate::cmd::{
     execute_completion, execute_diagram_generate, execute_library_generate, execute_library_schema,
-    execute_workspace_init,
+    execute_workspace_init, execute_workspace_install,
 };
 
 pub fn start_app<I, T>(args: I) -> i32
@@ -74,6 +74,15 @@ pub fn start_app<I, T>(args: I) -> i32
         Some(("workspace", m)) => match m.subcommand() {
             Some(("init", m)) => {
                 return match execute_workspace_init(m) {
+                    Ok(_) => 0,
+                    Err(e) => {
+                        log::error!("the command failed: {}", e);
+                        2
+                    }
+                };
+            }
+            Some(("install", m)) => {
+                return match execute_workspace_install(m) {
                     Ok(_) => 0,
                     Err(e) => {
                         log::error!("the command failed: {}", e);

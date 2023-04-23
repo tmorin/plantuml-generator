@@ -34,7 +34,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     }
 
     // clean the cache directory
-    if arg_matches.contains_id("do_clean_cache") {
+    if arg_matches.get_flag("do_clean_cache") {
         let path_to_delete = Path::new(&config.cache_directory);
         log::info!("clean the cache directory: {}", path_to_delete.display());
         delete_file_or_directory(path_to_delete)?

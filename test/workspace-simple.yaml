@@ -1,0 +1,6 @@
+cache_directory: "target/tests/cmd/workspace/install/cache"
+artifacts:
+  - type: "github.com/tmorin/plantuml-libs"
+    version: "11.0.0"
+  - type: "github.com/tmorin/plantuml-libs"
+    version: "latest"

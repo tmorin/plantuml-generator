@@ -26,6 +26,7 @@ anyhow = { version = "1", features = [] }
 chrono = { version = "0.4" }
 clap_complete = { version = "4" }
 clap = { version = "4", features = ["env", "cargo"] }
+zip-extract = "0.1.2"
 env_logger = { version = "0.10", default_features = false }
 glob = { version = "0.3" }
 heck = { version = "0.4" }

@@ -1,7 +1,13 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
-pub struct Artifact {
-    pub url: String,
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
+#[serde(tag = "type")]
+pub enum Artifact {
+    #[serde(rename = "github.com/tmorin/plantuml-libs")]
+    Builtin {
+        /// The version.
+        #[serde(default)]
+        version: String,
+    },
 }

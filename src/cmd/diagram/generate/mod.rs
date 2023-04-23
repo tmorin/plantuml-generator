@@ -1,4 +1,4 @@
-use std::fs::{OpenOptions, read_to_string};
+use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 use std::time::SystemTime;
@@ -86,7 +86,7 @@ fn get_puml_paths(config: &Config) -> Result<Paths> {
 pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     // resolve the config
     let config = &Config::default().update_from_args(arg_matches);
-    let force_generation = arg_matches.contains_id("do_force_generation");
+    let force_generation = arg_matches.get_flag("do_force_generation");
     if log::log_enabled!(log::Level::Info) {
         log::info!("source_directory: {}", &config.source_directory);
         log::info!("cache_directory: {}", &config.cache_directory);
@@ -161,7 +161,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-            .unwrap();
+        .unwrap();
         let path_diagram_a_0_png =
             Path::new("target/tests/cmd/diagram/generate/source/diagram_a_0.png");
         assert!(path_diagram_a_0_png.exists());
@@ -198,7 +198,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-            .unwrap();
+        .unwrap();
         // check path_diagram_a_0_png has been generated again
         let path_diagram_a_0_png_modified_after =
             path_diagram_a_0_png.metadata().unwrap().modified().unwrap();
