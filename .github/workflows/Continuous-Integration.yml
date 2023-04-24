@@ -6,35 +6,21 @@ jobs:
 
   Lint:
     name: Lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: "Cache cargo stuff"
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-lint-${{ hashFiles('**/Cargo.lock') }}
       - name: "Install the toolchain"
-        uses: actions-rs/toolchain@v1
+        uses: moonrepo/setup-rust@v0
         with:
           profile: minimal
-          toolchain: stable
-          override: true
           components: clippy
       - name: "Check with clippy"
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+        run: |
+          cargo clippy -- -D warnings
 
   Test:
     name: Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: "Install dependencies"
@@ -45,30 +31,17 @@ jobs:
           inkscape --version
           inkscape --help
         shell: bash
-      - name: "Cache cargo stuff"
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-test-${{ hashFiles('**/Cargo.lock') }}
       - name: "Install the toolchain"
-        uses: actions-rs/toolchain@v1
+        uses: moonrepo/setup-rust@v0
         with:
           profile: minimal
-          toolchain: stable
-          override: true
       - name: "Perform the tests"
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: |
+          cargo test
 
   Binary:
     name: Binary
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
@@ -87,90 +60,67 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: "Install the dependencies"
-        run: sudo apt-get install pkg-config libssl-dev
+        run: |
+          sudo apt-get install pkg-config libssl-dev
+          sudo apt-get install pkg-config libssl-dev build-essential dpkg libc-bin liblzma-dev
         shell: bash
-      - name: "Cache cargo stuff"
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-binary-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
       - name: "Install the toolchain"
-        uses: actions-rs/toolchain@v1
+        uses: moonrepo/setup-rust@v0
         with:
           profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.target }}
+          bins: cargo-deb
+      - name: "Install the target"
+        run: |
+          rustup target add ${{ matrix.target }}
+      - name: "Install cross"
+        run: |
+          cargo binstall --no-confirm cross
       - name: "Build the binary"
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target=${{ matrix.target }} --features vendored-openssl
+        run: |
+          cross build --release --target=${{ matrix.target }} --features vendored-openssl
       - name: "Archive the binary"
-        run: tar -C target/${{ matrix.target }}/release/ -czf ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz plantuml-generator
+        run: |
+          tar -C target/${{ matrix.target }}/release/ -czf ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz plantuml-generator
       - name: "Upload the binary"
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator
           path: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz
-#      - name: "Publish the crate"
-#        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-#        uses: actions-rs/cargo@v1
-#        with:
-#          use-cross: true
-#          command: publish
-#          args: --target=${{ matrix.target }} --features vendored-openssl --token ${{ secrets.CRATEIO_TOKEN }}
 
   DebianPackage:
     name: Debian Package
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
           - architecture: x86_64
-            system: linux
             target: x86_64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v3
       - name: "Install the dependencies"
-        run: sudo apt-get install build-essential pkg-config dpkg libc-bin libssl-dev liblzma-dev
+        run: |
+          sudo apt-get install pkg-config libssl-dev build-essential dpkg libc-bin liblzma-dev
         shell: bash
-      - name: "Cache cargo stuff"
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-debian-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
       - name: "Install the toolchain"
-        uses: actions-rs/toolchain@v1
+        uses: moonrepo/setup-rust@v0
         with:
           profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.target }}
-      - name: "Install cargo-deb"
-        run: cargo install cargo-deb -q || true
+          bins: cargo-deb
+      - name: "Install the target"
+        run: |
+          rustup target add ${{ matrix.target }}
       - name: "Build the deb package"
-        run: cargo deb --target=${{ matrix.target }} -- --features vendored-openssl
+        run: |
+          cargo deb --target=${{ matrix.target }} -- --release --features vendored-openssl
       - name: "Upload the deb package"
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.system }}${{ matrix.architecture }}_plantuml-generator
+          name: debian_${{ matrix.architecture }}_plantuml-generator
           path: target/${{ matrix.target }}/debian/*.deb
 
   DockerImage:
     name: Docker Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ Lint, Test ]
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     steps:
@@ -217,7 +167,7 @@ jobs:
 
   GithubRelease:
     name: Github Release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ Lint, Test, Binary, DebianPackage ]
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
@@ -227,7 +177,8 @@ jobs:
         with:
           path: artifacts
       - name: "List artifacts"
-        run: ls -R
+        run: |
+          ls -R
         working-directory: artifacts
       - name: "Create the changelog"
         id: build_changelog
