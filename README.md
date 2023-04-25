@@ -45,11 +45,13 @@ plantuml-generator --help
 
 ## Commands
 
-The tool provides two commands:
+The tool provides the following commands:
 
 - `library generate` generates a PlantUML library based on a provided manifest
 - `library schema` Generate the JSON Schema of the library manifest
 - `diagram generate` generates `.puml` discovered recursively in the file system
+- `workspace init` generate a fresh workspace, i.e. a `.pgen-workspace.yaml` file
+- `workspace install` install an artifact in the workspace
 
 ## Release
 
