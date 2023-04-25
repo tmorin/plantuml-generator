@@ -1,8 +1,24 @@
 # Changelog
 
-## [1.12.1](https://github.com/tmorin/plantuml-generator/compare/v1.12.0...v1.12.1) (2023-04-21)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.12.1...HEAD) (2023-04-25)
+
+### Features
+
+* **workspace:** install artifacts from the workspace manifest
+([95a4422](https://github.com/tmorin/plantuml-generator/commit/95a442237e2ea39baa284f1ce7f7d3b9e0eaaf22))
+* **workspace:** initialize a workspace
+([5e93ecb](https://github.com/tmorin/plantuml-generator/commit/5e93ecb88015075d87acb1244391fb27ff73385c))
 
 ### Fixes
+
+* improve the README.md with the full list of available commands
+([a444424](https://github.com/tmorin/plantuml-generator/commit/a4444249af24fb0d044a3580fe036c1f2fdf8f22))
+* **workspace:** prevent initialization of an initialized workspace
+([5808f76](https://github.com/tmorin/plantuml-generator/commit/5808f76e5e1bcc03fe3a7be8b3f36ee3faf5522e))
+
+### [v1.12.1](https://github.com/tmorin/plantuml-generator/compare/v1.12.0...v1.12.1) (2023-04-21)
+
+#### Fixes
 
 * remove the display of the executed command during the execution of
 `scripts/install_pgen.sh`
