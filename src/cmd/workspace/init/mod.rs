@@ -22,7 +22,7 @@ pub fn execute_workspace_init(arg_matches: &ArgMatches) -> Result<()> {
     let manifest_path = source_path.join(&config.workspace_manifest);
     // stop if manifest already exists
     if manifest_path.exists() {
-        return Err(anyhow::Error::msg(format!(
+        Err(anyhow::Error::msg(format!(
             "The manifest {} already exists",
             manifest_path.to_str().unwrap(),
         )))?;

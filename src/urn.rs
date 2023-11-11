@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use heck::ToTitleCase;
 use schemars::JsonSchema;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Debug, Clone, JsonSchema)]
 pub struct Urn {
@@ -37,13 +37,13 @@ impl Urn {
     pub fn is_included_in(&self, urns: &[Urn]) -> bool {
         urns.is_empty()
             || urns.iter().any(|other| {
-            // OK if descendant
-            if other.value.len() <= self.value.len() && self.value.starts_with(&other.value) {
-                return true;
-            }
-            // OK if ancestor
-            other.value.starts_with(&self.value)
-        })
+                // OK if descendant
+                if other.value.len() <= self.value.len() && self.value.starts_with(&other.value) {
+                    return true;
+                }
+                // OK if ancestor
+                other.value.starts_with(&self.value)
+            })
     }
 }
 
@@ -55,8 +55,8 @@ impl fmt::Display for Urn {
 
 impl Serialize for Urn {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.value)
     }
@@ -64,8 +64,8 @@ impl Serialize for Urn {
 
 impl<'de> Deserialize<'de> for Urn {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         struct UrnVisitor;
 
@@ -77,8 +77,8 @@ impl<'de> Deserialize<'de> for Urn {
             }
 
             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-                where
-                    E: Error,
+            where
+                E: Error,
             {
                 Ok(Urn::from(v))
             }
@@ -97,7 +97,7 @@ impl FromStr for Urn {
 
 impl From<&str> for Urn {
     fn from(value: &str) -> Self {
-        let parts: Vec<&str> = value.split('/').skip(0).map(|_| "..").collect();
+        let parts: Vec<&str> = value.split('/').map(|_| "..").collect();
         let path_to_base = match parts.is_empty() {
             true => ".".to_string(),
             false => parts.join("/"),

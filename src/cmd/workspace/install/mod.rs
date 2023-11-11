@@ -23,7 +23,7 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
 
     // stop if manifest doesn't exists
     if !manifest_path.exists() {
-        return Err(anyhow::Error::msg(format!(
+        Err(anyhow::Error::msg(format!(
             "the manifest {} doesn't exists",
             manifest_path.to_str().unwrap(),
         )))?;

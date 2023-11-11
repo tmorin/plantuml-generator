@@ -33,7 +33,7 @@ fn get_last_modified(path: &Path) -> Result<i64> {
                     ))
                 })?;
             let date_time: DateTime<Local> = DateTime::from(modified);
-            Ok(date_time.timestamp_nanos())
+            Ok(date_time.timestamp_nanos_opt().unwrap())
         }
         false => Ok(0),
     }
@@ -56,7 +56,7 @@ fn get_last_generation_timestamp(last_gen_path: &Path) -> Result<i64> {
 
 fn save_last_generation_timestamp(last_gen_path: &Path) -> Result<()> {
     let now: DateTime<Local> = DateTime::from(SystemTime::now());
-    let value = now.timestamp_nanos().to_string();
+    let value = now.timestamp_nanos_opt().unwrap().to_string();
     log::debug!("save_last_generation_timestamp {}", value);
     let mut last_gen_file = OpenOptions::new()
         .create(true)
