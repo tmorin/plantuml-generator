@@ -122,25 +122,25 @@ jobs:
     name: Docker Image
     runs-on: ubuntu-22.04
     needs: [ Lint, Test ]
-    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+    #if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - uses: actions/checkout@v3
       - name: "Set up QEMU"
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
       - name: "Login to Docker Hub"
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: "Set up Docker Buildx"
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
         with:
           install: true
       - name: "Inject slug/short variables"
         uses: rlespinasse/github-slug-action@v3.x
       - name: "Build and push branches"
         if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           platforms: linux/amd64
@@ -154,7 +154,7 @@ jobs:
         uses: ncipollo/semantic-version-action@v1
       - name: "Build and push tags"
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           platforms: linux/amd64
