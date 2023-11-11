@@ -1,3 +1,4 @@
+#[allow(clippy::needless_raw_string_hashes)]
 pub const TEMPLATE: &str = r##"# {{ data.package_name }}
 {% block header %}{% endblock header -%}
 

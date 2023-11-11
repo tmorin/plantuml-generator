@@ -1,3 +1,4 @@
+#[allow(clippy::needless_raw_string_hashes)]
 pub const TEMPLATE: &str = r##"{%- block header %}{% endblock header %}
 
 ' by default the inclusion mode is remote

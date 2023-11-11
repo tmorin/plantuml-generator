@@ -1,3 +1,4 @@
+#[allow(clippy::needless_raw_string_hashes)]
 pub const TEMPLATE: &str = r##"@startuml
 {%- block header %}{% endblock header %}
 {%- block include_mode %}
