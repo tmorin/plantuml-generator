@@ -1,12 +1,13 @@
-FROM docker.io/rust AS builder
+FROM rust:1 AS builder
 RUN apt-get update -y && \
-    apt-get install -y pkg-config libssl-dev
+    apt-get install -y pkg-config libssl-dev && \
+    apt-get clean
 WORKDIR /usr/src/plantuml-generator
 COPY Cargo.toml Cargo.lock /usr/src/plantuml-generator/
 COPY src /usr/src/plantuml-generator/src
 RUN cargo build --release --features vendored-openssl
 
-FROM docker.io/ubuntu:focal
+FROM docker.io/ubuntu:22.04
 ARG git_sha=""
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="tmorin" \
