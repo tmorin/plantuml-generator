@@ -59,6 +59,12 @@ jobs:
             target: s390x-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v3
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Install the dependencies"
         run: |
           sudo apt-get install pkg-config libssl-dev
