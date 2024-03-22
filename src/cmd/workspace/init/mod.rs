@@ -40,6 +40,7 @@ pub fn execute_workspace_init(arg_matches: &ArgMatches) -> Result<()> {
     let f = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(manifest_path)
         .expect("Couldn't open file");
     serde_yaml::to_writer(f, &manifest).unwrap();
