@@ -60,8 +60,6 @@ impl PlantUML {
             return Ok(());
         }
 
-        log::info!("download the PlantUML jar from {}", url);
-
         create_parent_directory(destination_path)?;
 
         let mut destination_file = File::create(destination_path).map_err(|e| {
