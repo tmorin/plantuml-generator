@@ -117,7 +117,7 @@ jobs:
           rustup target add ${{ matrix.target }}
       - name: "Build the deb package"
         run: |
-          cargo deb --target=${{ matrix.target }} -- --release --features vendored-openssl
+          cargo deb --target=${{ matrix.target }} --profile release  -- --features vendored-openssl
       - name: "Upload the deb package"
         uses: actions/upload-artifact@v3
         with:

@@ -106,13 +106,13 @@ pub fn get_default_tera_discovery_pattern() -> String {
     TERA_DISCOVERY_PATTERN.to_string()
 }
 
-pub const PLANTUML_VERSION: &str = "1.2022.4";
+pub const PLANTUML_VERSION: &str = "1.2024.7";
 
 pub fn get_default_plantuml_version() -> String {
     PLANTUML_VERSION.to_string()
 }
 
-pub const PLANTUML_JAR: &str = ".cache/plantuml-1.2022.4.jar";
+pub const PLANTUML_JAR: &str = ".cache/plantuml-1.2024.7.jar";
 
 pub fn get_default_plantuml_jar() -> String {
     PLANTUML_JAR.to_string()
