@@ -4,9 +4,8 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::Result;
-
 use crate::utils::create_parent_directory;
+use anyhow::Result;
 
 #[derive(Debug)]
 pub struct PlantUML {
@@ -49,10 +48,9 @@ impl PlantUML {
         Ok(())
     }
     pub fn download(&self) -> Result<()> {
-        // https://netcologne.dl.sourceforge.net/project/plantuml/1.2022.4/plantuml.1.2022.4.jar
-        // https://downloads.sourceforge.net/project/plantuml/1.2022.4/plantuml.1.2022.4.jar
+        // https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
         let url = format!(
-            "https://downloads.sourceforge.net/project/plantuml/{}/plantuml.{}.jar",
+            "https://github.com/plantuml/plantuml/releases/download/v{}/plantuml-{}.jar",
             self.plantuml_version, self.plantuml_version,
         );
 
@@ -70,6 +68,7 @@ impl PlantUML {
             anyhow::Error::new(e).context(format!("unable to open {}", &self.plantuml_jar))
         })?;
 
+        log::info!("download the PlantUML jar from {}", url);
         reqwest::blocking::get(&url)
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to download {}", &url)))?
             .copy_to(&mut destination_file)
