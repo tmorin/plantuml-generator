@@ -27,7 +27,7 @@ chrono = { version = "0.4" }
 clap_complete = { version = "4" }
 clap = { version = "4", features = ["env", "cargo"] }
 zip-extract = "0.1"
-env_logger = { version = "0.11", default_features = false }
+env_logger = { version = "0.11", default-features = false }
 glob = { version = "0.3" }
 heck = { version = "0.5" }
 image = { version = "0.25" }
