@@ -4,9 +4,8 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::Result;
-use image::GenericImageView;
 use image::imageops::FilterType;
-use image::io::Reader;
+use image::{GenericImageView, ImageReader};
 
 use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
@@ -100,8 +99,8 @@ impl ItemIconTask {
             &self.full_destination_image
         );
 
-        // get an handler on the source icon
-        let image = Reader::open(&self.full_source_image)
+        // get a handler on the source icon
+        let image = ImageReader::open(&self.full_source_image)
             .map_err(|e| {
                 anyhow::Error::new(e).context(format!("unable to open {}", &self.full_source_image))
             })?
