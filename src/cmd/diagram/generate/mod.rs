@@ -120,7 +120,12 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
         );
         if force_generation || last_modification_timestamp > last_generation_timestamp {
             log::info!("generate {:?}", source_path);
-            plantuml.render(&source_path)?;
+            let plantuml_args = arg_matches
+                .get_many::<String>("plantuml_args")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>();
+            plantuml.render(&source_path, Some(plantuml_args))?;
         }
     }
     save_last_generation_timestamp(last_gen_path)?;
@@ -153,6 +158,7 @@ mod test {
             "-s=target/tests/cmd/diagram/generate/source",
             "-C=target/tests/cmd/diagram/generate/cache",
             "-P=test/plantuml-1.2022.4.jar",
+            "-a=-png",
         ]);
         execute_diagram_generate(
             arg_matches
