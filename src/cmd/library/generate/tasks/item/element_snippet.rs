@@ -244,7 +244,7 @@ impl Task for ElementSnippetTask {
 
         // render the snippet
         let source_path = Path::new(&self.full_destination_source_path);
-        plantuml.render(source_path)?;
+        plantuml.render(source_path, None)?;
 
         Ok(())
     }

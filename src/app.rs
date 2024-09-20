@@ -11,9 +11,9 @@ use crate::cmd::{
 };
 
 pub fn start_app<I, T>(args: I) -> i32
-    where
-        I: IntoIterator<Item=T>,
-        T: Into<OsString> + Clone,
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
 {
     let mut app = build_cli();
 
@@ -43,26 +43,22 @@ pub fn start_app<I, T>(args: I) -> i32
         eprintln!("unable to configure the logger: {}", e);
     }
 
-    return match app_matches.subcommand() {
+    match app_matches.subcommand() {
         Some(("library", m)) => match m.subcommand() {
-            Some(("generate", m)) => {
-                return match execute_library_generate(m) {
-                    Ok(_) => 0,
-                    Err(e) => {
-                        log::error!("the command failed: {}", e);
-                        2
-                    }
-                };
-            }
-            Some(("schema", m)) => {
-                return match execute_library_schema(m) {
-                    Ok(_) => 0,
-                    Err(e) => {
-                        log::error!("the command failed: {}", e);
-                        2
-                    }
-                };
-            }
+            Some(("generate", m)) => match execute_library_generate(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            },
+            Some(("schema", m)) => match execute_library_schema(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            },
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
                 app.write_help(&mut io::stderr())
@@ -72,24 +68,20 @@ pub fn start_app<I, T>(args: I) -> i32
             }
         },
         Some(("workspace", m)) => match m.subcommand() {
-            Some(("init", m)) => {
-                return match execute_workspace_init(m) {
-                    Ok(_) => 0,
-                    Err(e) => {
-                        log::error!("the command failed: {}", e);
-                        2
-                    }
-                };
-            }
-            Some(("install", m)) => {
-                return match execute_workspace_install(m) {
-                    Ok(_) => 0,
-                    Err(e) => {
-                        log::error!("the command failed: {}", e);
-                        2
-                    }
-                };
-            }
+            Some(("init", m)) => match execute_workspace_init(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            },
+            Some(("install", m)) => match execute_workspace_install(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            },
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
                 app.write_help(&mut io::stderr())
@@ -99,15 +91,13 @@ pub fn start_app<I, T>(args: I) -> i32
             }
         },
         Some(("diagram", m)) => match m.subcommand() {
-            Some(("generate", m)) => {
-                return match execute_diagram_generate(m) {
-                    Ok(_) => 0,
-                    Err(e) => {
-                        log::error!("the command failed: {}", e);
-                        2
-                    }
-                };
-            }
+            Some(("generate", m)) => match execute_diagram_generate(m) {
+                Ok(_) => 0,
+                Err(e) => {
+                    log::error!("the command failed: {}", e);
+                    2
+                }
+            },
             _ => {
                 log::warn!("the SUBCOMMAND is missing");
                 app.write_help(&mut io::stderr())
@@ -116,15 +106,13 @@ pub fn start_app<I, T>(args: I) -> i32
                 2
             }
         },
-        Some(("completion", m)) => {
-            return match execute_completion(m) {
-                Ok(_) => 0,
-                Err(e) => {
-                    log::error!("the command failed: {}", e);
-                    2
-                }
-            };
-        }
+        Some(("completion", m)) => match execute_completion(m) {
+            Ok(_) => 0,
+            Err(e) => {
+                log::error!("the command failed: {}", e);
+                2
+            }
+        },
         _ => {
             log::warn!("the SUBCOMMAND is missing");
             app.write_help(&mut io::stderr())
@@ -132,5 +120,5 @@ pub fn start_app<I, T>(args: I) -> i32
             eprintln!();
             2
         }
-    };
+    }
 }

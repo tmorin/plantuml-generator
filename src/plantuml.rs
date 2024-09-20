@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -18,7 +19,7 @@ pub struct PlantUML {
 }
 
 impl PlantUML {
-    pub fn render(&self, source_path: &Path) -> Result<()> {
+    pub fn render(&self, source_path: &Path, p_args_as_strings: Option<Vec<String>>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
             None => {
@@ -30,18 +31,23 @@ impl PlantUML {
             Some(s) => s,
         };
         // generate the file
+        let p_args = p_args_as_strings.map(|strings| {
+            strings
+                .iter()
+                .map(OsString::from)
+                .collect::<Vec<OsString>>()
+        });
         let output = Command::new(&self.java_binary)
             .arg("-jar")
             .arg(&self.plantuml_jar)
             .arg(source)
+            .args(p_args.unwrap_or_default())
             .output()
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
-        io::stdout().write_all(&output.stdout).unwrap();
-        // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stdout"), Box::from(e)))?;
-        io::stderr().write_all(&output.stderr).unwrap();
+        io::stdout().write_all(&output.stdout)?;
+        io::stderr().write_all(&output.stderr)?;
         // check the generation
         if !output.status.success() {
-            // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stderr"), Box::from(e)))?;
             return Err(anyhow::Error::msg(format!("failed to render {}", source)));
         }
 
