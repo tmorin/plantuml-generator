@@ -105,7 +105,7 @@ impl Task for PackageExampleTask {
 
         // render the snippet
         let source_path = Path::new(&self.full_source_path);
-        plantuml.render(source_path)?;
+        plantuml.render(source_path, None)?;
 
         Ok(())
     }
