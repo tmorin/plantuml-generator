@@ -1,0 +1,11 @@
+@startuml diagram_c_0
+object ObjectA
+object ObjectB
+ObjectA -> ObjectB
+@enduml
+
+@startuml diagram_c_1
+object ObjectC
+object ObjectD
+ObjectC -> ObjectD
+@enduml

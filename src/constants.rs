@@ -88,6 +88,12 @@ pub fn get_default_source_directory() -> String {
     SOURCE_DIRECTORY.to_string()
 }
 
+pub const SOURCE_PATTERNS: &str = "**/*.puml,**/*.pu,**/*.pml,**/*.plantuml";
+
+pub fn get_default_source_patterns() -> String {
+    SOURCE_PATTERNS.to_string()
+}
+
 pub const OUTPUT_DIRECTORY: &str = "distribution";
 
 pub fn get_default_output_directory() -> String {

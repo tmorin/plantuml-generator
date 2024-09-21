@@ -52,6 +52,7 @@ mod test {
     use crate::cli::build_cli;
     use crate::constants::WORKSPACE_MANIFEST;
     use crate::utils::delete_file_or_directory;
+    use std::fs::OpenOptions;
 
     use super::*;
 
@@ -89,9 +90,7 @@ mod test {
         delete_file_or_directory(source_path).unwrap();
         create_parent_directory(&manifest_path).unwrap();
 
-        std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
+        OpenOptions::create(OpenOptions::new().write(true), true)
             .open(manifest_path)
             .expect("Couldn't open file");
 

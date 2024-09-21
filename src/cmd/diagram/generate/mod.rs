@@ -1,12 +1,12 @@
 use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use anyhow::Result;
 use chrono::prelude::*;
 use clap::ArgMatches;
-use glob::{glob, Paths};
+use glob::glob;
 
 use crate::cmd::diagram::generate::config::Config;
 use crate::plantuml::create_plantuml;
@@ -73,14 +73,25 @@ fn save_last_generation_timestamp(last_gen_path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn get_puml_paths(config: &Config) -> Result<Paths> {
-    let glob_pattern = format!("{}/**/*.puml", config.source_directory);
-    glob(&glob_pattern).map_err(|e| {
-        anyhow::Error::new(e).context(format!(
-            "unable to parse the glob pattern ({})",
-            &glob_pattern
-        ))
-    })
+fn get_puml_paths(config: &Config) -> Vec<PathBuf> {
+    config
+        .source_patterns
+        .split(",")
+        .map(str::trim)
+        .map(|pattern| format!("{}/{}", config.source_directory, pattern))
+        .flat_map(|glob_pattern| {
+            glob(&glob_pattern)
+                .map(|paths| paths.flatten())
+                .map_err(|e| {
+                    anyhow::Error::new(e).context(format!(
+                        "unable to parse the glob pattern ({})",
+                        &glob_pattern
+                    ))
+                })
+                .map(|paths| paths.collect::<Vec<PathBuf>>())
+                .unwrap()
+        })
+        .collect::<Vec<PathBuf>>()
 }
 
 pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
@@ -107,9 +118,9 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     plantuml.download()?;
     // get latest generation
     let last_generation_timestamp = get_last_generation_timestamp(last_gen_path)?;
-    // discover .puml files
-    let puml_paths = get_puml_paths(config)?.flatten();
-    // generate .puml file
+    // discover source files
+    let puml_paths = get_puml_paths(config);
+    // generate source files
     for source_path in puml_paths {
         let last_modification_timestamp = get_last_modified(&source_path)?;
         log::debug!(
@@ -142,7 +153,11 @@ mod test {
     #[test]
     fn test_diagram_generation() {
         delete_file_or_directory("target/tests/cmd/diagram/generate".as_ref()).unwrap();
-        for source_file in &["diagrams_a.puml", "folder_a/diagrams_b.puml"] {
+        for source_file in &[
+            "diagrams_a.puml",
+            "diagrams_c.plantuml",
+            "folder_a/diagrams_b.puml",
+        ] {
             let from_prefix = "test/source";
             let from_path = Path::new(from_prefix).join(source_file);
             let to_prefix = "target/tests/cmd/diagram/generate/source";
@@ -180,6 +195,12 @@ mod test {
         let path_diagram_b_1_png =
             Path::new("target/tests/cmd/diagram/generate/source/folder_a/diagram_b_1.png");
         assert!(path_diagram_b_1_png.exists());
+        let path_diagram_b_0_png =
+            Path::new("target/tests/cmd/diagram/generate/source/diagram_c_0.png");
+        assert!(path_diagram_b_0_png.exists());
+        let path_diagram_b_1_png =
+            Path::new("target/tests/cmd/diagram/generate/source/diagram_c_1.png");
+        assert!(path_diagram_b_1_png.exists());
         // get path_diagram_a_0_src modified
         let path_diagram_a_0_png_modified_before =
             path_diagram_a_0_png.metadata().unwrap().modified().unwrap();
@@ -187,7 +208,6 @@ mod test {
         let path_diagram_a_0_src =
             Path::new("target/tests/cmd/diagram/generate/source/diagrams_a.puml");
         let mut file_diagram_a_0_src = OpenOptions::new()
-            .write(true)
             .append(true)
             .open(path_diagram_a_0_src)
             .unwrap();

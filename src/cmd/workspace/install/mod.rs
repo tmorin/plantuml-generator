@@ -128,7 +128,7 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
 
 #[cfg(test)]
 mod test {
-    use std::fs::copy;
+    use std::fs::{copy, OpenOptions};
 
     use crate::cli::build_cli;
     use crate::constants::WORKSPACE_MANIFEST;
@@ -145,9 +145,7 @@ mod test {
         create_parent_directory(manifest_path).unwrap();
         copy(Path::new("test/workspace-simple.yaml"), manifest_path).unwrap();
 
-        std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
+        OpenOptions::create(OpenOptions::new().write(true), true)
             .open(manifest_path)
             .expect("Couldn't open file");
 
