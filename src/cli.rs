@@ -183,6 +183,7 @@ pub fn build_cli() -> Command {
                     .long("args")
                     .action(ArgAction::Set)
                     .num_args(1..)
+                    .value_delimiter(' ')
                     .help("Extra arguments for PlantUML."))
                 .arg(&arg_cache_directory)
                 .arg(&arg_plantuml_version)

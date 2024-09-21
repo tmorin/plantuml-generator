@@ -45,11 +45,9 @@ impl PlantUML {
             .output()
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
         io::stdout().write_all(&output.stdout)?;
-        // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stdout"), Box::from(e)))?;
         io::stderr().write_all(&output.stderr)?;
         // check the generation
         if !output.status.success() {
-            // .map_err(|e| anyhow::Error::new(e).context(format!("unable to write stderr"), Box::from(e)))?;
             return Err(anyhow::Error::msg(format!("failed to render {}", source)));
         }
 
