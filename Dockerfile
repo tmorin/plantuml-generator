@@ -1,4 +1,4 @@
-FROM rust:1 AS builder
+FROM rust:1.81 AS builder
 RUN apt-get update -y && \
     apt-get install -y pkg-config libssl-dev && \
     apt-get clean
@@ -17,7 +17,7 @@ LABEL org.label-schema.schema-version="1.0" \
 RUN apt-get update -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:inkscape.dev/stable -y && \
-    apt-get install -y openjdk-17-jre graphviz inkscape && \
+    apt-get install -y graphviz inkscape openjdk-17-jre && \
     apt-get purge -y software-properties-common && \
     apt-get autoremove -y --purge && \
     useradd --create-home guser && \
