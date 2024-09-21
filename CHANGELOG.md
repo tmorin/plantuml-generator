@@ -1,6 +1,28 @@
 # Changelog
 
-## [1.13.0](https://github.com/tmorin/plantuml-generator/compare/v1.12.1...v1.13.0) (2023-04-25)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.13.0...0d3b869480722c4688132484b376202cf0df96d0) (2024-09-21)
+
+### Features
+
+* add the discovery patterns for PlantUML files as a configuration entry
+([dbdbc6a](https://github.com/tmorin/plantuml-generator/commit/dbdbc6a69b61df1f4f371ee51a5e496c506b39f6)),
+closes [#15](https://github.com/tmorin/plantuml-generator/issues/15)
+* add an option to append additional PlantUML arguments when generating
+diagrams
+([9cc0a2f](https://github.com/tmorin/plantuml-generator/commit/9cc0a2f4597e7da118b71561b41d0a47987e0a74)),
+closes [#11](https://github.com/tmorin/plantuml-generator/issues/11)
+* upgrade PlantUML to 1.2024.7 switching to the GitHub repository
+([65f49b8](https://github.com/tmorin/plantuml-generator/commit/65f49b8e38e31df3422bf9d1a1a65928b214d533)),
+closes [#12](https://github.com/tmorin/plantuml-generator/issues/12)
+
+### Fixes
+
+* deactivate some clippy issues
+([d55c14a](https://github.com/tmorin/plantuml-generator/commit/d55c14a3731e2f55f9cbfc4f1a10c49af3c68a75))
+* complete clippy issues
+([dba3ce0](https://github.com/tmorin/plantuml-generator/commit/dba3ce0fec1f73211309ed292cd7245815222b51))
+
+## [v1.13.0](https://github.com/tmorin/plantuml-generator/compare/v1.12.1...v1.13.0) (2023-04-25)
 
 ### Features
 
@@ -121,7 +143,8 @@ a file
 ### Features
 
 * added optional description to Icon Items (#1)
-([bc9f6d9](https://github.com/tmorin/plantuml-generator/commit/bc9f6d9ebc425fa800fc75a40ec3aa23ec708ddf))
+([bc9f6d9](https://github.com/tmorin/plantuml-generator/commit/bc9f6d9ebc425fa800fc75a40ec3aa23ec708ddf)),
+closes [#1](https://github.com/tmorin/plantuml-generator/issues/1)
 
 ## [v1.3.0](https://github.com/tmorin/plantuml-generator/compare/v1.2.0...v1.3.0) (2022-06-07)
 
