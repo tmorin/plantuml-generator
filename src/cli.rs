@@ -1,3 +1,4 @@
+use crate::constants::SOURCE_PATTERNS;
 use clap::builder::{PossibleValuesParser, ValueParser};
 use clap::{
     crate_authors, crate_description, crate_version, value_parser, Arg, ArgAction, Command,
@@ -9,6 +10,15 @@ pub fn build_cli() -> Command {
         .short('s')
         .long("source")
         .default_value(".")
+        .action(ArgAction::Set)
+        .num_args(1)
+        .env("PLANTUML_GENERATOR_SOURCE_DIRECTORY")
+        .help("The directory where the .puml will be discovered.");
+
+    let arg_source_patterns: Arg = Arg::new("source_patterns")
+        .short('p')
+        .long("patterns")
+        .default_value(SOURCE_PATTERNS)
         .action(ArgAction::Set)
         .num_args(1)
         .env("PLANTUML_GENERATOR_SOURCE_DIRECTORY")
@@ -173,6 +183,7 @@ pub fn build_cli() -> Command {
             Command::new("generate")
                 .about("Generate discovered .puml files which has been mutated since the last generation.")
                 .arg(&arg_source_directory)
+                .arg(&arg_source_patterns)
                 .arg(Arg::new("do_force_generation")
                     .short('f')
                     .long("force")

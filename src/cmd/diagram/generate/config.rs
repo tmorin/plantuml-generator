@@ -3,17 +3,20 @@ use std::path::Path;
 use clap::ArgMatches;
 use serde::{Deserialize, Serialize};
 
-use crate::constants::get_default_cache_directory;
 use crate::constants::get_default_java_binary;
 use crate::constants::get_default_plantuml_jar;
 use crate::constants::get_default_plantuml_version;
 use crate::constants::get_default_source_directory;
+use crate::constants::{get_default_cache_directory, get_default_source_patterns};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// The path to the output directory.
     #[serde(default = "get_default_source_directory")]
     pub source_directory: String,
+    /// The patterns to discover the source files separated by comas.
+    #[serde(default = "get_default_source_patterns")]
+    pub source_patterns: String,
     /// The path to the cache directory.
     #[serde(default = "get_default_cache_directory")]
     pub cache_directory: String,
@@ -34,6 +37,11 @@ impl Config {
             .get_one::<String>("source_directory")
             .map(|v| v.to_string())
             .unwrap_or_else(|| self.source_directory.clone());
+
+        let source_patterns = args
+            .get_one::<String>("source_patterns")
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| self.source_patterns.clone());
 
         let cache_directory = args
             .get_one::<String>("cache_directory")
@@ -62,6 +70,7 @@ impl Config {
 
         Config {
             source_directory,
+            source_patterns,
             cache_directory,
             plantuml_version,
             plantuml_jar,
@@ -78,19 +87,20 @@ impl Default for Config {
         Config {
             source_directory: std::env::var("PLANTUML_GENERATOR_SOURCE_DIRECTORY")
                 .unwrap_or_else(|_| get_default_source_directory()),
+            source_patterns: std::env::var("PLANTUML_GENERATOR_SOURCE_PATTERNS")
+                .unwrap_or_else(|_| get_default_source_patterns()),
             cache_directory: std::env::var("PLANTUML_GENERATOR_CACHE_DIRECTORY")
                 .unwrap_or_else(|_| get_default_cache_directory()),
             plantuml_version: std::env::var("PLANTUML_GENERATOR_PLANTUML_VERSION")
                 .unwrap_or_else(|_| get_default_plantuml_version()),
             plantuml_jar: std::env::var("PLANTUML_GENERATOR_PLANTUML_JAR")
                 .unwrap_or_else(|_| get_default_plantuml_jar()),
-            java_binary: match std::env::var("PLANTUML_GENERATOR_JAVA_BINARY") {
-                Ok(v) => v,
-                Err(_) => match std::env::var("JAVA_HOME") {
+            java_binary: std::env::var("PLANTUML_GENERATOR_JAVA_BINARY").unwrap_or_else(|_| {
+                match std::env::var("JAVA_HOME") {
                     Ok(v) => format!("{}/bin/java", v),
                     Err(_) => get_default_java_binary(),
-                },
-            },
+                }
+            }),
         }
     }
 }
