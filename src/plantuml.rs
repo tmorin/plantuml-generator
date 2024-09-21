@@ -19,7 +19,7 @@ pub struct PlantUML {
 }
 
 impl PlantUML {
-    pub fn render(&self, source_path: &Path, p_args_as_string: Option<Vec<String>>) -> Result<()> {
+    pub fn render(&self, source_path: &Path, p_args_as_strings: Option<Vec<String>>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
             None => {
@@ -31,8 +31,7 @@ impl PlantUML {
             Some(s) => s,
         };
         // generate the file
-
-        let p_args = p_args_as_string.map(|strings| {
+        let p_args = p_args_as_strings.map(|strings| {
             strings
                 .iter()
                 .map(OsString::from)
