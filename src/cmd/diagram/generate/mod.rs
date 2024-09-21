@@ -158,7 +158,7 @@ mod test {
             "-s=target/tests/cmd/diagram/generate/source",
             "-C=target/tests/cmd/diagram/generate/cache",
             "-P=test/plantuml-1.2022.4.jar",
-            "-a=-png",
+            "-a=-png -v",
         ]);
         execute_diagram_generate(
             arg_matches
