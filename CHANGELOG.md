@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.14.0](https://github.com/tmorin/plantuml-generator/compare/v1.13.0...0d3b869480722c4688132484b376202cf0df96d0) (2024-09-21)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.14.0...15a38728e5e8785f725314056f983155c4a1f4ad) (2024-09-30)
+
+### Fixes
+
+* **library:** icons are not loaded when using remote loader
+([15a3872](https://github.com/tmorin/plantuml-generator/commit/15a38728e5e8785f725314056f983155c4a1f4ad))
+
+## [v1.14.0](https://github.com/tmorin/plantuml-generator/compare/v1.13.0...v1.14.0) (2024-09-21)
 
 ### Features
 
