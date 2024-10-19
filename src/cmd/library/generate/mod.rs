@@ -63,7 +63,7 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
         .map_err(|e| anyhow::Error::new(e).context(format!("unable to read {}", manifest_file)))?;
 
     // parse the manifest
-    let library: &Library = &serde_yaml::from_str(yaml)
+    let library: &Library = &serde_yaml_ok::from_str(yaml)
         .map_err(|e| anyhow::Error::new(e).context(format!("unable to parse {}", manifest_file)))?;
 
     // create side utilities
@@ -131,7 +131,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-            .unwrap();
+        .unwrap();
         assert!(Path::new("target/tests/cmd/library/generate/urns/distribution/c4model").exists());
         assert!(
             !Path::new("target/tests/cmd/library/generate/urns/distribution/eventstorming")
@@ -163,7 +163,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-            .unwrap();
+        .unwrap();
         assert!(!path_in_cache.exists());
     }
 
@@ -192,7 +192,7 @@ mod test {
                 .subcommand_matches("generate")
                 .unwrap(),
         )
-            .unwrap();
+        .unwrap();
         assert!(!path_in_output.exists());
         assert!(path_in_output.parent().unwrap().exists());
     }

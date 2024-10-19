@@ -36,7 +36,7 @@ mod tests {
             name: example
             template: example_template
         "#;
-        let example: Example = serde_yaml::from_str(yaml).unwrap();
+        let example: Example = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(example.name, "example");
         assert_eq!(example.template, "example_template");
     }

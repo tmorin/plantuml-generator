@@ -38,7 +38,7 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
     })?;
 
     // parse the manifest
-    let manifest: &Workspace = &serde_yaml::from_str(yaml).map_err(|e| {
+    let manifest: &Workspace = &serde_yaml_ok::from_str(yaml).map_err(|e| {
         anyhow::Error::new(e).context(format!(
             "unable to parse {}",
             manifest_path.to_str().unwrap()

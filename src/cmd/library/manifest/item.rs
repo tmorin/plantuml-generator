@@ -69,7 +69,7 @@ mod tests {
             templates:
                 snippet: item_templates_snippet
         "#;
-        let item: Item = serde_yaml::from_str(yaml).unwrap();
+        let item: Item = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(item.urn.value, "item_urn");
         assert_eq!(item.family.unwrap(), "item_family");
         assert!(item.elements.is_empty());

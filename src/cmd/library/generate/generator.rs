@@ -157,9 +157,9 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-            .unwrap();
+        .unwrap();
         let yaml = &read_to_string(Path::new("test/library-full.yaml")).unwrap();
-        let library: &Library = &serde_yaml::from_str(yaml).unwrap();
+        let library: &Library = &serde_yaml_ok::from_str(yaml).unwrap();
         let generator = &Generator::create(config, library, &[]).unwrap();
         generator
             .generate(&[CleanupScope::All], tera, plantuml)
@@ -188,9 +188,9 @@ mod tests {
             &config.plantuml_jar,
             &config.plantuml_version,
         )
-            .unwrap();
+        .unwrap();
         let yaml = &read_to_string(Path::new("test/library-icon_reference.yaml")).unwrap();
-        let library: &Library = &serde_yaml::from_str(yaml).unwrap();
+        let library: &Library = &serde_yaml_ok::from_str(yaml).unwrap();
         let generator = &Generator::create(config, library, &[]).unwrap();
         generator
             .generate(&[CleanupScope::All], tera, plantuml)

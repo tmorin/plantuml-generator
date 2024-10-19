@@ -120,7 +120,7 @@ mod tests {
                 type: Icon
                 stereotype_name: CustomStereotype
         "#;
-        let element: Element = serde_yaml::from_str(yaml).unwrap();
+        let element: Element = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(element.shape.get_name(), "Icon");
         assert_eq!(
             element.shape.get_element_name(&Urn::from("p/m/f/Test")),
@@ -141,7 +141,7 @@ mod tests {
             shape:
                 type: IconCard
         "#;
-        let element: Element = serde_yaml::from_str(yaml).unwrap();
+        let element: Element = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(element.shape.get_name(), "IconCard");
         assert_eq!(
             element.shape.get_element_name(&Urn::from("p/m/f/Test")),
@@ -165,7 +165,7 @@ mod tests {
             shape:
                 type: IconGroup
         "#;
-        let element: Element = serde_yaml::from_str(yaml).unwrap();
+        let element: Element = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(element.shape.get_name(), "IconGroup");
         assert_eq!(
             element.shape.get_element_name(&Urn::from("p/m/f/Test")),
@@ -189,7 +189,7 @@ mod tests {
             shape:
                 type: Group
         "#;
-        let element: Element = serde_yaml::from_str(yaml).unwrap();
+        let element: Element = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(element.shape.get_name(), "Group");
         assert_eq!(
             element.shape.get_element_name(&Urn::from("p/m/f/Test")),
@@ -212,7 +212,7 @@ mod tests {
                 properties:
                     keyA: valueA
         "#;
-        let element: Element = serde_yaml::from_str(yaml).unwrap();
+        let element: Element = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(element.shape.get_name(), "Custom");
         assert_eq!(
             element.shape.get_element_name(&Urn::from("p/m/f/Test")),

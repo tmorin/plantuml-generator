@@ -9,7 +9,6 @@ pub mod customization {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
-    use crate::constants::{get_default_font_color, SPRITE_LG, SPRITE_MD, SPRITE_SM, SPRITE_XS};
     use crate::constants::get_default_font_color_light;
     use crate::constants::get_default_font_size_lg;
     use crate::constants::get_default_font_size_md;
@@ -19,6 +18,7 @@ pub mod customization {
     use crate::constants::get_default_icon_height;
     use crate::constants::get_default_msg_width_max;
     use crate::constants::get_default_text_width_max;
+    use crate::constants::{get_default_font_color, SPRITE_LG, SPRITE_MD, SPRITE_SM, SPRITE_XS};
 
     #[derive(Serialize, Deserialize, Debug, JsonSchema)]
     pub struct Customization {
@@ -148,7 +148,7 @@ mod tests {
             customization:
                 icon_format: svg
         "#;
-        let library: Library = serde_yaml::from_str(yaml).unwrap();
+        let library: Library = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert!(library.packages.is_empty());
         assert_eq!(library.templates.bootstrap, "library_bootstrap.tera");
@@ -168,7 +168,7 @@ mod tests {
             templates:
                 bootstrap: dummy_path
         "#;
-        let library: Library = serde_yaml::from_str(yaml).unwrap();
+        let library: Library = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert!(library.packages.is_empty());
         assert_eq!(library.templates.bootstrap, "dummy_path");
@@ -187,7 +187,7 @@ mod tests {
                 - urn: testlib/packagetest0
                 - urn: testlib/packagetest1
         "#;
-        let library: Library = serde_yaml::from_str(yaml).unwrap();
+        let library: Library = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(library.name, "testlib");
         assert_eq!(library.packages.len(), 2);
     }

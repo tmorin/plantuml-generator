@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{File, read_to_string};
+use std::fs::{read_to_string, File};
 use std::path::Path;
 
 use anyhow::Result;
@@ -11,7 +11,7 @@ use crate::cmd::library::generate::config::Config;
 use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::cmd::library::manifest::element::Shape;
 use crate::cmd::library::manifest::item::Item;
-use crate::constants::{SPRITE_LG, SPRITES};
+use crate::constants::{SPRITES, SPRITE_LG};
 use crate::utils::{create_parent_directory, delete_file};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -171,7 +171,7 @@ impl ItemSourceTask {
         })
     }
     fn get_relative_source_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.puml", self.item_urn, ).as_str()))
+        Box::from(Path::new(format!("{}.puml", self.item_urn,).as_str()))
     }
     fn get_full_source_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -298,7 +298,7 @@ mod test {
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-            .unwrap();
+        .unwrap();
         assert!(content.contains("LX_6N8UPcPbT0G"));
         assert!(content.contains(
             r"IconElement($id, 'IconElement', 'Package/Module/Family/BuiltInItem', $name, $tech, $desc)"
@@ -314,13 +314,13 @@ mod test {
 
     #[test]
     fn test_custom_elements() {
-        let properties: HashMap<String, Value> = serde_yaml::from_str(
+        let properties: HashMap<String, Value> = serde_yaml_ok::from_str(
             r#"
             keyA: valueA
             keyB: [ itemA, itemB ]
         "#,
         )
-            .unwrap();
+        .unwrap();
         let generator = ItemSourceTask {
             item_urn: "Package/Module/Family/CustomItem".to_string(),
             cached_sprite_paths: vec![],
@@ -338,7 +338,7 @@ mod test {
             "{}/{}.puml",
             generator.output_directory, generator.item_urn,
         ))
-            .unwrap();
+        .unwrap();
         assert!(content.contains("' valueA"));
         assert!(content.contains("' itemA,itemB"));
         assert!(content.contains("!procedure CustomItem($id)"));

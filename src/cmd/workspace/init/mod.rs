@@ -43,7 +43,7 @@ pub fn execute_workspace_init(arg_matches: &ArgMatches) -> Result<()> {
         .truncate(true)
         .open(manifest_path)
         .expect("Couldn't open file");
-    serde_yaml::to_writer(f, &manifest).unwrap();
+    serde_yaml_ok::to_writer(f, &manifest).unwrap();
     Ok(())
 }
 

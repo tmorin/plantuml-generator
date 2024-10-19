@@ -82,7 +82,7 @@ mod tests {
                 bootstrap: templates_bootstrap_path
                 embedded: templates_embedded_path
         "#;
-        let package: Package = serde_yaml::from_str(yaml).unwrap();
+        let package: Package = serde_yaml_ok::from_str(yaml).unwrap();
         assert_eq!(package.urn.value, "package/urn");
         assert!(package.modules.is_empty());
         assert!(package.examples.is_empty());
@@ -99,7 +99,7 @@ mod tests {
             rendering:
                 skip_embedded: true
         "#;
-        let package: Package = serde_yaml::from_str(yaml).unwrap();
+        let package: Package = serde_yaml_ok::from_str(yaml).unwrap();
         assert!(package.rendering.skip_embedded);
     }
 }

@@ -26,7 +26,7 @@ anyhow = { version = "1", features = [] }
 chrono = { version = "0.4" }
 clap_complete = { version = "4" }
 clap = { version = "4", features = ["env", "cargo"] }
-zip-extract = "0.1"
+zip-extract = "0.2"
 env_logger = { version = "0.11", default-features = false }
 glob = { version = "0.3" }
 heck = { version = "0.5" }
@@ -37,7 +37,7 @@ raster = { version = "0.2" }
 reqwest = { version = "0.12", features = ["blocking"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
-serde_yaml = { version = "0.9" }
+serde_yaml_ok = { version = "0.9" }
 schemars = { version = "0.8", features = ["impl_json_schema"] }
 tera = { version = "1" }
 
