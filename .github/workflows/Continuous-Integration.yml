@@ -94,10 +94,11 @@ jobs:
         run: |
           tar -C target/${{ matrix.target }}/release/ -czf ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz plantuml-generator
       - name: "Upload the binary"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator
           path: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz
+          overwrite: true
 
   DebianPackage:
     name: Debian Package
@@ -125,10 +126,11 @@ jobs:
         run: |
           cargo deb --target=${{ matrix.target }} --profile release  -- --features vendored-openssl
       - name: "Upload the deb package"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: debian_${{ matrix.architecture }}_plantuml-generator
           path: target/${{ matrix.target }}/debian/*.deb
+          overwrite: true
 
   DockerImage:
     name: Docker Image
