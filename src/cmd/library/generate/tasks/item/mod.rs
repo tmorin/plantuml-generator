@@ -32,7 +32,7 @@ pub fn parse_item(
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
-    if let Some(ref icon) = &_item.icon {
+    if let Some(icon) = &_item.icon {
         match icon {
             Icon::Source { source } => {
                 // create the task to generate the icon
