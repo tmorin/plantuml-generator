@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-use crate::utils::create_parent_directory;
+use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
 
 #[derive(Debug)]
@@ -30,13 +30,28 @@ impl PlantUML {
             }
             Some(s) => s,
         };
+        
+        // Build the final arguments list
+        let mut final_args = p_args_as_strings.unwrap_or_default();
+        
+        // Check if we should automatically add smetana layout
+        if should_add_smetana_layout(&final_args) {
+            log::info!("GraphViz dot not available or GRAPHVIZ_DOT not set, using -Playout=smetana");
+            final_args.insert(0, "-Playout=smetana".to_string());
+        }
+        
         // generate the file
-        let p_args = p_args_as_strings.map(|strings| {
-            strings
-                .iter()
-                .map(OsString::from)
-                .collect::<Vec<OsString>>()
-        });
+        let p_args = if final_args.is_empty() {
+            None
+        } else {
+            Some(
+                final_args
+                    .iter()
+                    .map(OsString::from)
+                    .collect::<Vec<OsString>>(),
+            )
+        };
+        
         let output = Command::new(&self.java_binary)
             .arg("-jar")
             .arg(&self.plantuml_jar)

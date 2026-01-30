@@ -1,5 +1,6 @@
 use std::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file};
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::Result;
 
@@ -68,4 +69,56 @@ pub fn delete_file_or_directory(path: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Check if the `dot` binary is available on the system.
+pub fn is_dot_available() -> bool {
+    Command::new("dot")
+        .arg("-V")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+/// Check if the GRAPHVIZ_DOT environment variable is set.
+pub fn is_graphviz_dot_set() -> bool {
+    std::env::var("GRAPHVIZ_DOT").is_ok()
+}
+
+/// Determine if we should automatically add the smetana layout argument.
+/// Returns true if:
+/// - BOTH dot is not available AND GRAPHVIZ_DOT is not set
+/// - AND the user hasn't already specified a layout argument
+pub fn should_add_smetana_layout(user_args: &[String]) -> bool {
+    // Check if either dot is available OR GRAPHVIZ_DOT is set
+    // If either one is present, we assume GraphViz is configured
+    let dot_available = is_dot_available();
+    let graphviz_dot_set = is_graphviz_dot_set();
+    let graphviz_configured = dot_available || graphviz_dot_set;
+    
+    // Check if user already specified a layout argument
+    let has_layout_arg = user_args.iter().any(|arg| arg.starts_with("-Playout="));
+    
+    // Add smetana only if GraphViz is not configured and user hasn't specified a layout
+    !graphviz_configured && !has_layout_arg
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_should_add_smetana_layout_with_existing_layout() {
+        let args = vec!["-png".to_string(), "-Playout=elk".to_string()];
+        // Should not add smetana if user already specified a layout
+        assert!(!should_add_smetana_layout(&args));
+    }
+
+    #[test]
+    fn test_should_add_smetana_layout_without_existing_layout() {
+        let args = vec!["-png".to_string()];
+        // Result depends on whether dot is available and GRAPHVIZ_DOT is set
+        // We can't predict this in a test environment, so just verify it runs
+        let _ = should_add_smetana_layout(&args);
+    }
 }
