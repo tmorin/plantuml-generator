@@ -41,6 +41,9 @@ serde_yaml_ok = { version = "0.9" }
 schemars = { version = "0.8", features = ["impl_json_schema"] }
 tera = { version = "1" }
 
+[dev-dependencies]
+tempfile = "3"
+
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different
 # architecture, enable this feature to compile OpenSSL as part of the build.
