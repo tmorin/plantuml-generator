@@ -2,6 +2,7 @@ use std::fs::{read_to_string, File};
 use std::path::Path;
 
 use clap::ArgMatches;
+use zip::ZipArchive;
 
 use crate::cmd::workspace::install::config::Config;
 use crate::cmd::workspace::manifest::artifact::Artifact;
@@ -104,12 +105,41 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
                             ))
                         })
                         .and_then(|archive_file| {
-                            zip_extract::extract(archive_file, artifact_path, false).map_err(|e| {
+                            let mut archive = ZipArchive::new(archive_file).map_err(|e| {
                                 anyhow::Error::new(e).context(format!(
-                                    "unable to unzip {}",
+                                    "unable to open zip archive from {}",
                                     artifact_path.to_str().unwrap()
                                 ))
-                            })
+                            })?;
+                            for i in 0..archive.len() {
+                                let mut file = archive.by_index(i).map_err(|e| {
+                                    anyhow::Error::new(e).context(format!(
+                                        "unable to read zip entry {}",
+                                        i
+                                    ))
+                                })?;
+                                let outpath = artifact_path.join(file.enclosed_name().unwrap_or(Path::new("")));
+                                if file.is_dir() {
+                                    create_directory(&outpath)?;
+                                } else {
+                                    if let Some(parent) = outpath.parent() {
+                                        create_directory(parent)?;
+                                    }
+                                    let mut outfile = File::create(&outpath).map_err(|e| {
+                                        anyhow::Error::new(e).context(format!(
+                                            "unable to create file {:?}",
+                                            outpath
+                                        ))
+                                    })?;
+                                    std::io::copy(&mut file, &mut outfile).map_err(|e| {
+                                        anyhow::Error::new(e).context(format!(
+                                            "unable to copy file {:?}",
+                                            outpath
+                                        ))
+                                    })?;
+                                }
+                            }
+                            Ok(())
                         }) {
                         Ok(_) => {
                             log::info!("unzip completed for {:?}", archive_path)
