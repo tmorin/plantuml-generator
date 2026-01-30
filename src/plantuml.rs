@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-use crate::utils::create_parent_directory;
+use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
 
 #[derive(Debug)]
@@ -19,6 +19,19 @@ pub struct PlantUML {
 }
 
 impl PlantUML {
+    /// Prepare the final arguments list, adding smetana layout if needed
+    fn prepare_args(&self, p_args_as_strings: Option<Vec<String>>) -> Vec<String> {
+        let mut final_args = p_args_as_strings.unwrap_or_default();
+        
+        // Check if we should automatically add smetana layout
+        if should_add_smetana_layout(&final_args) {
+            log::info!("GraphViz dot not available and GRAPHVIZ_DOT not set, using -Playout=smetana");
+            final_args.insert(0, "-Playout=smetana".to_string());
+        }
+        
+        final_args
+    }
+    
     pub fn render(&self, source_path: &Path, p_args_as_strings: Option<Vec<String>>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
@@ -30,13 +43,22 @@ impl PlantUML {
             }
             Some(s) => s,
         };
+        
+        // Build the final arguments list
+        let final_args = self.prepare_args(p_args_as_strings);
+        
         // generate the file
-        let p_args = p_args_as_strings.map(|strings| {
-            strings
-                .iter()
-                .map(OsString::from)
-                .collect::<Vec<OsString>>()
-        });
+        let p_args = if final_args.is_empty() {
+            None
+        } else {
+            Some(
+                final_args
+                    .iter()
+                    .map(OsString::from)
+                    .collect::<Vec<OsString>>(),
+            )
+        };
+        
         let output = Command::new(&self.java_binary)
             .arg("-jar")
             .arg(&self.plantuml_jar)
@@ -100,6 +122,7 @@ pub fn create_plantuml(
 mod tests {
     use crate::constants::{JAVA_BINARY, PLANTUML_VERSION};
     use crate::utils::delete_file;
+    use serial_test::serial;
 
     use super::*;
 
@@ -112,5 +135,77 @@ mod tests {
         };
         delete_file(Path::new(&plantuml.plantuml_jar)).unwrap_or_default();
         plantuml.download().expect("the download fails");
+    }
+
+    #[test]
+    #[serial]
+    fn test_prepare_args_adds_smetana_when_no_graphviz() {
+        // Clear GRAPHVIZ_DOT to ensure fallback behavior
+        std::env::remove_var("GRAPHVIZ_DOT");
+        
+        let plantuml = PlantUML {
+            java_binary: "java".to_string(),
+            plantuml_jar: "plantuml.jar".to_string(),
+            plantuml_version: "1.0.0".to_string(),
+        };
+        
+        // Test with no args - should add smetana if dot not available
+        let _result = plantuml.prepare_args(None);
+        // Result depends on whether dot is actually installed
+        // If dot is not available, smetana should be added
+        // We can't make strong assertions without mocking, but we can verify the logic
+        
+        // Test with args but no layout - should add smetana if dot not available
+        let args = Some(vec!["-png".to_string()]);
+        let result = plantuml.prepare_args(args);
+        // If smetana was added, it should be first
+        if !crate::utils::is_dot_available() {
+            assert!(result[0] == "-Playout=smetana", "Smetana should be added when GraphViz not available");
+            assert!(result[1] == "-png", "Original args should be preserved");
+        }
+        
+        // Clean up
+        std::env::remove_var("GRAPHVIZ_DOT");
+    }
+
+    #[test]
+    fn test_prepare_args_respects_user_layout() {
+        let plantuml = PlantUML {
+            java_binary: "java".to_string(),
+            plantuml_jar: "plantuml.jar".to_string(),
+            plantuml_version: "1.0.0".to_string(),
+        };
+        
+        // Test with user-specified layout - should NOT add smetana
+        let args = Some(vec!["-Playout=elk".to_string(), "-png".to_string()]);
+        let result = plantuml.prepare_args(args);
+        
+        // User's layout should be preserved
+        assert_eq!(result[0], "-Playout=elk");
+        assert_eq!(result[1], "-png");
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    #[serial]
+    fn test_prepare_args_with_graphviz_dot_set() {
+        // When GRAPHVIZ_DOT is set, should not add smetana
+        std::env::set_var("GRAPHVIZ_DOT", "/usr/bin/dot");
+        
+        let plantuml = PlantUML {
+            java_binary: "java".to_string(),
+            plantuml_jar: "plantuml.jar".to_string(),
+            plantuml_version: "1.0.0".to_string(),
+        };
+        
+        let args = Some(vec!["-png".to_string()]);
+        let result = plantuml.prepare_args(args);
+        
+        // Should NOT have smetana added
+        assert_eq!(result[0], "-png");
+        assert_eq!(result.len(), 1);
+        
+        // Clean up
+        std::env::remove_var("GRAPHVIZ_DOT");
     }
 }
