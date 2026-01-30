@@ -36,7 +36,7 @@ impl PlantUML {
         
         // Check if we should automatically add smetana layout
         if should_add_smetana_layout(&final_args) {
-            log::info!("GraphViz dot not available or GRAPHVIZ_DOT not set, using -Playout=smetana");
+            log::info!("GraphViz dot not available and GRAPHVIZ_DOT not set, using -Playout=smetana");
             final_args.insert(0, "-Playout=smetana".to_string());
         }
         
