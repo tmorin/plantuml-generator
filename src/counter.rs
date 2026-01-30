@@ -11,7 +11,7 @@ impl Counter {
     }
     pub fn increase(&mut self) {
         self.current += 1;
-        if self.current % 100_usize == 0 || self.current == self.total {
+        if self.current.is_multiple_of(100_usize) || self.current == self.total {
             log::info!(
                 "progress - {}% - {}/{} tasks executed",
                 self.current * 100 / self.total,

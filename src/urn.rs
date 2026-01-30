@@ -103,7 +103,7 @@ impl From<&str> for Urn {
             false => parts.join("/"),
         };
 
-        let name = value.split('/').last().unwrap_or(value);
+        let name = value.split('/').next_back().unwrap_or(value);
         Urn {
             value: String::from(value),
             name: String::from(name),
