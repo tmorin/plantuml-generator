@@ -48,7 +48,7 @@
 //!
 //! # Configuration
 //!
-//! The thread pool can be configured via the `PLANTUML_GENERATOR_THREADS` environment
+//! The thread pool can be configured via the `PLANTUML_GEN_THREADS` environment
 //! variable. Valid values are 1-256. If not set or invalid, defaults to the
 //! number of CPU cores.
 //!
