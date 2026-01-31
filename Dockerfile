@@ -1,4 +1,4 @@
-FROM rust:1.81 AS builder
+FROM rust:1.93 AS builder
 RUN apt-get update -y && \
     apt-get install -y pkg-config libssl-dev && \
     apt-get clean
