@@ -74,7 +74,13 @@ pub fn delete_file_or_directory(path: &Path) -> Result<()> {
 
 /// Check if the `dot` binary is available on the system.
 /// The result is cached after the first check to avoid repeated system calls.
+/// Can be overridden with PLANTUML_IGNORE_DOT environment variable for testing.
 pub fn is_dot_available() -> bool {
+    // Allow tests to override by setting PLANTUML_IGNORE_DOT
+    if std::env::var("PLANTUML_IGNORE_DOT").is_ok() {
+        return false;
+    }
+    
     static DOT_AVAILABLE: OnceLock<bool> = OnceLock::new();
     *DOT_AVAILABLE.get_or_init(|| {
         Command::new("dot")

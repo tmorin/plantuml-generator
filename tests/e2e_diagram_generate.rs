@@ -20,7 +20,7 @@ fn get_binary_path() -> PathBuf {
         path.pop();
     }
     
-    path.push("plantuml-generator");
+    path.push(format!("plantuml-generator{}", std::env::consts::EXE_SUFFIX));
     path
 }
 
@@ -154,11 +154,7 @@ A -> B
         .env_remove("GRAPHVIZ_DOT")
         .output()
         .expect("Failed to execute diagram generate");
-    
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let _combined = format!("{}{}", stdout, stderr);
-    
+
     // Check if smetana fallback message appears (only if dot is not available)
     // This test might pass or not depending on whether GraphViz is installed
     // So we just verify the command completes successfully
@@ -211,15 +207,19 @@ fn test_e2e_invalid_source_directory() {
         .output()
         .expect("Failed to execute diagram generate");
     
-    // The command might succeed (finding no files) or fail
-    // Either way, it should handle the case gracefully
-    // Just verify it doesn't crash
-    let _stderr = String::from_utf8_lossy(&output.stderr);
-    let _stdout = String::from_utf8_lossy(&output.stdout);
+    // The command might succeed (finding no files) or fail.
+    // Either way, it should handle the case gracefully and not panic.
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stderr, stdout);
     
-    // As long as it doesn't panic or segfault, we're good
+    // As long as it doesn't panic or segfault, we're good.
+    // A Rust panic will typically include these substrings in the output.
     assert!(
-        output.status.success() || !output.status.success(),
-        "Command should handle invalid directory gracefully"
+        !combined.contains("thread 'main' panicked")
+            && !combined.contains("panicked at")
+            && !combined.contains("stack backtrace"),
+        "Command should handle invalid directory gracefully without panicking. Output:\n{}",
+        combined
     );
 }
