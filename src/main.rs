@@ -12,6 +12,7 @@ mod constants;
 mod counter;
 mod plantuml;
 mod tera;
+mod threading;
 mod urn;
 mod utils;
 

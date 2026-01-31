@@ -22,16 +22,18 @@ impl PlantUML {
     /// Prepare the final arguments list, adding smetana layout if needed
     fn prepare_args(&self, p_args_as_strings: Option<Vec<String>>) -> Vec<String> {
         let mut final_args = p_args_as_strings.unwrap_or_default();
-        
+
         // Check if we should automatically add smetana layout
         if should_add_smetana_layout(&final_args) {
-            log::info!("GraphViz dot not available and GRAPHVIZ_DOT not set, using -Playout=smetana");
+            log::info!(
+                "GraphViz dot not available and GRAPHVIZ_DOT not set, using -Playout=smetana"
+            );
             final_args.insert(0, "-Playout=smetana".to_string());
         }
-        
+
         final_args
     }
-    
+
     pub fn render(&self, source_path: &Path, p_args_as_strings: Option<Vec<String>>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
@@ -43,10 +45,10 @@ impl PlantUML {
             }
             Some(s) => s,
         };
-        
+
         // Build the final arguments list
         let final_args = self.prepare_args(p_args_as_strings);
-        
+
         // generate the file
         let p_args = if final_args.is_empty() {
             None
@@ -58,7 +60,7 @@ impl PlantUML {
                     .collect::<Vec<OsString>>(),
             )
         };
-        
+
         let output = Command::new(&self.java_binary)
             .arg("-jar")
             .arg(&self.plantuml_jar)
@@ -144,24 +146,24 @@ mod tests {
         std::env::set_var("PLANTUML_IGNORE_DOT", "1");
         // Clear GRAPHVIZ_DOT to ensure fallback behavior
         std::env::remove_var("GRAPHVIZ_DOT");
-        
+
         let plantuml = PlantUML {
             java_binary: "java".to_string(),
             plantuml_jar: "plantuml.jar".to_string(),
             plantuml_version: "1.0.0".to_string(),
         };
-        
+
         // Test with no args - should not panic and should return some args
         let result_no_args = plantuml.prepare_args(None);
         assert!(
             !result_no_args.is_empty(),
             "prepare_args should return at least one argument when called with None"
         );
-        
+
         // Test with args but no layout - original args must be preserved regardless of dot availability
         let args = Some(vec!["-png".to_string()]);
         let result = plantuml.prepare_args(args);
-        
+
         // The original argument should still be present and remain the last argument
         assert!(
             !result.is_empty(),
@@ -172,7 +174,7 @@ mod tests {
             "-png",
             "Original args should be preserved at the end of the argument list"
         );
-        
+
         // Clean up
         std::env::remove_var("GRAPHVIZ_DOT");
         std::env::remove_var("PLANTUML_IGNORE_DOT");
@@ -185,11 +187,11 @@ mod tests {
             plantuml_jar: "plantuml.jar".to_string(),
             plantuml_version: "1.0.0".to_string(),
         };
-        
+
         // Test with user-specified layout - should NOT add smetana
         let args = Some(vec!["-Playout=elk".to_string(), "-png".to_string()]);
         let result = plantuml.prepare_args(args);
-        
+
         // User's layout should be preserved
         assert_eq!(result[0], "-Playout=elk");
         assert_eq!(result[1], "-png");
@@ -201,20 +203,20 @@ mod tests {
     fn test_prepare_args_with_graphviz_dot_set() {
         // When GRAPHVIZ_DOT is set, should not add smetana
         std::env::set_var("GRAPHVIZ_DOT", "/usr/bin/dot");
-        
+
         let plantuml = PlantUML {
             java_binary: "java".to_string(),
             plantuml_jar: "plantuml.jar".to_string(),
             plantuml_version: "1.0.0".to_string(),
         };
-        
+
         let args = Some(vec!["-png".to_string()]);
         let result = plantuml.prepare_args(args);
-        
+
         // Should NOT have smetana added
         assert_eq!(result[0], "-png");
         assert_eq!(result.len(), 1);
-        
+
         // Clean up
         std::env::remove_var("GRAPHVIZ_DOT");
     }
