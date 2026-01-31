@@ -108,7 +108,7 @@ impl PackageEmbeddedTask {
                     EmbeddedMode::Full => "full",
                 }
             )
-                .as_str(),
+            .as_str(),
         ))
     }
     fn get_embedded_destination_path(&self) -> Box<Path> {
