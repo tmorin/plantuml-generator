@@ -3,7 +3,7 @@
 //! This module provides configuration options for the thread pool, including
 //! environment variable parsing and validation.
 
-use log::info;
+use log::{info, warn};
 use std::env;
 
 /// Configuration for the thread pool.
@@ -86,14 +86,14 @@ impl Config {
                     Self::new(count)
                 }
                 Ok(count) => {
-                    info!(
+                    warn!(
                         "Invalid thread count {} from {}: must be 1-256. Using default.",
                         count, ENV_VAR
                     );
                     Self::default()
                 }
                 Err(e) => {
-                    info!(
+                    warn!(
                         "Failed to parse {} value '{}': {}. Using default.",
                         ENV_VAR, val, e
                     );
