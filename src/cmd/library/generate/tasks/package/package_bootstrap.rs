@@ -101,7 +101,7 @@ mod test {
             "{}/Package/bootstrap.puml",
             generator.output_directory
         ))
-            .unwrap();
+        .unwrap();
         assert!(content.trim().contains("header"));
         assert!(content.trim().contains("content"));
         assert!(content.trim().contains("footer"));
