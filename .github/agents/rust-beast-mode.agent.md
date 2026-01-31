@@ -1,6 +1,5 @@
 ---
 description: 'Rust GPT-4.1 Coding Beast Mode for VS Code'
-model: GPT-4.1
 name: 'Rust Beast Mode'
 
 ---
