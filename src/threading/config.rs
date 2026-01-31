@@ -3,7 +3,7 @@
 //! This module provides configuration options for the thread pool, including
 //! environment variable parsing and validation.
 
-use log::{debug, warn};
+use log::{info, warn};
 use std::env;
 
 /// Configuration for the thread pool.
@@ -79,7 +79,7 @@ impl Config {
         match env::var(ENV_VAR) {
             Ok(val) => match val.parse::<usize>() {
                 Ok(count) if (1..=256).contains(&count) => {
-                    debug!(
+                    info!(
                         "Using {} threads from environment variable {}",
                         count, ENV_VAR
                     );
@@ -101,7 +101,7 @@ impl Config {
                 }
             },
             Err(_) => {
-                debug!(
+                info!(
                     "Environment variable {} not set, using default thread count",
                     ENV_VAR
                 );
@@ -114,32 +114,24 @@ impl Config {
 impl Default for Config {
     /// Creates a default configuration using the number of logical CPU cores.
     fn default() -> Self {
-        let thread_count = num_cpus::get();
-        debug!("Default thread count: {} (CPU cores)", thread_count);
+        let thread_count = Self::detect_cpu_count();
+        info!("Default thread count: {} (CPU cores)", thread_count);
         Self { thread_count }
     }
 }
 
-// Required for num_cpus detection
-// This will need to be added to Cargo.toml dependencies
-#[cfg(not(test))]
-mod num_cpus {
-    /// Returns the number of logical CPU cores.
+impl Config {
+    /// Detects the number of logical CPU cores.
     ///
-    /// This is a placeholder that should be replaced with the actual
-    /// `num_cpus` crate once it's added to dependencies.
-    pub fn get() -> usize {
-        // Fallback to a reasonable default
-        std::thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(4)
+    /// In production, uses the `num_cpus` crate. In tests, returns a fixed value.
+    #[cfg(not(test))]
+    fn detect_cpu_count() -> usize {
+        num_cpus::get()
     }
-}
 
-#[cfg(test)]
-mod num_cpus {
-    pub fn get() -> usize {
-        4 // Use fixed value in tests
+    #[cfg(test)]
+    fn detect_cpu_count() -> usize {
+        4 // Use fixed value in tests for deterministic behavior
     }
 }
 
