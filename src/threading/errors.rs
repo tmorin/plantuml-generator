@@ -490,4 +490,201 @@ mod tests {
         assert!(!collector.has_errors());
         assert_eq!(collector.len(), 0);
     }
+
+    #[test]
+    fn test_error_collector_stress_high_concurrency() {
+        use std::thread;
+
+        let collector = ErrorCollector::new();
+        let thread_count = 50;
+        let errors_per_thread = 100;
+
+        let mut handles = vec![];
+        for thread_id in 0..thread_count {
+            let collector_clone = collector.clone();
+            let handle = thread::spawn(move || {
+                for i in 0..errors_per_thread {
+                    collector_clone.add(ExecutionError::new(
+                        format!("task_{}_{}", thread_id, i),
+                        format!("Error from thread {} iteration {}", thread_id, i),
+                    ));
+                }
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(collector.len(), thread_count * errors_per_thread);
+        assert!(collector.has_errors());
+    }
+
+    #[test]
+    fn test_error_collector_snapshot_consistency() {
+        let collector = ErrorCollector::new();
+
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        let snapshot1 = collector.snapshot();
+
+        collector.add(ExecutionError::new(
+            "task_2".to_string(),
+            "Error 2".to_string(),
+        ));
+        let snapshot2 = collector.snapshot();
+
+        assert_eq!(snapshot1.len(), 1);
+        assert_eq!(snapshot2.len(), 2);
+        assert_eq!(collector.len(), 2);
+    }
+
+    #[test]
+    fn test_aggregated_error_is_error_trait() {
+        use std::error::Error;
+
+        let error = ExecutionError::new("task_1".to_string(), "Test".to_string());
+        let agg = AggregatedError::new(vec![error]);
+
+        // Verify it implements Error trait
+        let _: &dyn Error = &agg;
+    }
+
+    #[test]
+    fn test_execution_error_clone() {
+        let error1 = ExecutionError::new("task_1".to_string(), "Error".to_string());
+        let error2 = error1.clone();
+
+        assert_eq!(error1.unit_identifier, error2.unit_identifier);
+        assert_eq!(error1.message, error2.message);
+    }
+
+    #[test]
+    fn test_aggregated_error_errors_accessor() {
+        let errors = vec![
+            ExecutionError::new("task_1".to_string(), "Error 1".to_string()),
+            ExecutionError::new("task_2".to_string(), "Error 2".to_string()),
+        ];
+        let agg = AggregatedError::new(errors);
+
+        let accessed_errors = agg.errors();
+        assert_eq!(accessed_errors.len(), 2);
+        assert_eq!(accessed_errors[0].unit_identifier, "task_1");
+        assert_eq!(accessed_errors[1].unit_identifier, "task_2");
+    }
+
+    #[test]
+    fn test_error_collector_multiple_snapshots() {
+        let collector = ErrorCollector::new();
+
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        let snapshot1 = collector.snapshot();
+        let snapshot2 = collector.snapshot();
+
+        // Both snapshots should be identical
+        assert_eq!(snapshot1.len(), snapshot2.len());
+        assert_eq!(snapshot1[0].unit_identifier, snapshot2[0].unit_identifier);
+    }
+
+    #[test]
+    fn test_error_collector_concurrent_snapshots() {
+        use std::thread;
+
+        let collector = ErrorCollector::new();
+
+        // Add some initial errors
+        for i in 0..10 {
+            collector.add(ExecutionError::new(
+                format!("task_{}", i),
+                format!("Error {}", i),
+            ));
+        }
+
+        // Take snapshots concurrently
+        let mut handles = vec![];
+        for _ in 0..5 {
+            let collector_clone = collector.clone();
+            let handle = thread::spawn(move || {
+                let snapshot = collector_clone.snapshot();
+                assert_eq!(snapshot.len(), 10);
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_aggregated_error_display_formatting() {
+        let error1 = ExecutionError::new("task_1".to_string(), "First error".to_string());
+        let error2 = ExecutionError::new("task_2".to_string(), "Second error".to_string());
+        let error3 = ExecutionError::new("task_3".to_string(), "Third error".to_string());
+
+        let agg = AggregatedError::new(vec![error1, error2, error3]);
+        let display = format!("{}", agg);
+
+        // Should contain the count
+        assert!(display.contains("3 errors"));
+        // Should contain all error messages
+        assert!(display.contains("First error"));
+        assert!(display.contains("Second error"));
+        assert!(display.contains("Third error"));
+        // Should contain enumeration
+        assert!(display.contains("1."));
+        assert!(display.contains("2."));
+        assert!(display.contains("3."));
+    }
+
+    #[test]
+    fn test_error_collector_empty_snapshot() {
+        let collector = ErrorCollector::new();
+        let snapshot = collector.snapshot();
+        assert_eq!(snapshot.len(), 0);
+        assert!(snapshot.is_empty());
+    }
+
+    #[test]
+    fn test_execution_error_with_special_characters() {
+        let error = ExecutionError::new(
+            "task_with_unicode_🚀".to_string(),
+            "Error with special chars: \n\t\"quotes\" and \\backslash\\".to_string(),
+        );
+        let display = format!("{}", error);
+        assert!(display.contains("task_with_unicode_🚀"));
+        assert!(display.contains("special chars"));
+    }
+
+    #[test]
+    fn test_error_collector_shared_state() {
+        let collector1 = ErrorCollector::new();
+        let collector2 = collector1.clone();
+
+        // Add error through first collector
+        collector1.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+
+        // Second collector should see the error
+        assert_eq!(collector2.len(), 1);
+        assert!(collector2.has_errors());
+
+        // Add error through second collector
+        collector2.add(ExecutionError::new(
+            "task_2".to_string(),
+            "Error 2".to_string(),
+        ));
+
+        // Both should see both errors
+        assert_eq!(collector1.len(), 2);
+        assert_eq!(collector2.len(), 2);
+    }
 }

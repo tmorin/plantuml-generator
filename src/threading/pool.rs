@@ -426,4 +426,234 @@ mod tests {
         let result = pool.execute(tasks);
         assert!(result.is_ok());
     }
+
+    // Test for explicit panic handling
+    struct PanicTask {
+        id: usize,
+    }
+
+    impl WorkUnit for PanicTask {
+        fn identifier(&self) -> String {
+            format!("panic_task_{}", self.id)
+        }
+
+        fn execute(&self) -> Result<(), String> {
+            panic!("Intentional panic in task {}", self.id);
+        }
+    }
+
+    #[test]
+    fn test_execute_with_panic() {
+        let pool = ThreadPool::new(Config::new(4));
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![
+            Box::new(TestTask {
+                id: 1,
+                should_fail: false,
+            }),
+            Box::new(PanicTask { id: 2 }),
+            Box::new(TestTask {
+                id: 3,
+                should_fail: false,
+            }),
+        ];
+        let result = pool.execute(tasks);
+        // Should return an error because one worker panicked
+        assert!(result.is_err());
+        if let Err(agg) = result {
+            // Should have at least one error for the panicked worker
+            assert!(agg.len() >= 1);
+            // Check that at least one error is about a worker panic
+            let has_panic_error = agg.errors().iter().any(|e| e.message.contains("panicked"));
+            assert!(has_panic_error, "Expected panic error in aggregated errors");
+        }
+    }
+
+    #[test]
+    fn test_execute_multiple_panics() {
+        let pool = ThreadPool::new(Config::new(4));
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![
+            Box::new(PanicTask { id: 1 }),
+            Box::new(PanicTask { id: 2 }),
+            Box::new(PanicTask { id: 3 }),
+        ];
+        let result = pool.execute(tasks);
+        assert!(result.is_err());
+        // All three tasks should cause worker panics
+        if let Err(agg) = result {
+            assert!(agg.len() >= 1);
+        }
+    }
+
+    #[test]
+    fn test_execute_panic_and_error_mixed() {
+        let pool = ThreadPool::new(Config::new(4));
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![
+            Box::new(TestTask {
+                id: 1,
+                should_fail: true,
+            }),
+            Box::new(PanicTask { id: 2 }),
+            Box::new(TestTask {
+                id: 3,
+                should_fail: true,
+            }),
+            Box::new(TestTask {
+                id: 4,
+                should_fail: false,
+            }),
+        ];
+        let result = pool.execute(tasks);
+        assert!(result.is_err());
+        if let Err(agg) = result {
+            // Should have errors from both failed tasks and panicked worker
+            assert!(agg.len() >= 2);
+        }
+    }
+
+    #[test]
+    fn test_execute_stress_many_tasks() {
+        let pool = ThreadPool::new(Config::new(8));
+        let task_count = 1000;
+        let tasks: Vec<Box<dyn WorkUnit>> = (0..task_count)
+            .map(|i| {
+                Box::new(TestTask {
+                    id: i,
+                    should_fail: false,
+                }) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let result = pool.execute(tasks);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_execute_stress_with_failures() {
+        let pool = ThreadPool::new(Config::new(8));
+        let task_count = 1000;
+        let tasks: Vec<Box<dyn WorkUnit>> = (0..task_count)
+            .map(|i| {
+                Box::new(TestTask {
+                    id: i,
+                    should_fail: i % 10 == 0, // Every 10th task fails
+                }) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let result = pool.execute(tasks);
+        assert!(result.is_err());
+        if let Err(agg) = result {
+            assert_eq!(agg.len(), 100); // 1000 / 10 = 100 failures
+        }
+    }
+
+    #[test]
+    fn test_execute_all_failures() {
+        let pool = ThreadPool::new(Config::new(4));
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![
+            Box::new(TestTask {
+                id: 1,
+                should_fail: true,
+            }),
+            Box::new(TestTask {
+                id: 2,
+                should_fail: true,
+            }),
+            Box::new(TestTask {
+                id: 3,
+                should_fail: true,
+            }),
+            Box::new(TestTask {
+                id: 4,
+                should_fail: true,
+            }),
+        ];
+        let result = pool.execute(tasks);
+        assert!(result.is_err());
+        if let Err(agg) = result {
+            assert_eq!(agg.len(), 4);
+        }
+    }
+
+    #[test]
+    fn test_thread_pool_config_accessor() {
+        let config = Config::new(6);
+        let pool = ThreadPool::new(config.clone());
+        assert_eq!(pool.config.thread_count(), 6);
+    }
+
+    #[test]
+    fn test_execute_single_task_single_thread() {
+        let pool = ThreadPool::new(Config::new(1));
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![Box::new(TestTask {
+            id: 1,
+            should_fail: false,
+        })];
+        let result = pool.execute(tasks);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_execute_ordering_independent() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+        use std::time::Duration;
+
+        struct OrderTestTask {
+            id: usize,
+            delay_ms: u64,
+            results: Arc<Mutex<Vec<usize>>>,
+        }
+
+        impl WorkUnit for OrderTestTask {
+            fn identifier(&self) -> String {
+                format!("order_task_{}", self.id)
+            }
+
+            fn execute(&self) -> Result<(), String> {
+                thread::sleep(Duration::from_millis(self.delay_ms));
+                let mut results = self.results.lock().unwrap();
+                results.push(self.id);
+                Ok(())
+            }
+        }
+
+        let pool = ThreadPool::new(Config::new(4));
+        let results = Arc::new(Mutex::new(Vec::new()));
+
+        // Tasks with different delays to ensure non-sequential completion
+        let tasks: Vec<Box<dyn WorkUnit>> = vec![
+            Box::new(OrderTestTask {
+                id: 1,
+                delay_ms: 30,
+                results: results.clone(),
+            }),
+            Box::new(OrderTestTask {
+                id: 2,
+                delay_ms: 10,
+                results: results.clone(),
+            }),
+            Box::new(OrderTestTask {
+                id: 3,
+                delay_ms: 20,
+                results: results.clone(),
+            }),
+            Box::new(OrderTestTask {
+                id: 4,
+                delay_ms: 5,
+                results: results.clone(),
+            }),
+        ];
+
+        let result = pool.execute(tasks);
+        assert!(result.is_ok());
+
+        let completed = results.lock().unwrap();
+        assert_eq!(completed.len(), 4);
+        // All tasks should have completed regardless of order
+        assert!(completed.contains(&1));
+        assert!(completed.contains(&2));
+        assert!(completed.contains(&3));
+        assert!(completed.contains(&4));
+    }
 }
