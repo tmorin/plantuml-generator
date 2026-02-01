@@ -69,6 +69,6 @@ mod traits;
 
 // Re-export public API
 pub use config::Config;
-pub use errors::{AggregatedError, ExecutionError};
+pub use errors::{AggregatedError, ErrorCollector, ExecutionError};
 pub use pool::ThreadPool;
 pub use traits::WorkUnit;
