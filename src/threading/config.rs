@@ -138,6 +138,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
     fn test_new_valid() {
@@ -164,6 +165,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_from_env_not_set() {
         env::remove_var("PLANTUML_GENERATOR_THREADS");
         let config = Config::from_env();
@@ -171,6 +173,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_from_env_valid() {
         env::set_var("PLANTUML_GENERATOR_THREADS", "16");
         let config = Config::from_env();
@@ -179,6 +182,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_from_env_invalid_falls_back() {
         env::set_var("PLANTUML_GENERATOR_THREADS", "invalid");
         let config = Config::from_env();
@@ -187,10 +191,117 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_from_env_out_of_range() {
         env::set_var("PLANTUML_GENERATOR_THREADS", "300");
         let config = Config::from_env();
         assert_eq!(config.thread_count(), 4); // Falls back to default
         env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    fn test_new_boundary_min() {
+        let config = Config::new(1);
+        assert_eq!(config.thread_count(), 1);
+    }
+
+    #[test]
+    fn test_new_boundary_max() {
+        let config = Config::new(256);
+        assert_eq!(config.thread_count(), 256);
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_boundary_min() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "1");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 1);
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_boundary_max() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "256");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 256);
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_zero() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "0");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_negative() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "-5");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_empty_string() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_whitespace() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "  8  ");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default (parse fails on whitespace)
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_float() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "3.14");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_very_large_number() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "999999999999999999");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default (parse fails or out of range)
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    #[serial]
+    fn test_from_env_special_chars() {
+        env::set_var("PLANTUML_GENERATOR_THREADS", "8!@#");
+        let config = Config::from_env();
+        assert_eq!(config.thread_count(), 4); // Falls back to default
+        env::remove_var("PLANTUML_GENERATOR_THREADS");
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config1 = Config::new(10);
+        let config2 = config1.clone();
+        assert_eq!(config1.thread_count(), config2.thread_count());
+    }
+
+    #[test]
+    fn test_detect_cpu_count_in_test() {
+        let count = Config::detect_cpu_count();
+        assert_eq!(count, 4); // Should be fixed value in test mode
     }
 }
