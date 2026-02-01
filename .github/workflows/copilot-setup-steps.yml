@@ -1,0 +1,52 @@
+name: "Copilot Setup Steps"
+
+# Automatically run the setup steps when they are changed to allow for easy validation, and
+# allow manual testing through the repository's "Actions" tab
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-22.04
+
+    # Set the permissions to the lowest permissions possible needed for your steps.
+    # Copilot will be given its own token for its operations.
+    permissions:
+      contents: read
+
+    steps:
+      # Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install system dependencies required for the project
+      # Based on the Test job in Continuous-Integration.yml
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository ppa:inkscape.dev/stable -y
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev openjdk-11-jre graphviz inkscape
+          inkscape --version
+        shell: bash
+
+      # Set up Rust toolchain with caching
+      # Using moonrepo/setup-rust as in the CI workflow for consistency
+      - name: Install Rust toolchain
+        uses: moonrepo/setup-rust@v1
+        with:
+          profile: minimal
+          cache: true
+
+      # Install Cargo dependencies with caching
+      # This ensures all dependencies are pre-downloaded and compiled
+      - name: Install Cargo dependencies
+        run: |
+          cargo fetch
+          cargo build --release --all-features
