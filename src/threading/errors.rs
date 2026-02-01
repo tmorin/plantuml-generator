@@ -4,6 +4,7 @@
 //! error aggregation for collecting failures from multiple work units.
 
 use std::fmt;
+use std::sync::{Arc, Mutex};
 
 /// An error that occurred during execution of a work unit.
 ///
@@ -102,6 +103,188 @@ impl fmt::Display for AggregatedError {
 
 impl std::error::Error for AggregatedError {}
 
+/// A thread-safe collector for execution errors.
+///
+/// This struct provides a thread-safe way to collect errors from multiple
+/// worker threads during parallel execution. It uses `Arc<Mutex<Vec<ExecutionError>>>`
+/// internally to ensure safe concurrent access.
+///
+/// # Examples
+///
+/// ```ignore
+/// use crate::threading::errors::{ErrorCollector, ExecutionError};
+/// use std::thread;
+///
+/// let collector = ErrorCollector::new();
+///
+/// // Clone the collector for use in multiple threads
+/// let collector_clone = collector.clone();
+/// let handle = thread::spawn(move || {
+///     collector_clone.add(ExecutionError::new(
+///         "task_1".to_string(),
+///         "Failed to process".to_string(),
+///     ));
+/// });
+///
+/// handle.join().unwrap();
+///
+/// // Check if any errors occurred
+/// if collector.has_errors() {
+///     let aggregated = collector.into_result().unwrap_err();
+///     println!("Errors occurred: {}", aggregated);
+/// }
+/// ```
+#[derive(Clone, Debug)]
+pub struct ErrorCollector {
+    errors: Arc<Mutex<Vec<ExecutionError>>>,
+}
+
+impl ErrorCollector {
+    /// Creates a new empty error collector.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::ErrorCollector;
+    ///
+    /// let collector = ErrorCollector::new();
+    /// assert!(!collector.has_errors());
+    /// ```
+    pub fn new() -> Self {
+        Self {
+            errors: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    /// Adds an error to the collection.
+    ///
+    /// This method is thread-safe and can be called from multiple threads
+    /// concurrently.
+    ///
+    /// # Arguments
+    ///
+    /// * `error` - The execution error to add
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
+    ///
+    /// let collector = ErrorCollector::new();
+    /// collector.add(ExecutionError::new(
+    ///     "task_1".to_string(),
+    ///     "Failed".to_string(),
+    /// ));
+    /// assert!(collector.has_errors());
+    /// ```
+    pub fn add(&self, error: ExecutionError) {
+        let mut errors = self.errors.lock().unwrap();
+        errors.push(error);
+    }
+
+    /// Checks if any errors have been collected.
+    ///
+    /// # Returns
+    ///
+    /// `true` if at least one error has been added, `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::ErrorCollector;
+    ///
+    /// let collector = ErrorCollector::new();
+    /// assert!(!collector.has_errors());
+    /// ```
+    pub fn has_errors(&self) -> bool {
+        let errors = self.errors.lock().unwrap();
+        !errors.is_empty()
+    }
+
+    /// Returns the number of errors collected.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
+    ///
+    /// let collector = ErrorCollector::new();
+    /// collector.add(ExecutionError::new("task_1".to_string(), "Error".to_string()));
+    /// assert_eq!(collector.len(), 1);
+    /// ```
+    pub fn len(&self) -> usize {
+        let errors = self.errors.lock().unwrap();
+        errors.len()
+    }
+
+    /// Checks if the collector is empty.
+    ///
+    /// # Returns
+    ///
+    /// `true` if no errors have been collected, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        let errors = self.errors.lock().unwrap();
+        errors.is_empty()
+    }
+
+    /// Consumes the collector and returns a Result.
+    ///
+    /// If no errors were collected, returns `Ok(())`. If errors were collected,
+    /// returns `Err(AggregatedError)`.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
+    ///
+    /// let collector = ErrorCollector::new();
+    /// assert!(collector.into_result().is_ok());
+    ///
+    /// let collector = ErrorCollector::new();
+    /// collector.add(ExecutionError::new("task_1".to_string(), "Error".to_string()));
+    /// assert!(collector.into_result().is_err());
+    /// ```
+    pub fn into_result(self) -> Result<(), AggregatedError> {
+        let errors = Arc::try_unwrap(self.errors)
+            .expect("Cannot convert ErrorCollector to Result while clones exist. Ensure all clones are dropped before calling into_result()")
+            .into_inner()
+            .unwrap();
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(AggregatedError::new(errors))
+        }
+    }
+
+    /// Returns a snapshot of the current errors without consuming the collector.
+    ///
+    /// This method clones all errors and returns them in a Vec. The collector
+    /// remains usable after this call.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
+    ///
+    /// let collector = ErrorCollector::new();
+    /// collector.add(ExecutionError::new("task_1".to_string(), "Error".to_string()));
+    /// let errors = collector.snapshot();
+    /// assert_eq!(errors.len(), 1);
+    /// assert!(collector.has_errors()); // Collector is still usable
+    /// ```
+    pub fn snapshot(&self) -> Vec<ExecutionError> {
+        let errors = self.errors.lock().unwrap();
+        errors.clone()
+    }
+}
+
+impl Default for ErrorCollector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,5 +351,143 @@ mod tests {
     #[should_panic(expected = "AggregatedError cannot be empty")]
     fn test_aggregated_error_empty_panics() {
         AggregatedError::new(vec![]);
+    }
+
+    // ErrorCollector tests
+    #[test]
+    fn test_error_collector_new() {
+        let collector = ErrorCollector::new();
+        assert!(!collector.has_errors());
+        assert!(collector.is_empty());
+        assert_eq!(collector.len(), 0);
+    }
+
+    #[test]
+    fn test_error_collector_add() {
+        let collector = ErrorCollector::new();
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        assert!(collector.has_errors());
+        assert!(!collector.is_empty());
+        assert_eq!(collector.len(), 1);
+    }
+
+    #[test]
+    fn test_error_collector_add_multiple() {
+        let collector = ErrorCollector::new();
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        collector.add(ExecutionError::new(
+            "task_2".to_string(),
+            "Error 2".to_string(),
+        ));
+        collector.add(ExecutionError::new(
+            "task_3".to_string(),
+            "Error 3".to_string(),
+        ));
+        assert_eq!(collector.len(), 3);
+    }
+
+    #[test]
+    fn test_error_collector_into_result_success() {
+        let collector = ErrorCollector::new();
+        let result = collector.into_result();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_error_collector_into_result_failure() {
+        let collector = ErrorCollector::new();
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        let result = collector.into_result();
+        assert!(result.is_err());
+
+        if let Err(agg) = result {
+            assert_eq!(agg.len(), 1);
+            assert_eq!(agg.first().unit_identifier, "task_1");
+        }
+    }
+
+    #[test]
+    fn test_error_collector_snapshot() {
+        let collector = ErrorCollector::new();
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+        collector.add(ExecutionError::new(
+            "task_2".to_string(),
+            "Error 2".to_string(),
+        ));
+
+        let snapshot = collector.snapshot();
+        assert_eq!(snapshot.len(), 2);
+        assert_eq!(snapshot[0].unit_identifier, "task_1");
+        assert_eq!(snapshot[1].unit_identifier, "task_2");
+
+        // Collector should still be usable
+        assert!(collector.has_errors());
+        assert_eq!(collector.len(), 2);
+    }
+
+    #[test]
+    fn test_error_collector_clone() {
+        let collector = ErrorCollector::new();
+        collector.add(ExecutionError::new(
+            "task_1".to_string(),
+            "Error 1".to_string(),
+        ));
+
+        let clone = collector.clone();
+        assert_eq!(clone.len(), 1);
+
+        // Adding to clone should also add to original (shared Arc)
+        clone.add(ExecutionError::new(
+            "task_2".to_string(),
+            "Error 2".to_string(),
+        ));
+        assert_eq!(collector.len(), 2);
+        assert_eq!(clone.len(), 2);
+    }
+
+    #[test]
+    fn test_error_collector_thread_safety() {
+        use std::thread;
+
+        let collector = ErrorCollector::new();
+
+        let mut handles = vec![];
+        for i in 0..10 {
+            let collector_clone = collector.clone();
+            let handle = thread::spawn(move || {
+                collector_clone.add(ExecutionError::new(
+                    format!("task_{}", i),
+                    format!("Error {}", i),
+                ));
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(collector.len(), 10);
+        let snapshot = collector.snapshot();
+        assert_eq!(snapshot.len(), 10);
+    }
+
+    #[test]
+    fn test_error_collector_default() {
+        let collector = ErrorCollector::default();
+        assert!(!collector.has_errors());
+        assert_eq!(collector.len(), 0);
     }
 }
