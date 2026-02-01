@@ -3,7 +3,7 @@
 //! This module provides a thread pool that can execute multiple work units
 //! in parallel using a configurable number of worker threads.
 
-use crate::threading::{AggregatedError, Config, ExecutionError, WorkUnit};
+use crate::threading::{AggregatedError, Config, ErrorCollector, ExecutionError, WorkUnit};
 use log::{debug, error};
 
 /// A thread pool for executing work units in parallel.
@@ -107,9 +107,27 @@ impl ThreadPool {
         // The full implementation will include:
         // 1. Creating worker threads
         // 2. Distributing work via channels
-        // 3. Collecting results
+        // 3. Collecting results using ErrorCollector for thread-safe error aggregation
         // 4. Fail-fast error handling
         // 5. Proper thread cleanup
+        //
+        // Example for future parallel implementation:
+        // ```
+        // let error_collector = ErrorCollector::new();
+        // let handles: Vec<_> = work_units.into_iter().map(|unit| {
+        //     let collector = error_collector.clone();
+        //     thread::spawn(move || {
+        //         match unit.execute() {
+        //             Ok(()) => {},
+        //             Err(e) => collector.add(ExecutionError::new(unit.identifier(), e)),
+        //         }
+        //     })
+        // }).collect();
+        // for handle in handles {
+        //     handle.join().unwrap();
+        // }
+        // error_collector.into_result()
+        // ```
 
         // Skeleton: Execute sequentially for now
         let mut errors = Vec::new();
