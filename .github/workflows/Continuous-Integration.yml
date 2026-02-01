@@ -12,11 +12,11 @@ jobs:
 
   Lint:
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Install the toolchain"
-        uses: moonrepo/setup-rust@v0
+        uses: moonrepo/setup-rust@v1
         with:
           profile: minimal
           components: clippy
@@ -26,9 +26,9 @@ jobs:
 
   Test:
     name: Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Install dependencies"
         run: |
           sudo add-apt-repository ppa:inkscape.dev/stable -y
@@ -38,7 +38,7 @@ jobs:
           inkscape --help
         shell: bash
       - name: "Install the toolchain"
-        uses: moonrepo/setup-rust@v0
+        uses: moonrepo/setup-rust@v1
         with:
           profile: minimal
       - name: "Perform the tests"
@@ -47,7 +47,7 @@ jobs:
 
   Binary:
     name: Binary
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         include:
@@ -64,7 +64,7 @@ jobs:
             system: linux
             target: s390x-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
         with:
@@ -77,10 +77,11 @@ jobs:
           sudo apt-get install pkg-config libssl-dev build-essential dpkg libc-bin liblzma-dev
         shell: bash
       - name: "Install the toolchain"
-        uses: moonrepo/setup-rust@v0
+        uses: moonrepo/setup-rust@v1
         with:
           profile: minimal
           bins: cargo-deb
+          cache-target: release
       - name: "Install the target"
         run: |
           rustup target add ${{ matrix.target }}
@@ -99,26 +100,28 @@ jobs:
           name: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator
           path: ${{ matrix.system }}_${{ matrix.architecture }}_plantuml-generator.tar.gz
           overwrite: true
+          retention-days: 30
 
   DebianPackage:
     name: Debian Package
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         include:
           - architecture: x86_64
             target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Install the dependencies"
         run: |
           sudo apt-get install pkg-config libssl-dev build-essential dpkg libc-bin liblzma-dev
         shell: bash
       - name: "Install the toolchain"
-        uses: moonrepo/setup-rust@v0
+        uses: moonrepo/setup-rust@v1
         with:
           profile: minimal
           bins: cargo-deb
+          cache-target: release
       - name: "Install the target"
         run: |
           rustup target add ${{ matrix.target }}
@@ -131,14 +134,15 @@ jobs:
           name: debian_${{ matrix.architecture }}_plantuml-generator
           path: target/${{ matrix.target }}/debian/*.deb
           overwrite: true
+          retention-days: 30
 
   DockerImage:
     name: Docker Image
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [ Lint, Test ]
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up QEMU"
         uses: docker/setup-qemu-action@v3
       - name: "Login to Docker Hub"
@@ -150,8 +154,15 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           install: true
+      - name: "Cache Docker layers"
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: "Inject slug/short variables"
-        uses: rlespinasse/github-slug-action@v3.x
+        uses: rlespinasse/github-slug-action@v4
       - name: "Build and push branches"
         if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
         uses: docker/build-push-action@v5
@@ -162,10 +173,12 @@ jobs:
             thibaultmorin/plantuml-generator:${{ env.GITHUB_REF_SLUG }}
           build-args: |
             git_sha=${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
       - name: "Process version of the tag"
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         id: version
-        uses: ncipollo/semantic-version-action@v1
+        uses: PaulHatch/semantic-version-action@v5
       - name: "Build and push tags"
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: docker/build-push-action@v5
@@ -178,16 +191,23 @@ jobs:
             thibaultmorin/plantuml-generator:${{ steps.version.outputs.major }}
           build-args: |
             git_sha=${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+      - name: "Move Docker cache"
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   GithubRelease:
     name: Github Release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [ Lint, Test, Binary, DebianPackage ]
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Download all artifacts"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: "List artifacts"
@@ -196,14 +216,14 @@ jobs:
         working-directory: artifacts
       - name: "Create the changelog"
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v3
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           ignorePreReleases: true
           commitMode: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Create the release"
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.14
         with:
           allowUpdates: true
           artifacts: "artifacts/**/*.tar.gz,artifacts/**/*.deb"
