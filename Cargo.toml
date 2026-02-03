@@ -31,7 +31,7 @@ glob = { version = "0.3" }
 heck = { version = "0.5" }
 image = { version = "0.25" }
 log = { version = "0.4" }
-num_cpus = { version = "1" }
+num_cpus = { version = "1.16" }
 openssl = { version = "0.10", optional = true }
 raster = { version = "0.2" }
 reqwest = { version = "0.13", features = ["blocking"] }
