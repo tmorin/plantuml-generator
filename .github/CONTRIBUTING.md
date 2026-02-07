@@ -2,20 +2,16 @@
 
 We appreciate your thought to contribute to open source. :heart:
 
-## Commit Message Requirements
+## Pull Request Requirements
 
-All commits must follow these requirements:
+When submitting a pull request, ensure the following requirements are met:
 
-### 1. Conventional Commits Format
+### 1. PR Title: Conventional Commits Format
 
-Commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+The PR title must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
 ```
 <type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
 ```
 
 **Valid types:**
@@ -31,76 +27,75 @@ Commits must follow the [Conventional Commits](https://www.conventionalcommits.o
 - `chore`: Other changes that don't modify src or test files
 - `revert`: Reverts a previous commit
 
-**Examples:**
+**Examples of valid PR titles:**
 ```
-feat: add PlantUML C4 model support
-fix(parser): resolve null pointer exception in diagram parser
-docs: update installation instructions
-feat!: breaking change to library API
+✅ feat: add PlantUML C4 model support
+✅ fix(parser): resolve null pointer exception in diagram parser
+✅ ci: add automated PR validation
+✅ feat!: breaking change to library API
 ```
 
-### 2. Issue/Ticket References
+**Why this matters:** When using GitHub's "Squash and merge" option, the PR title becomes the commit message in the main branch.
 
-Every commit must reference an issue or ticket number. You can reference issues in:
+### 2. PR Description: Issue Reference Required
 
-- The commit subject: `feat: add feature #123`
-- The commit body or footer using keywords:
-  ```
-  feat: add new diagram type
-  
-  This implements support for sequence diagrams.
-  
-  Closes #123
-  ```
+The PR description must reference an issue or ticket number. You can reference issues using:
+
+- Standalone: `#123` or `GH-123`
+- With keywords: `Closes #123`, `Fixes #456`, `Resolves #789`
 
 **Keywords that automatically close issues:**
 - `close`, `closes`, `closed`
 - `fix`, `fixes`, `fixed`
 - `resolve`, `resolves`, `resolved`
 
-### 3. Single Commit per PR
+**Example PR description:**
+```markdown
+This PR adds automated validation for commit messages to ensure
+consistency across the project.
 
-Before a PR can be merged, it should contain only **one commit**. This keeps the git history clean and makes it easier to track changes.
-
-**To squash multiple commits:**
-
-```bash
-# Method 1: Interactive rebase
-git rebase -i HEAD~n  # where n is the number of commits
-# Mark first commit as 'pick', others as 'squash' or 'fixup'
-git push --force-with-lease
-
-# Method 2: Soft reset
-git reset --soft HEAD~n  # where n is the number of commits
-git commit -m "your-combined-commit-message"
-git push --force-with-lease
+Closes #123
 ```
 
-Alternatively, use GitHub's "Squash and merge" button when merging.
+**Why this matters:** When using "Squash and merge", the PR description is included in the commit body, providing traceability.
 
-## Pull Request Process
+### 3. Merging: Use "Squash and Merge"
 
-1. Create a feature branch from `main`
-2. Make your changes with commits following the guidelines above
-3. Squash commits into a single commit before requesting review
-4. Ensure all CI checks pass
-5. Request review from maintainers
-6. Address any review comments
-7. Once approved, the PR will be merged
+When merging PRs, use GitHub's **"Squash and merge"** button. This:
+- Combines all commits into a single commit in the main branch
+- Uses the PR title as the commit message
+- Includes the PR description in the commit body
+- Keeps the git history clean and linear
+
+## Development Workflow
+
+1. **Create a feature branch** from `main`
+2. **Make your changes** with any number of commits (during development)
+3. **Ensure the PR title follows Conventional Commits format**
+4. **Ensure the PR description contains an issue reference**
+5. **Ensure all CI checks pass** (including automated validation)
+6. **Request review** from maintainers
+7. **Address any review comments**
+8. **Merge using "Squash and merge"** when approved
+
+## Commit Messages During Development
+
+During development, you can make commits with any message format that helps your workflow. However, we recommend following Conventional Commits even for development commits as a good practice.
+
+**The important part is the PR title and description**, as these become the final commit message when squashed.
 
 ## Automated Checks
 
 All PRs are automatically validated for:
-- ✅ Conventional Commits format
-- ✅ Issue/ticket references
-- ✅ Single commit requirement
-- ✅ Code linting and tests
+- ✅ PR title follows Conventional Commits format
+- ✅ PR description contains issue/ticket reference
+- ✅ Code linting and tests pass
 
 If any check fails, you'll see helpful error messages explaining how to fix the issue.
 
 ## General Guidelines
 
-For little fixes or improvements, feel free to submit pull requests following the commit message requirements above.
+For little fixes or improvements, feel free to submit pull requests following the requirements above.
 
 For larger changes, please [open a GitHub Issue](https://github.com/tmorin/plantuml-generator/issues) first to discuss the proposed changes.
 

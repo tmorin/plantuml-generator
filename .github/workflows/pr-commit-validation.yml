@@ -11,65 +11,17 @@ permissions:
   pull-requests: read
 
 jobs:
-  validate-commits:
-    name: Validate PR Commits
+  validate-pr:
+    name: Validate PR Title and Description
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          # Fetch all commits to validate the entire PR history
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Get PR commit count
-        id: commit-count
+      - name: Validate PR title (Conventional Commits)
         run: |
-          # Get the number of commits in the PR
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "🔍 Validating PR title..."
+          echo ""
           
-          # Count commits between base and head
-          COMMIT_COUNT=$(git rev-list --count ${BASE_SHA}..${HEAD_SHA})
-          echo "count=${COMMIT_COUNT}" >> $GITHUB_OUTPUT
-          echo "📊 This PR has ${COMMIT_COUNT} commit(s)"
-
-      - name: Check single commit requirement
-        if: steps.commit-count.outputs.count != '1'
-        run: |
-          echo "::error::❌ PR must have exactly 1 commit before merge"
-          echo ""
-          echo "This PR currently has ${{ steps.commit-count.outputs.count }} commits."
-          echo ""
-          echo "📝 To squash your commits, use one of these methods:"
-          echo ""
-          echo "Method 1 - Interactive rebase:"
-          echo "  git rebase -i HEAD~${{ steps.commit-count.outputs.count }}"
-          echo "  # Mark the first commit as 'pick' and others as 'squash' or 'fixup'"
-          echo "  git push --force-with-lease"
-          echo ""
-          echo "Method 2 - Soft reset (easier):"
-          echo "  git reset --soft HEAD~${{ steps.commit-count.outputs.count }}"
-          echo "  git commit -m 'your-new-commit-message'"
-          echo "  git push --force-with-lease"
-          echo ""
-          echo "Method 3 - Use GitHub's 'Squash and merge' button when merging"
-          echo ""
-          exit 1
-
-      - name: Get PR commits
-        id: get-commits
-        run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          
-          # Get commit SHAs
-          git rev-list ${BASE_SHA}..${HEAD_SHA} > commits.txt
-          echo "✅ Retrieved $(wc -l < commits.txt) commit(s) for validation"
-
-      - name: Validate Conventional Commits format
-        run: |
-          echo "🔍 Validating Conventional Commits format..."
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: ${PR_TITLE}"
           echo ""
           
           # Conventional Commits regex pattern
@@ -78,58 +30,38 @@ jobs:
           # Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
           CONVENTIONAL_COMMIT_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .{3,}'
           
-          VALIDATION_FAILED=0
-          
-          while IFS= read -r commit_sha; do
-            # Get commit message (subject only)
-            commit_subject=$(git log --format=%s -n 1 "${commit_sha}")
-            commit_author=$(git log --format='%an' -n 1 "${commit_sha}")
-            
-            echo "📝 Commit: ${commit_sha:0:7}"
-            echo "   Author: ${commit_author}"
-            echo "   Subject: ${commit_subject}"
-            
-            # Check if commit follows Conventional Commits
-            if ! echo "${commit_subject}" | grep -qE "${CONVENTIONAL_COMMIT_REGEX}"; then
-              echo "   ❌ FAILED: Does not follow Conventional Commits format"
-              echo ""
-              VALIDATION_FAILED=1
-            else
-              echo "   ✅ PASSED: Follows Conventional Commits format"
-              echo ""
-            fi
-          done < commits.txt
-          
-          if [ ${VALIDATION_FAILED} -eq 1 ]; then
-            echo "::error::❌ One or more commits do not follow Conventional Commits specification"
+          if ! echo "${PR_TITLE}" | grep -qE "${CONVENTIONAL_COMMIT_REGEX}"; then
+            echo "::error::❌ PR title does not follow Conventional Commits specification"
             echo ""
-            echo "📚 Conventional Commits Format:"
+            echo "📚 PR Title Format (used for squash and merge):"
             echo "  <type>[optional scope]: <description>"
-            echo ""
-            echo "  [optional body]"
-            echo ""
-            echo "  [optional footer(s)]"
             echo ""
             echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
             echo ""
             echo "Examples:"
             echo "  ✅ feat: add new PlantUML diagram generator"
             echo "  ✅ fix(parser): resolve parsing error for nested elements"
-            echo "  ✅ docs: update README with installation instructions"
+            echo "  ✅ ci: add automated PR validation"
             echo "  ✅ feat!: breaking change to API"
             echo "  ❌ Add new feature (missing type)"
             echo "  ❌ feature: add something (invalid type)"
+            echo "  ❌ fix: ab (description too short)"
             echo ""
             echo "Learn more: https://www.conventionalcommits.org/"
+            echo ""
+            echo "💡 Note: When using 'Squash and merge', the PR title becomes the commit message."
             exit 1
           fi
           
-          echo "✅ All commits follow Conventional Commits format"
+          echo "✅ PR title follows Conventional Commits format"
 
-      - name: Validate issue/ticket references
+      - name: Validate PR description (issue reference)
         run: |
-          echo "🔍 Validating issue/ticket references..."
           echo ""
+          echo "🔍 Validating PR description for issue reference..."
+          echo ""
+          
+          PR_BODY="${{ github.event.pull_request.body }}"
           
           # Pattern to match issue references: #123, GH-123, closes #123, fixes #123, etc.
           # Supported formats:
@@ -142,71 +74,47 @@ jobs:
           # Used with grep -i flag for case-insensitive matching
           ISSUE_REFERENCE_REGEX='(#[0-9]+|GH-[0-9]+|(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+)'
           
-          VALIDATION_FAILED=0
-          
-          while IFS= read -r commit_sha; do
-            # Get full commit message (subject + body)
-            commit_message=$(git log --format=%B -n 1 "${commit_sha}")
-            commit_subject=$(git log --format=%s -n 1 "${commit_sha}")
-            
-            echo "📝 Commit: ${commit_sha:0:7}"
-            echo "   Subject: ${commit_subject}"
-            
-            # Check if commit message contains issue reference
-            if ! echo "${commit_message}" | grep -qiE "${ISSUE_REFERENCE_REGEX}"; then
-              echo "   ❌ FAILED: No issue/ticket reference found"
-              echo ""
-              VALIDATION_FAILED=1
-            else
-              # Extract and display the reference
-              issue_ref=$(echo "${commit_message}" | grep -oiE "${ISSUE_REFERENCE_REGEX}" | head -1)
-              echo "   ✅ PASSED: Found reference: ${issue_ref}"
-              echo ""
-            fi
-          done < commits.txt
-          
-          if [ ${VALIDATION_FAILED} -eq 1 ]; then
-            echo "::error::❌ One or more commits are missing issue/ticket references"
+          if ! echo "${PR_BODY}" | grep -qiE "${ISSUE_REFERENCE_REGEX}"; then
+            echo "::error::❌ PR description is missing issue/ticket reference"
             echo ""
             echo "📚 Issue Reference Requirements:"
-            echo "  Every commit must reference an issue or ticket number"
+            echo "  PR description must reference an issue or ticket number"
             echo ""
             echo "Valid formats:"
-            echo "  - In subject: feat: add feature #123"
-            echo "  - In subject: fix(parser): resolve bug (closes #456)"
-            echo "  - In body or footer:"
-            echo "      feat: add new feature"
-            echo "      "
-            echo "      This implements the requested functionality."
-            echo "      "
-            echo "      Closes #123"
+            echo "  - Standalone: #123 or GH-123"
+            echo "  - With keywords: Closes #123, Fixes #456, Resolves #789"
             echo ""
-            echo "Keywords that link issues:"
+            echo "Keywords that automatically close issues:"
             echo "  - close, closes, closed"
             echo "  - fix, fixes, fixed"
             echo "  - resolve, resolves, resolved"
             echo ""
-            echo "Examples:"
-            echo "  ✅ feat: add PlantUML support #123"
-            echo "  ✅ fix: resolve parser error (fixes #456)"
-            echo "  ✅ docs: update README"
-            echo "     "
-            echo "     Closes #789"
-            echo "  ❌ feat: add new feature (no issue reference)"
+            echo "Example PR description:"
+            echo "  This PR adds automated validation for commit messages."
+            echo "  "
+            echo "  Closes #123"
             echo ""
+            echo "💡 Note: When using 'Squash and merge', the PR description is included in the commit body."
             exit 1
           fi
           
-          echo "✅ All commits contain issue/ticket references"
+          # Extract and display the reference
+          issue_ref=$(echo "${PR_BODY}" | grep -oiE "${ISSUE_REFERENCE_REGEX}" | head -1)
+          echo "✅ PR description contains issue reference: ${issue_ref}"
 
       - name: Validation summary
         if: success()
         run: |
+          echo ""
           echo "✅ All validations passed!"
           echo ""
           echo "Summary:"
-          echo "  ✅ Commit count: ${{ steps.commit-count.outputs.count }}"
-          echo "  ✅ Conventional Commits format: Valid"
-          echo "  ✅ Issue references: Present"
+          echo "  ✅ PR title: Follows Conventional Commits format"
+          echo "  ✅ PR description: Contains issue reference"
           echo ""
-          echo "🎉 This PR is ready for review!"
+          echo "🎉 This PR is ready to be merged using 'Squash and merge'!"
+          echo ""
+          echo "ℹ️  When you use 'Squash and merge':"
+          echo "    - The PR title will become the commit message"
+          echo "    - The PR description will be included in the commit body"
+          echo "    - All commits will be combined into a single commit"
