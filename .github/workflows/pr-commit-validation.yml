@@ -74,9 +74,9 @@ jobs:
           
           # Conventional Commits regex pattern
           # Format: <type>[optional scope]: <description>
-          # Optional body and footer
+          # Description must be at least 3 characters to ensure meaningful content
           # Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-          CONVENTIONAL_COMMIT_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .{1,}'
+          CONVENTIONAL_COMMIT_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .{3,}'
           
           VALIDATION_FAILED=0
           
@@ -132,6 +132,7 @@ jobs:
           echo ""
           
           # Pattern to match issue references: #123, GH-123, closes #123, fixes #123, etc.
+          # Supported keywords: close/closes/closed, fix/fixes/fixed, resolve/resolves/resolved
           ISSUE_REFERENCE_REGEX='(#[0-9]+|GH-[0-9]+|(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+)'
           
           VALIDATION_FAILED=0
