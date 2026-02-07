@@ -2,9 +2,9 @@
 
 ## Task Information
 - **Task ID**: TASK-2.1
-- **Title**: Analyze work units for library generate
+- **Title**: Analyze work units for library generation
 - **Date**: 2026-02-07
-- **Status**: IN PROGRESS
+- **Status**: READY FOR REVIEW
 - **Dependencies**: TASK-1.5 (WorkUnit trait) - ✅ COMPLETE
 
 ## Executive Summary
@@ -125,10 +125,10 @@ For a typical library with:
 - Icon for each item
 
 **Total Tasks**: ~11,000-12,000 tasks
-- Library: 3 tasks
-- Packages: ~40 tasks (5 packages × 8 tasks)
-- Modules: 50 tasks
-- Items: ~11,000 tasks (1000 items × 11 tasks)
+- Library: 3 tasks (1 library × 3 library-level task types)
+- Packages: 40 tasks (5 packages × (4 core package tasks + 4 example tasks))
+- Modules: 50 tasks (50 modules × 1 module-level task type)
+- Items: ~11,000 tasks (1000 items × 11 item-level task types)
 
 ## 3. Independence Analysis
 
@@ -151,11 +151,12 @@ For a typical library with:
 - **No shared state**: Tasks operate on different file paths
 - **Parallelizable**: ✅ YES
 
-#### ✅ Create Resources Phase
-- **Independent**: Each task creates its own resources
+#### ⚠️ Create Resources Phase
+- **Mostly Independent**: Each task creates its own resources
 - **File conflicts**: None - unique file paths per task
 - **External tools**: Inkscape (thread-safe), Image processing (thread-safe)
-- **Parallelizable**: ✅ YES
+- **Intra-item dependencies**: SpriteIconTask depends on ItemIconTask output, SpriteValueTask depends on SpriteIconTask output
+- **Parallelizable**: ✅ YES, with dependency handling (see Section 3.3 for mitigation strategies)
 
 #### ✅ Render Atomic Templates Phase
 - **Independent**: Each task renders its own template
@@ -181,12 +182,17 @@ For a typical library with:
 #### Within Item Scope
 
 ```
-ItemIconTask → SpriteIconTask → SpriteValueTask
+ItemIconTask → SpriteIconTask (per size) → SpriteValueTask (per size)
 ```
 
-- **Dependency**: Sprite tasks depend on icon task output
-- **Solution**: Execute in correct phase (all in Resources phase)
-- **Parallelization**: Icon tasks can run parallel across items
+- **Dependency**: Sprite tasks depend on icon task output (see `src/cmd/library/generate/tasks/item/mod.rs:35-64`)
+- **Issue**: If all Resources phase tasks run in parallel without ordering, sprite tasks may start before their input files exist
+- **Mitigation Strategies**:
+  1. **Sub-phases** (Recommended): Split Resources phase into sub-phases (icons → sprites → values) with barriers between each
+  2. **DAG Scheduling**: Implement dependency graph scheduling to respect task ordering constraints
+  3. **Combined Work Units**: Merge ItemIconTask + all SpriteIconTask + all SpriteValueTask into a single work unit per item
+  4. **Pre-execution Check**: Each task checks for input file existence and waits/retries if not ready (adds complexity)
+- **Recommendation**: Use sub-phases (Option 1) for Resources phase to maintain task granularity while respecting dependencies
 
 #### Cross-Scope Dependencies
 
@@ -244,13 +250,15 @@ pub trait Task {
 
 #### Option A: Phase-Specific WorkUnit Wrappers
 
-Create a wrapper that maps a Task + Phase to WorkUnit:
+Create a wrapper that maps a Task + Phase to WorkUnit using owned/Arc values to satisfy the 'static bound:
 
 ```rust
-struct PhaseWorkUnit<'a> {
-    task: &'a dyn Task,
+use std::sync::Arc;
+
+struct PhaseWorkUnit {
+    task: Box<dyn Task + Send>,
     phase: Phase,
-    context: PhaseContext<'a>,
+    context: PhaseContext,
 }
 
 enum Phase {
@@ -261,28 +269,28 @@ enum Phase {
     RenderSources,
 }
 
-struct PhaseContext<'a> {
-    tera: Option<&'a Tera>,
-    plantuml: Option<&'a PlantUML>,
+struct PhaseContext {
+    tera: Option<Arc<Tera>>,
+    plantuml: Option<Arc<PlantUML>>,
 }
 
-impl WorkUnit for PhaseWorkUnit<'_> {
+impl WorkUnit for PhaseWorkUnit {
     fn identifier(&self) -> String {
         format!("{:?}_{}", self.phase, /* task identifier */)
     }
     
     fn execute(&self) -> Result<(), String> {
-        match self.phase {
+        match &self.phase {
             Phase::Cleanup(scopes) => self.task.cleanup(scopes),
             Phase::CreateResources => self.task.create_resources(),
             Phase::RenderAtomicTemplates => {
-                self.task.render_atomic_templates(self.context.tera.unwrap())
+                self.task.render_atomic_templates(self.context.tera.as_ref().unwrap())
             },
             Phase::RenderComposedTemplates => {
-                self.task.render_composed_templates(self.context.tera.unwrap())
+                self.task.render_composed_templates(self.context.tera.as_ref().unwrap())
             },
             Phase::RenderSources => {
-                self.task.render_sources(self.context.plantuml.unwrap())
+                self.task.render_sources(self.context.plantuml.as_ref().unwrap())
             },
         }
         .map_err(|e| e.to_string())
@@ -290,14 +298,18 @@ impl WorkUnit for PhaseWorkUnit<'_> {
 }
 ```
 
+**Note**: Tasks must be boxed/owned and Task trait must add `Send` bound to support the `'static` requirement of WorkUnit.
+
 **Pros**:
 - Reuses existing Task trait
-- Minimal changes to existing code
+- Minimal changes to task implementations
 - Clear phase separation
+- Satisfies WorkUnit's `'static` bound with Arc for shared context
 
 **Cons**:
-- Requires borrowing tasks (lifetime management)
-- Multiple wrapper structs
+- Requires Task trait to have `Send` bound
+- Context (Tera, PlantUML) must be wrapped in Arc
+- Slightly more complex ownership model
 
 #### Option B: Direct WorkUnit Implementation
 
@@ -472,9 +484,9 @@ Use existing `AggregatedError` from threading module:
 match pool.execute(work_units) {
     Ok(()) => log::info!("Phase completed successfully"),
     Err(agg_err) => {
-        log::error!("Phase failed with {} errors", agg_err.errors.len());
-        for error in agg_err.errors {
-            log::error!("  - {}: {}", error.identifier, error.message);
+        log::error!("Phase failed with {} errors", agg_err.errors().len());
+        for error in agg_err.errors() {
+            log::error!("  - {}: {}", error.unit_identifier, error.message);
         }
         return Err(agg_err.into());
     }
