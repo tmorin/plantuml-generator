@@ -263,7 +263,7 @@ struct PhaseWorkUnit {
 }
 
 enum Phase {
-    Cleanup(Vec<CleanupScope>),
+    Cleanup(Arc<Vec<CleanupScope>>),
     CreateResources,
     RenderAtomicTemplates,
     RenderComposedTemplates,
@@ -344,7 +344,11 @@ impl WorkUnit for PhaseWorkUnit {
 }
 ```
 
-**Note**: Tasks are stored as `Arc<dyn Task + Send + Sync>` to allow reuse across multiple phases without moving. Each work unit clones the Arc, making it lightweight to create multiple work units per task (one for each phase).
+**Note**: Tasks are stored as `Arc<dyn Task + Send + Sync>` to allow reuse across multiple phases without moving. Each work unit clones the Arc, making it lightweight to create multiple work units per task (one for each phase). Cleanup scopes are wrapped in `Arc<Vec<CleanupScope>>` to avoid cloning requirements.
+
+**Implementation Requirements**:
+- Change `Generator::tasks` from `Vec<Box<dyn Task>>` to `Vec<Arc<dyn Task + Send + Sync>>`
+- Wrap cleanup scopes in `Arc<Vec<CleanupScope>>` when creating Phase::Cleanup work units
 
 **Pros**:
 - Reuses existing Task trait
@@ -410,7 +414,7 @@ macro_rules! impl_workunit_for_task {
 **Option A: Phase-Specific WorkUnit Wrappers** is recommended because:
 
 1. **Minimal disruption**: Existing Task trait and implementations unchanged
-2. **Type safety**: Phase context enforced at compile time
+2. **Runtime validation**: Phase context validated at runtime with explicit error handling
 3. **Clear semantics**: Each wrapper represents a task in a specific phase
 4. **Testable**: Easy to test wrapper logic separately
 5. **Flexible**: Easy to add phase-specific logic (e.g., retries, logging)
@@ -478,18 +482,15 @@ fn create_resources_parallel(&self) -> Result<()> {
     let thread_pool_config = crate::threading::Config::from_env();
     let pool = ThreadPool::new(thread_pool_config);
     
-    // Convert tasks to Arc for sharing across phases
-    // This allows the same task set to be used in all phases
-    let shared_tasks: Vec<Arc<dyn Task + Send + Sync>> = self.tasks
-        .iter()
-        .enumerate()
-        .map(|(idx, task)| {
-            // In practice, tasks would already be Arc or converted once during Generator::create
-            Arc::clone(task) // Assuming tasks are already Arc
-        })
-        .collect();
+    // Note: This example assumes Generator has been modified to store tasks as Arc.
+    // In practice, you would change Generator::tasks from Vec<Box<dyn Task>>
+    // to Vec<Arc<dyn Task + Send + Sync>> during the initial refactoring.
+    //
+    // Example modification to Generator::create():
+    //   tasks: Vec<Arc<dyn Task + Send + Sync>> = Vec::new();
+    //   tasks.push(Arc::new(task_instance) as Arc<dyn Task + Send + Sync>);
     
-    let work_units: Vec<Box<dyn WorkUnit>> = shared_tasks
+    let work_units: Vec<Box<dyn WorkUnit>> = self.tasks
         .iter()
         .enumerate()
         .map(|(idx, task)| {
