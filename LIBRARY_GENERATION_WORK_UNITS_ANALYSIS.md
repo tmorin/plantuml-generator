@@ -98,15 +98,15 @@ Item-level tasks are the most numerous and offer the highest parallelization ben
 
 **Sprite Sizes**: Typically 3 sizes (xs, sm, md) = 6 tasks per item with icon.
 
-#### Element Processing Tasks (2-N tasks per element)
+#### Element Processing Tasks (2 Task instances, 2–3 WorkUnits per element)
 
 | Task Type | Purpose | Phase | File Operations | Dependencies |
 |-----------|---------|-------|-----------------|--------------|
-| `ElementSnippetTask` (Local) | Generate local snippet | Atomic Templates | Write 1 file | None |
-| `ElementSnippetTask` (Local) | Render snippet image | Sources | Write 1 image | PlantUML + snippet |
-| `ElementSnippetTask` (Remote) | Generate remote snippet | Atomic Templates | Write 1 file | None |
+| `ElementSnippetTask` (Local) – Snippet File | Generate local snippet file | Atomic Templates | Write 1 file | None |
+| `ElementSnippetTask` (Local) – Snippet Image | Render local snippet image | Sources | Write 1 image | PlantUML + snippet |
+| `ElementSnippetTask` (Remote) – Snippet File | Generate remote snippet file | Atomic Templates | Write 1 file | None |
 
-**Elements per Item**: Typically 1-4 elements = 2-8 tasks per item.
+**Elements per Item**: Typically 1-4 elements = 2 Task instances (local + remote) per element, resulting in 2-3 WorkUnit executions per element (local snippet file, optional local image, remote snippet file), i.e., 2-12 WorkUnits per item.
 
 #### Other Item Tasks (2 tasks per item)
 
@@ -277,7 +277,9 @@ struct PhaseContext {
 
 impl WorkUnit for PhaseWorkUnit {
     fn identifier(&self) -> String {
-        format!("{:?}_{}", self.phase, /* task identifier */)
+        // Note: Task trait would need to be extended with an identifier() method
+        // or tasks could be wrapped with identifiers at construction time
+        format!("{:?}", self.phase)
     }
     
     fn execute(&self) -> Result<(), String> {
@@ -467,22 +469,18 @@ fn create_resources_parallel(&mut self) -> Result<()> {
 
 ### 6.3 Configuration
 
-```rust
-// In Config
-pub struct GeneratorConfig {
-    pub max_threads: usize,
-    pub max_plantuml_concurrent: usize,
-}
+Leverage existing threading configuration alongside library generation config:
 
-impl Default for GeneratorConfig {
-    fn default() -> Self {
-        Self {
-            max_threads: num_cpus::get(),
-            max_plantuml_concurrent: 4, // Memory-limited
-        }
-    }
-}
+```rust
+// Use existing threading::Config for thread pool
+let thread_pool_config = crate::threading::Config::from_env();
+let pool = ThreadPool::new(thread_pool_config);
+
+// For PlantUML-specific limits, can extend cmd::library::generate::config::Config
+// or add fields to control concurrent PlantUML processes
 ```
+
+**Recommendation**: Use existing `crate::threading::Config` for thread pool sizing. If PlantUML memory limits are needed, add a field to the existing `cmd::library::generate::config::Config` rather than introducing a new config type.
 
 ### 6.4 Error Handling
 
@@ -644,39 +642,46 @@ identifier: format!("element_snippet_sources_{}_{:?}", item_urn, snippet_mode)
 execute: call render_sources(plantuml)
 ```
 
-## Appendix B: Dependency Graph
+## Appendix B: Execution Order by Phase
+
+The following shows the conceptual execution order according to the 5 sequential phases. Within each phase, tasks at the same level can be parallelized:
 
 ```
-Library Bootstrap (atomic)
+=== Phase 1: Cleanup ===
+All tasks clean their respective outputs in parallel
+
+=== Phase 2: Create Resources ===
+Sub-phase 2a: Item Icons
+  Item Icon (resources) × N items (parallel)
     ↓
-Package Bootstrap (atomic) × N packages
+Sub-phase 2b: Sprite Icons  
+  Sprite Icon (resources) × N items × N sizes (parallel)
     ↓
-Module Documentation (atomic) × N modules
-    ↓
-Item Icon (resources) × N items
-    ↓
-Sprite Icon (resources) × N items × N sizes
-    ↓
-Sprite Value (resources) × N items × N sizes
-    ↓
-Element Snippet (atomic) × N items × N elements
-    ↓
-Item Documentation (atomic) × N items
-    ↓
-Item Source (atomic) × N items
-    ↓
-Package Embedded (composed) × N packages
-    ↓
-Package Documentation (atomic) × N packages
-    ↓
-Library Documentation (composed)
-    ↓
-Element Snippet Images (sources) × N items × N elements
-    ↓
-Package Examples (sources) × N examples
+Sub-phase 2c: Sprite Values
+  Sprite Value (resources) × N items × N sizes (parallel)
+
+=== Phase 3: Render Atomic Templates ===
+(All can run in parallel)
+  Library Bootstrap (atomic)
+  Package Bootstrap (atomic) × N packages
+  Module Documentation (atomic) × N modules
+  Element Snippet Files (atomic) × N items × N elements
+  Item Documentation (atomic) × N items
+  Item Source (atomic) × N items
+  Package Documentation (atomic) × N packages
+
+=== Phase 4: Render Composed Templates ===
+(All can run in parallel, after Phase 3 complete)
+  Package Embedded (composed) × N packages
+  Library Documentation (composed)
+
+=== Phase 5: Render Sources ===
+(All can run in parallel)
+  Element Snippet Images (sources) × N items × N elements
+  Package Examples (sources) × N examples
 ```
 
-**Key**: Each level can be parallelized independently.
+**Key**: Tasks within each phase can be parallelized. Phases must execute sequentially.
 
 ## Appendix C: References
 
