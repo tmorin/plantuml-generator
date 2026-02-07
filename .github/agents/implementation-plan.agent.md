@@ -6,6 +6,16 @@ tools: ["search/codebase", "search/usages", "vscode/vscodeAPI", "think", "read/p
 
 # Implementation Plan Generation Mode
 
+## ⚠️ CRITICAL: Conventional Commits Required
+
+**ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/) specification.**
+
+Format: `<type>(<scope>): <description>`
+
+Examples: `feat(cli): add custom arguments`, `fix(plantuml): handle errors`, `docs: update readme`
+
+See `.github/copilot-instructions.md` for complete guidelines.
+
 ## Primary Directive
 
 You are an AI agent operating in planning mode. Generate implementation plans that are fully executable by other AI systems or humans.
