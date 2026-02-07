@@ -262,13 +262,24 @@ struct PhaseWorkUnit {
     context: PhaseContext,
 }
 
-#[derive(Debug)]
 enum Phase {
     Cleanup(Vec<CleanupScope>),
     CreateResources,
     RenderAtomicTemplates,
     RenderComposedTemplates,
     RenderSources,
+}
+
+impl Phase {
+    fn name(&self) -> &str {
+        match self {
+            Phase::Cleanup(_) => "Cleanup",
+            Phase::CreateResources => "CreateResources",
+            Phase::RenderAtomicTemplates => "RenderAtomicTemplates",
+            Phase::RenderComposedTemplates => "RenderComposedTemplates",
+            Phase::RenderSources => "RenderSources",
+        }
+    }
 }
 
 struct PhaseContext {
@@ -279,30 +290,56 @@ struct PhaseContext {
 impl WorkUnit for PhaseWorkUnit {
     fn identifier(&self) -> String {
         // Combine task identifier with phase name for unique per-work-unit identification
-        format!("{}::{:?}", self.task_identifier, self.phase)
+        format!("{}::{}", self.task_identifier, self.phase.name())
     }
     
     fn execute(&self) -> Result<(), String> {
         match &self.phase {
-            Phase::Cleanup(scopes) => self.task.cleanup(scopes),
-            Phase::CreateResources => self.task.create_resources(),
+            Phase::Cleanup(scopes) => self
+                .task
+                .cleanup(scopes)
+                .map_err(|e| e.to_string()),
+            Phase::CreateResources => self
+                .task
+                .create_resources()
+                .map_err(|e| e.to_string()),
             Phase::RenderAtomicTemplates => {
-                let tera = self.context.tera.as_ref()
-                    .ok_or_else(|| "Tera context missing for RenderAtomicTemplates phase".to_string())?;
-                self.task.render_atomic_templates(tera)
+                let tera = self
+                    .context
+                    .tera
+                    .as_ref()
+                    .ok_or_else(|| {
+                        "Tera context missing for RenderAtomicTemplates phase".to_string()
+                    })?;
+                self.task
+                    .render_atomic_templates(tera)
+                    .map_err(|e| e.to_string())
             },
             Phase::RenderComposedTemplates => {
-                let tera = self.context.tera.as_ref()
-                    .ok_or_else(|| "Tera context missing for RenderComposedTemplates phase".to_string())?;
-                self.task.render_composed_templates(tera)
+                let tera = self
+                    .context
+                    .tera
+                    .as_ref()
+                    .ok_or_else(|| {
+                        "Tera context missing for RenderComposedTemplates phase".to_string()
+                    })?;
+                self.task
+                    .render_composed_templates(tera)
+                    .map_err(|e| e.to_string())
             },
             Phase::RenderSources => {
-                let plantuml = self.context.plantuml.as_ref()
-                    .ok_or_else(|| "PlantUML context missing for RenderSources phase".to_string())?;
-                self.task.render_sources(plantuml)
+                let plantuml = self
+                    .context
+                    .plantuml
+                    .as_ref()
+                    .ok_or_else(|| {
+                        "PlantUML context missing for RenderSources phase".to_string()
+                    })?;
+                self.task
+                    .render_sources(plantuml)
+                    .map_err(|e| e.to_string())
             },
         }
-        .map_err(|e| e.to_string())
     }
 }
 ```
@@ -316,7 +353,7 @@ impl WorkUnit for PhaseWorkUnit {
 - Satisfies WorkUnit's `'static` bound with Arc for shared context
 
 **Cons**:
-- Requires Task trait to have `Send + Sync` bounds
+- Tasks used with PhaseWorkUnit must be usable as `Arc<dyn Task + Send + Sync>` (implementors must be `Send + Sync`, but the `Task` trait itself can remain unchanged)
 - Context (Tera, PlantUML) must be wrapped in Arc
 - Tasks must be wrapped in Arc for multi-phase reuse
 - Need to track task identifiers separately
