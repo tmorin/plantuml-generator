@@ -13,7 +13,7 @@ packages:
             family: FamilyB
             icon:
               type: Source
-              source: test/raw/eip/MessageConstruction__CommandMessage.svg
+              source: test/original_icon.png
             elements:
               - shape:
                   type: Icon
@@ -25,7 +25,7 @@ packages:
             family: FamilyA
             icon:
               type: Source
-              source: test/raw/eip/MessageConstruction__MessageExpiration.svg
+              source: test/original_icon.png
             elements:
               - shape:
                   type: Icon
@@ -35,7 +35,7 @@ packages:
             family: FamilyB
             icon:
               type: Source
-              source: test/raw/eip/MessageConstruction__MessageReturnAddress.svg
+              source: test/original_icon.png
             elements:
               - shape:
                   type: Icon
@@ -55,7 +55,7 @@ packages:
             family: FamilyA
             icon:
               type: Source
-              source: test/raw/eip/MessageRouting__Aggregator.svg
+              source: test/original_icon.png
             elements:
               - shape:
                   type: Icon
