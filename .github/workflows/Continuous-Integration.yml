@@ -33,9 +33,12 @@ jobs:
         run: |
           sudo add-apt-repository ppa:inkscape.dev/stable -y
           sudo apt update
-          sudo apt-get install pkg-config libssl-dev openjdk-11-jre graphviz inkscape
+          sudo apt-get install pkg-config libssl-dev openjdk-11-jre graphviz inkscape libcairo2-dev libpango1.0-dev
           inkscape --version
-          inkscape --help
+          # Test Inkscape can actually process an SVG file
+          echo '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40"/></svg>' > /tmp/test.svg
+          inkscape /tmp/test.svg --export-filename=/tmp/test.png --export-height=50 || echo "Inkscape test conversion failed"
+          ls -lh /tmp/test.png || echo "Test PNG not created"
         shell: bash
       - name: "Install the toolchain"
         uses: moonrepo/setup-rust@v0
