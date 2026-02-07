@@ -177,10 +177,10 @@
 //!
 //! # See Also
 //!
-//! - [`WorkUnit`]: Trait for defining parallelizable work
-//! - [`ThreadPool`]: The main thread pool implementation
-//! - [`Config`]: Thread pool configuration options
-//! - [`AggregatedError`]: Error aggregation for multiple failures
+//! - [`WorkUnit`] - Trait for defining parallelizable work
+//! - [`ThreadPool`] - The main thread pool implementation
+//! - [`Config`] - Thread pool configuration options
+//! - [`AggregatedError`] - Error aggregation for multiple failures
 
 // Allow dead code since this is a foundational module being built incrementally
 #![allow(dead_code)]
