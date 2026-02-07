@@ -256,16 +256,18 @@ Create `tests/parallel_diagram_generation.rs`:
 ```rust
 use std::fs;
 use std::path::Path;
-use std::time::Instant;
 
 #[test]
-fn test_parallel_execution_performance() {
-    // Setup: Create 20 test diagrams
-    // Execute: Run with 1 thread
-    // Time: Record duration (sequential)
-    // Execute: Run with 4 threads
-    // Time: Record duration (parallel)
-    // Verify: Parallel is significantly faster
+fn test_parallel_execution_produces_same_outputs() {
+    // Setup: Create 20 test diagrams under a temporary directory
+    // Execute: Run diagram generation with 1 thread and capture all outputs (paths, contents, and errors)
+    // Execute: Run diagram generation with 4 threads and capture all outputs
+    // Verify: The sets of generated files (names and contents) are identical between sequential and parallel runs
+    // Verify: Any reported errors are identical between sequential and parallel runs (same inputs, same error messages)
+    // Verify: No data races or partial writes are observed (e.g., no truncated or corrupted output files)
+    //
+    // Note: If you want to explore performance, add a separate benchmark or manual experiment
+    //       without asserting on wall-clock timings in automated tests.
 }
 ```
 
@@ -285,10 +287,10 @@ processing of multiple diagram files. By default, it uses all available CPU core
 
 To control the number of threads:
 
-\`\`\`bash
+```bash
 export PLANTUML_GENERATOR_THREADS=8
 plantuml-generator diagram generate
-\`\`\`
+```
 
 Thread count should be between 1 and 256. Invalid values fall back to CPU core count.
 
@@ -324,12 +326,10 @@ Update "Development Workflow" section if needed:
 ```markdown
 ### Environment Setup
 
-\`\`\`bash
 # ... existing variables ...
 
-# Optional: Control diagram generation parallelization (optional)
-# export PLANTUML_GENERATOR_THREADS=8
-\`\`\`
+# Optional: Control diagram generation parallelization
+export PLANTUML_GENERATOR_THREADS=8
 ```
 
 ## Error Handling

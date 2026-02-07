@@ -52,9 +52,23 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
 1. **File Discovery** (lines 76-95): Glob patterns discover `.puml` and `.plantuml` files
    ```rust
    fn get_puml_paths(config: &Config) -> Vec<PathBuf> {
-       config.source_patterns.split(",")
+       config
+           .source_patterns
+           .split(",")
+           .map(str::trim)
            .map(|pattern| format!("{}/{}", config.source_directory, pattern))
-           .flat_map(|glob_pattern| glob(&glob_pattern).unwrap())
+           .flat_map(|glob_pattern| {
+               glob(&glob_pattern)
+                   .map(|paths| paths.flatten())
+                   .map_err(|e| {
+                       anyhow::Error::new(e).context(format!(
+                           "unable to parse the glob pattern ({})",
+                           &glob_pattern
+                       ))
+                   })
+                   .map(|paths| paths.collect::<Vec<PathBuf>>())
+                   .unwrap()
+           })
            .collect::<Vec<PathBuf>>()
    }
    ```
@@ -92,7 +106,7 @@ struct DiagramGenerationWorkUnit {
 1. **File System Safety**
    - **Read Operations**: Each work unit reads its own `.puml` source file
    - **Write Operations**: Outputs are written to same directory as source
-   - **No Conflicts**: PlantUML generates unique output filenames per diagram
+   - **No Conflicts (When Names Are Unique)**: PlantUML generates unique output filenames per diagram within a single source file, so there are no conflicts as long as diagram names are unique per output directory
    - **Example**: `diagrams_a.puml` → `diagram_a_0.png`, `diagram_a_1.png`
 
 2. **Process Isolation**
@@ -359,7 +373,7 @@ Typical project:
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Race condition in file writes | Medium | PlantUML handles this internally with unique names |
+| Race condition in file writes | Medium | Document requirement for unique diagram names per directory and/or use per-file output directories to avoid collisions |
 | Timestamp synchronization bug | Low | Keep simple approach (Option A), well-tested |
 | Memory exhaustion with many threads | Low | Default to CPU core count, document limits |
 | PlantUML JAR corruption during concurrent download | Low | Download before parallel execution |
