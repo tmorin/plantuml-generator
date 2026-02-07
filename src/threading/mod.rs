@@ -142,9 +142,12 @@
 //! plantuml-generator library generate
 //! ```
 //!
-//! Invalid values fall back to the default (CPU core count). The thread pool
-//! automatically limits threads to the number of work units when there are
-//! fewer work units than configured threads.
+//! Invalid environment variable values fall back to the default (CPU core
+//! count). When using [`Config::new(count)`](Config::new), the provided count
+//! is validated (1-256) and out-of-range values will panic rather than
+//! silently falling back. The thread pool automatically limits threads to
+//! the number of work units when there are fewer work units than configured
+//! threads.
 //!
 //! # Error Handling
 //!
