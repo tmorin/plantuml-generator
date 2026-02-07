@@ -7,6 +7,18 @@ applyTo: '**'
 **Specification-Driven Workflow:**
 Bridge the gap between requirements and implementation.
 
+## ⚠️ CRITICAL REQUIREMENT: Conventional Commits
+
+**ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/) specification.**
+
+Format: `<type>(<scope>): <description>`
+
+- Type: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+- Description: imperative mood, lowercase, no period, max 50 chars
+- Examples: `feat(cli): add custom arguments`, `fix(plantuml): handle errors`, `docs: update readme`
+
+See `.github/copilot-instructions.md` for complete guidelines.
+
 **Maintain these artifacts at all times:**
 
 - **`requirements.md`**: User stories and acceptance criteria in structured EARS notation.

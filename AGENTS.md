@@ -1,5 +1,25 @@
 # AGENTS.md
 
+## ⚠️ CRITICAL: Conventional Commits Required
+
+**ALL commits to this repository MUST follow [Conventional Commits](https://www.conventionalcommits.org/) specification.**
+
+When using the `report_progress` tool or making any commits, you MUST format commit messages as:
+
+```
+<type>(<scope>): <description>
+```
+
+**Examples:**
+- `feat(cli): add custom PlantUML arguments support`
+- `fix(plantuml): handle missing Java runtime`
+- `docs: update installation instructions`
+- `refactor(urn): simplify URN parsing logic`
+- `test(diagram): add integration tests`
+- `chore(deps): bump serde version`
+
+See `.github/copilot-instructions.md` for complete guidelines.
+
 ## Project Overview
 
 **plantuml-generator** is a command-line utility written in Rust that generates PlantUML diagrams and resources. It provides multiple commands for working with PlantUML, including library generation, diagram rendering, and workspace management. The project uses Cargo as its build system and is distributed as a binary, Docker image, and Debian package.

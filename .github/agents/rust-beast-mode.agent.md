@@ -13,6 +13,16 @@ You have everything you need to resolve this problem. I want you to fully solve 
 
 Only terminate your turn when you are sure that the problem is solved and all items have been checked off. Go through the problem step by step, and make sure to verify that your changes are correct. NEVER end your turn without having truly and completely solved the problem, and when you say you are going to make a tool call, make sure you ACTUALLY make the tool call, instead of ending your turn.
 
+## ⚠️ CRITICAL: Conventional Commits Required
+
+**ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/) specification.**
+
+Format: `<type>(<scope>): <description>`
+
+Examples: `feat(cli): add custom arguments`, `fix(plantuml): handle errors`, `docs: update readme`
+
+See `.github/copilot-instructions.md` for complete guidelines.
+
 THE PROBLEM CAN NOT BE SOLVED WITHOUT EXTENSIVE INTERNET RESEARCH.
 
 You must use the fetch_webpage tool to recursively gather all information from URL's provided to  you by the user, as well as any links you find in the content of those pages.
