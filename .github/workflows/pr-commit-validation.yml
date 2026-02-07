@@ -132,7 +132,14 @@ jobs:
           echo ""
           
           # Pattern to match issue references: #123, GH-123, closes #123, fixes #123, etc.
-          # Supported keywords: close/closes/closed, fix/fixes/fixed, resolve/resolves/resolved
+          # Supported formats:
+          #   - Standalone: #123, GH-123
+          #   - With keywords: close/closes/closed/fix/fixes/fixed/resolve/resolves/resolved #123
+          # Pattern breakdown:
+          #   - close[sd]? matches: close, closes, closed
+          #   - fix(e[sd])? matches: fix, fixes (fix+es), fixed (fix+ed)
+          #   - resolve[sd]? matches: resolve, resolves, resolved
+          # Used with grep -i flag for case-insensitive matching
           ISSUE_REFERENCE_REGEX='(#[0-9]+|GH-[0-9]+|(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+)'
           
           VALIDATION_FAILED=0
