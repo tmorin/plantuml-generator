@@ -256,7 +256,8 @@ Create a wrapper that maps a Task + Phase to WorkUnit using owned/Arc values to 
 use std::sync::Arc;
 
 struct PhaseWorkUnit {
-    task: Box<dyn Task + Send>,
+    task: Arc<dyn Task + Send + Sync>,
+    task_identifier: String,
     phase: Phase,
     context: PhaseContext,
 }
@@ -277,9 +278,8 @@ struct PhaseContext {
 
 impl WorkUnit for PhaseWorkUnit {
     fn identifier(&self) -> String {
-        // Note: Task trait would need to be extended with an identifier() method
-        // or tasks could be wrapped with identifiers at construction time
-        format!("{:?}", self.phase)
+        // Combine task identifier with phase name for unique per-work-unit identification
+        format!("{}::{:?}", self.task_identifier, self.phase)
     }
     
     fn execute(&self) -> Result<(), String> {
@@ -307,7 +307,7 @@ impl WorkUnit for PhaseWorkUnit {
 }
 ```
 
-**Note**: Tasks must be boxed/owned and Task trait must add `Send` bound to support the `'static` requirement of WorkUnit.
+**Note**: Tasks are stored as `Arc<dyn Task + Send + Sync>` to allow reuse across multiple phases without moving. Each work unit clones the Arc, making it lightweight to create multiple work units per task (one for each phase).
 
 **Pros**:
 - Reuses existing Task trait
@@ -316,9 +316,10 @@ impl WorkUnit for PhaseWorkUnit {
 - Satisfies WorkUnit's `'static` bound with Arc for shared context
 
 **Cons**:
-- Requires Task trait to have `Send` bound
+- Requires Task trait to have `Send + Sync` bounds
 - Context (Tera, PlantUML) must be wrapped in Arc
-- Slightly more complex ownership model
+- Tasks must be wrapped in Arc for multi-phase reuse
+- Need to track task identifiers separately
 
 #### Option B: Direct WorkUnit Implementation
 
@@ -433,18 +434,31 @@ Speedup = 1000 / (1000/8 + 5) ≈ 7.6x
 
 ```rust
 // In generator.rs
-fn create_resources_parallel(&mut self) -> Result<()> {
+fn create_resources_parallel(&self) -> Result<()> {
     log::info!("Start Create Resources phase (parallel).");
     
     // Thread-pool configuration loaded from environment
     let thread_pool_config = crate::threading::Config::from_env();
     let pool = ThreadPool::new(thread_pool_config);
     
-    let work_units: Vec<Box<dyn WorkUnit>> = self.tasks
-        .drain(..)
-        .map(|task| {
+    // Convert tasks to Arc for sharing across phases
+    // This allows the same task set to be used in all phases
+    let shared_tasks: Vec<Arc<dyn Task + Send + Sync>> = self.tasks
+        .iter()
+        .enumerate()
+        .map(|(idx, task)| {
+            // In practice, tasks would already be Arc or converted once during Generator::create
+            Arc::clone(task) // Assuming tasks are already Arc
+        })
+        .collect();
+    
+    let work_units: Vec<Box<dyn WorkUnit>> = shared_tasks
+        .iter()
+        .enumerate()
+        .map(|(idx, task)| {
             Box::new(ResourcesWorkUnit {
-                task,
+                task: Arc::clone(task),
+                task_identifier: format!("task_{}", idx),
             }) as Box<dyn WorkUnit>
         })
         .collect();
