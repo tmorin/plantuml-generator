@@ -183,12 +183,11 @@ mod test {
     #[test]
     fn test_create_resources_with_inkscape() {
         // Skip this test if inkscape is not available
-        if std::process::Command::new("inkscape")
+        if !std::process::Command::new("inkscape")
             .arg("--version")
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
-            == false
         {
             eprintln!("Skipping test_create_resources_with_inkscape: inkscape not available");
             return;
