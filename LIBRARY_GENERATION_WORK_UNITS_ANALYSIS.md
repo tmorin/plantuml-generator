@@ -13,7 +13,7 @@ This document analyzes the library generation process to identify parallelizable
 
 ### Key Findings
 
-- ✅ **Parallelization Ready**: All task types are stateless and independent
+- ✅ **Parallelization Ready**: All task types are stateless with no shared mutable state; some require dependency handling within phases
 - ✅ **WorkUnit Compatible**: All tasks can be mapped to WorkUnit trait
 - ✅ **Phase-Based Execution**: 5 sequential phases with internal parallelization
 - ✅ **High Scalability**: Hundreds to thousands of parallelizable units per library
@@ -261,6 +261,7 @@ struct PhaseWorkUnit {
     context: PhaseContext,
 }
 
+#[derive(Debug)]
 enum Phase {
     Cleanup(Vec<CleanupScope>),
     CreateResources,
@@ -284,13 +285,19 @@ impl WorkUnit for PhaseWorkUnit {
             Phase::Cleanup(scopes) => self.task.cleanup(scopes),
             Phase::CreateResources => self.task.create_resources(),
             Phase::RenderAtomicTemplates => {
-                self.task.render_atomic_templates(self.context.tera.as_ref().unwrap())
+                let tera = self.context.tera.as_ref()
+                    .ok_or_else(|| "Tera context missing for RenderAtomicTemplates phase".to_string())?;
+                self.task.render_atomic_templates(tera)
             },
             Phase::RenderComposedTemplates => {
-                self.task.render_composed_templates(self.context.tera.as_ref().unwrap())
+                let tera = self.context.tera.as_ref()
+                    .ok_or_else(|| "Tera context missing for RenderComposedTemplates phase".to_string())?;
+                self.task.render_composed_templates(tera)
             },
             Phase::RenderSources => {
-                self.task.render_sources(self.context.plantuml.as_ref().unwrap())
+                let plantuml = self.context.plantuml.as_ref()
+                    .ok_or_else(|| "PlantUML context missing for RenderSources phase".to_string())?;
+                self.task.render_sources(plantuml)
             },
         }
         .map_err(|e| e.to_string())
@@ -424,17 +431,18 @@ Speedup = 1000 / (1000/8 + 5) ≈ 7.6x
 
 ```rust
 // In generator.rs
-fn create_resources_parallel(&self) -> Result<()> {
+fn create_resources_parallel(&mut self) -> Result<()> {
     log::info!("Start Create Resources phase (parallel).");
     
-    let config = Config::from_env();
-    let pool = ThreadPool::new(config);
+    // Thread-pool configuration loaded from environment
+    let thread_pool_config = crate::threading::Config::from_env();
+    let pool = ThreadPool::new(thread_pool_config);
     
     let work_units: Vec<Box<dyn WorkUnit>> = self.tasks
-        .iter()
+        .drain(..)
         .map(|task| {
             Box::new(ResourcesWorkUnit {
-                task: task.as_ref(),
+                task,
             }) as Box<dyn WorkUnit>
         })
         .collect();
