@@ -24,7 +24,7 @@
 //!
 //! ## Simple Example
 //!
-//! ```ignore
+//! ```no_run
 //! use crate::threading::{Config, ThreadPool, WorkUnit};
 //!
 //! // Define a work unit
@@ -69,7 +69,7 @@
 //!
 //! ## Error Handling Example
 //!
-//! ```ignore
+//! ```no_run
 //! use crate::threading::{Config, ThreadPool, WorkUnit, AggregatedError};
 //!
 //! struct DataValidator {
@@ -113,7 +113,7 @@
 //!
 //! ## Configuration Examples
 //!
-//! ```ignore
+//! ```no_run
 //! use crate::threading::Config;
 //!
 //! // Default configuration (CPU core count)
@@ -160,9 +160,10 @@
 //!
 //! # Performance Characteristics
 //!
-//! - **Thread overhead**: Worker threads are spawned once and reused for all work
-//! - **Work distribution**: Lock-free channel with minimal contention
-//! - **Scalability**: Linear speedup up to CPU core count for CPU-bound work
+//! - **Thread overhead**: Worker threads are spawned once per [`ThreadPool::execute`](ThreadPool::execute)
+//!   call and reused across all work units within that call
+//! - **Work distribution**: Channel-based queue with a mutex-guarded receiver
+//! - **Scalability**: Can approach linear speedup up to CPU core count for sufficiently coarse CPU-bound work
 //! - **Thread safety**: All types are `Send` and use appropriate synchronization
 //!
 //! For I/O-bound work, you may benefit from more threads than CPU cores.
