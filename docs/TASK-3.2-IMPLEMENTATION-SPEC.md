@@ -70,9 +70,8 @@ impl DiagramWorkUnit {
 impl WorkUnit for DiagramWorkUnit {
     fn identifier(&self) -> String {
         self.source_path
-            .to_str()
-            .unwrap_or("unknown")
-            .to_string()
+            .to_string_lossy()
+            .into_owned()
     }
 
     fn execute(&self) -> Result<(), String> {
@@ -219,7 +218,8 @@ fn test_parallel_diagram_generation() {
     // Setup: Create 10+ test .puml files
     // Execute: Run diagram generation with PLANTUML_GENERATOR_THREADS=4
     // Verify: All files generated correctly
-    // Verify: Faster than sequential (timing check)
+    // Verify: Parallel execution occurred (e.g., via shared atomic counters or mocked/stubbed renderer that blocks on a barrier)
+    // Note: Avoid wall-clock timing assertions as they are flaky in CI due to resource contention
 }
 ```
 
@@ -243,7 +243,9 @@ fn test_parallel_diagram_generation_with_errors() {
 fn test_thread_count_from_env() {
     // Set PLANTUML_GENERATOR_THREADS=2
     // Execute: Run diagram generation
-    // Verify: Uses configured thread count (via logging or other means)
+    // Verify: Behavior is correct (multiple work units executed, errors aggregated)
+    // Note: Since threading::Config::from_env() is already unit-tested, focus on behavior rather than logging output
+    // Alternative: Expose a narrow introspection hook for the pool/config in tests if needed
 }
 ```
 

@@ -112,12 +112,19 @@ struct DiagramGenerationWorkUnit {
    - Can be cloned or shared via `Arc<Config>`
    - No mutable configuration during execution
 
-**Potential Race Conditions: NONE IDENTIFIED**
+**Potential Race Conditions: ONE IDENTIFIED**
 
-The only potential concern is concurrent writes to the same output file, but this is prevented by:
-- PlantUML generates unique filenames based on diagram names
-- Diagram names are unique within a file
-- Different files never generate the same output filename
+**⚠️ Same Diagram Names Across Files:**
+- PlantUML generates output filenames based on diagram names (e.g., `@startuml my_diagram` → `my_diagram.png`)
+- Output files are written to the same directory as the source file by default
+- **Risk**: Two `.puml` files in the same directory that define diagrams with the same name will race to write the same output file, potentially causing corruption
+
+**Mitigation Options:**
+1. **Document as requirement**: Diagram names must be unique per output directory (recommended for initial implementation)
+2. **Use PlantUML's `-output` flag**: Direct outputs to per-file subdirectories
+3. **Name prefixing**: Prefix diagram names with source filename
+
+**Recommendation**: Document this as a constraint for users. Most projects naturally avoid duplicate diagram names within the same directory for organizational clarity.
 
 ### ⚠️ Criterion 3: Timestamp Synchronization
 
@@ -142,20 +149,22 @@ save_last_generation_timestamp(last_gen_path)?;
 1. **Problem**: Timestamp is read once, used by all threads, then written once
    - ✅ **Safe**: Multiple threads reading same timestamp value
    - ✅ **Safe**: Comparing timestamps concurrently
-   - ❌ **Issue**: Single write at end doesn't account for failures
+   - ⚠️ **Potential Issue (in parallel version)**: The single write at the end **must only occur if all renders succeeded**
 
 2. **Edge Case**: Partial failure scenario
-   - If some files succeed and others fail
-   - Timestamp still gets updated (in current implementation)
-   - Next run might skip failed files if they weren't updated
+   - In the **current sequential implementation**, any `plantuml.render(..)?` error returns early via the `?` operator, so `save_last_generation_timestamp()` is **not** called and the timestamp is **not** updated
+   - In a **parallel/thread-pool implementation**, some files may succeed while others fail
+   - The aggregated result must be an error in that case, and the timestamp **must not** be written unless the aggregated result is `Ok(())`
+   - Otherwise, a future run could incorrectly skip failed files because the global timestamp would appear up-to-date
 
 **Solutions:**
 
 **Option A: Simple - Keep Current Behavior (Recommended for MVP)**
 - Read timestamp before parallel execution
 - Process all files in parallel
-- Write timestamp after all threads complete
-- On error, don't update timestamp (already fails fast with `?` operator)
+- Aggregate per-file results into a single `Result<()>`
+- Write timestamp after all threads complete **only if** the aggregated result is `Ok(())`
+- On error, don't update timestamp (mirrors current sequential fail-fast behavior with the `?` operator)
 - **Pros**: Minimal code changes, simple, correct
 - **Cons**: On partial failure, requires re-running all files
 
