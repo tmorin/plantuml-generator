@@ -113,11 +113,12 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
                             })?;
                             for i in 0..archive.len() {
                                 let mut file = archive.by_index(i).map_err(|e| {
-                                    anyhow::Error::new(e)
-                                        .context(format!("unable to read zip entry {}", i))
+                                    anyhow::Error::new(e).context(format!(
+                                        "unable to read zip entry {}",
+                                        i
+                                    ))
                                 })?;
-                                let outpath = artifact_path
-                                    .join(file.enclosed_name().unwrap_or(Path::new("")));
+                                let outpath = artifact_path.join(file.enclosed_name().unwrap_or(Path::new("")));
                                 if file.is_dir() {
                                     create_directory(&outpath)?;
                                 } else {
@@ -125,12 +126,16 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
                                         create_directory(parent)?;
                                     }
                                     let mut outfile = File::create(&outpath).map_err(|e| {
-                                        anyhow::Error::new(e)
-                                            .context(format!("unable to create file {:?}", outpath))
+                                        anyhow::Error::new(e).context(format!(
+                                            "unable to create file {:?}",
+                                            outpath
+                                        ))
                                     })?;
                                     std::io::copy(&mut file, &mut outfile).map_err(|e| {
-                                        anyhow::Error::new(e)
-                                            .context(format!("unable to copy file {:?}", outpath))
+                                        anyhow::Error::new(e).context(format!(
+                                            "unable to copy file {:?}",
+                                            outpath
+                                        ))
                                     })?;
                                 }
                             }

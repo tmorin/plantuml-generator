@@ -28,6 +28,6 @@ mod test {
                 .subcommand_matches("schema")
                 .unwrap(),
         )
-        .unwrap()
+            .unwrap()
     }
 }

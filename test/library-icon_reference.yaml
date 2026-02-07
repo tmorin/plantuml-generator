@@ -13,7 +13,7 @@ packages:
             family: FamilyB
             icon:
               type: Source
-              source: test/original_icon.png
+              source: test/raw/eip/MessageConstruction__MessageReturnAddress.svg
             elements:
               - shape:
                   type: Icon
