@@ -16,11 +16,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Validate PR title (Conventional Commits)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "🔍 Validating PR title..."
           echo ""
           
-          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Use environment variable to safely handle special characters
           echo "PR Title: ${PR_TITLE}"
           echo ""
           
@@ -56,12 +58,21 @@ jobs:
           echo "✅ PR title follows Conventional Commits format"
 
       - name: Validate PR description (issue reference)
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           echo ""
           echo "🔍 Validating PR description for issue reference..."
           echo ""
           
-          PR_BODY="${{ github.event.pull_request.body }}"
+          # Check if PR body is empty
+          if [ -z "${PR_BODY}" ]; then
+            echo "::error::❌ PR description is empty"
+            echo ""
+            echo "PR description must contain an issue reference."
+            echo "Example: 'This PR adds a feature. Closes #123'"
+            exit 1
+          fi
           
           # Pattern to match issue references: #123, GH-123, closes #123, fixes #123, etc.
           # Supported formats:
