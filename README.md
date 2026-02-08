@@ -70,12 +70,15 @@ To use this repository with GitHub Copilot CLI with optimal tool configuration:
 
 ```bash
 copilot \
-  --allow-tool 'shell(cargo *)' \
-  --allow-tool 'shell(rustc *)' \
-  --allow-tool 'shell(rustfmt *)' \
-  --allow-tool 'shell(git *)' \
-  --allow-tool 'shell(gh *)' \
-  --allow-tool 'shell(xargs *)' \
+  --allow-tool 'shell(cargo)' \
+  --allow-tool 'shell(rustc)' \
+  --allow-tool 'shell(rustfmt)' \
+  --allow-tool 'shell(git)' \
+  --allow-tool 'shell(gh)' \
+  --allow-tool 'shell(xargs)' \
+  --allow-tool 'shell(mkdir)' \
+  --allow-tool 'shell(head)' \
+  --allow-tool 'shell(tail)' \
   --allow-tool 'mcp(github-mcp-server)' \
   --allow-tool 'read' \
   --allow-tool 'write'

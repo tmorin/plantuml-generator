@@ -20,6 +20,7 @@ mod generator;
 mod task;
 mod tasks;
 mod templates;
+pub mod work_units;
 
 pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     // create the config
