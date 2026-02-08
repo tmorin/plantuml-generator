@@ -5,7 +5,7 @@ use tera::Tera;
 
 use crate::plantuml::PlantUML;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub enum CleanupScope {
     All,
     Example,
@@ -82,7 +82,7 @@ impl CleanupScope {
     }
 }
 
-pub trait Task {
+pub trait Task: Send + Sync {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
         Ok(())
     }

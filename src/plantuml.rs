@@ -8,7 +8,7 @@ use std::process::Command;
 use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlantUML {
     /// The command/path of the java binary.
     java_binary: String,
