@@ -18,7 +18,18 @@ use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::plantuml::PlantUML;
 use crate::threading::WorkUnit;
 
+
 /// Enumeration of library generation phases.
+///
+/// # Phase/Context Dependencies
+///
+/// - `Cleanup`: Requires cleanup scopes, no other context needed
+/// - `CreateResources`: No context required
+/// - `RenderAtomicTemplates`: Requires Tera context (will error if missing)
+/// - `RenderComposedTemplates`: Requires Tera context (will error if missing)
+/// - `RenderSources`: Requires PlantUML context (will error if missing)
+///
+/// Using a factory method ensures the correct context is provided for each phase.
 enum Phase {
     Cleanup(Arc<Vec<CleanupScope>>),
     CreateResources,
@@ -40,6 +51,12 @@ impl Phase {
 }
 
 /// Context required to execute task phases.
+///
+/// Each phase requires specific context to be present:
+/// - `tera`: Required for rendering phases (atomic and composed templates)
+/// - `plantuml`: Required for the sources rendering phase
+///
+/// Missing context will result in a descriptive error during execution.
 struct PhaseContext {
     tera: Option<Arc<Tera>>,
     plantuml: Option<Arc<PlantUML>>,
@@ -152,22 +169,22 @@ impl WorkUnit for LibraryGenerationTask {
             Phase::Cleanup(scopes) => self
                 .task
                 .cleanup(scopes)
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::cleanup: {}", self.task_identifier, e)),
             Phase::CreateResources => self
                 .task
                 .create_resources()
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
                 let tera = self
                     .context
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderAtomicTemplates phase".to_string()
+                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_atomic_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
             }
             Phase::RenderComposedTemplates => {
                 let tera = self
@@ -175,11 +192,11 @@ impl WorkUnit for LibraryGenerationTask {
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderComposedTemplates phase".to_string()
+                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_composed_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
             }
             Phase::RenderSources => {
                 let plantuml = self
@@ -187,11 +204,11 @@ impl WorkUnit for LibraryGenerationTask {
                     .plantuml
                     .as_ref()
                     .ok_or_else(|| {
-                        "PlantUML context missing for RenderSources phase".to_string()
+                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_sources(plantuml)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
             }
         }
     }
@@ -305,22 +322,22 @@ impl WorkUnit for PackageGenerationTask {
             Phase::Cleanup(scopes) => self
                 .task
                 .cleanup(scopes)
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::cleanup: {}", self.task_identifier, e)),
             Phase::CreateResources => self
                 .task
                 .create_resources()
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
                 let tera = self
                     .context
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderAtomicTemplates phase".to_string()
+                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_atomic_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
             }
             Phase::RenderComposedTemplates => {
                 let tera = self
@@ -328,11 +345,11 @@ impl WorkUnit for PackageGenerationTask {
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderComposedTemplates phase".to_string()
+                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_composed_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
             }
             Phase::RenderSources => {
                 let plantuml = self
@@ -340,11 +357,11 @@ impl WorkUnit for PackageGenerationTask {
                     .plantuml
                     .as_ref()
                     .ok_or_else(|| {
-                        "PlantUML context missing for RenderSources phase".to_string()
+                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_sources(plantuml)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
             }
         }
     }
@@ -457,22 +474,22 @@ impl WorkUnit for ModuleGenerationTask {
             Phase::Cleanup(scopes) => self
                 .task
                 .cleanup(scopes)
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::cleanup: {}", self.task_identifier, e)),
             Phase::CreateResources => self
                 .task
                 .create_resources()
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
                 let tera = self
                     .context
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderAtomicTemplates phase".to_string()
+                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_atomic_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
             }
             Phase::RenderComposedTemplates => {
                 let tera = self
@@ -480,11 +497,11 @@ impl WorkUnit for ModuleGenerationTask {
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderComposedTemplates phase".to_string()
+                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_composed_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
             }
             Phase::RenderSources => {
                 let plantuml = self
@@ -492,11 +509,11 @@ impl WorkUnit for ModuleGenerationTask {
                     .plantuml
                     .as_ref()
                     .ok_or_else(|| {
-                        "PlantUML context missing for RenderSources phase".to_string()
+                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_sources(plantuml)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
             }
         }
     }
@@ -610,22 +627,22 @@ impl WorkUnit for ItemGenerationTask {
             Phase::Cleanup(scopes) => self
                 .task
                 .cleanup(scopes)
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::cleanup: {}", self.task_identifier, e)),
             Phase::CreateResources => self
                 .task
                 .create_resources()
-                .map_err(|e| e.to_string()),
+                .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
                 let tera = self
                     .context
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderAtomicTemplates phase".to_string()
+                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_atomic_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
             }
             Phase::RenderComposedTemplates => {
                 let tera = self
@@ -633,11 +650,11 @@ impl WorkUnit for ItemGenerationTask {
                     .tera
                     .as_ref()
                     .ok_or_else(|| {
-                        "Tera context missing for RenderComposedTemplates phase".to_string()
+                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_composed_templates(tera)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
             }
             Phase::RenderSources => {
                 let plantuml = self
@@ -645,11 +662,11 @@ impl WorkUnit for ItemGenerationTask {
                     .plantuml
                     .as_ref()
                     .ok_or_else(|| {
-                        "PlantUML context missing for RenderSources phase".to_string()
+                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
                     })?;
                 self.task
                     .render_sources(plantuml)
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
             }
         }
     }
@@ -840,5 +857,17 @@ mod tests {
 
         // Verify all cleanup methods were called
         assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    #[test]
+    fn assert_work_units_are_send_sync() {
+        // Compile-time verification that all WorkUnit types are Send + Sync
+        // This ensures they can safely be used in parallel execution contexts
+        fn is_send_sync<T: Send + Sync>() {}
+
+        is_send_sync::<LibraryGenerationTask>();
+        is_send_sync::<PackageGenerationTask>();
+        is_send_sync::<ModuleGenerationTask>();
+        is_send_sync::<ItemGenerationTask>();
     }
 }
