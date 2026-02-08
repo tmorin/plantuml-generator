@@ -231,9 +231,14 @@ impl WorkUnit for LibraryGenerationTask {
                         self.task_identifier
                     )
                 })?;
-                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
-                })
+                self.task
+                    .render_atomic_templates_snippets(tera)
+                    .map_err(|e| {
+                        format!(
+                            "{}::render_atomic_templates_snippets: {}",
+                            self.task_identifier, e
+                        )
+                    })
             }
             Phase::RenderAtomicTemplatesOther => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
@@ -243,7 +248,10 @@ impl WorkUnit for LibraryGenerationTask {
                     )
                 })?;
                 self.task.render_atomic_templates_other(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
+                    format!(
+                        "{}::render_atomic_templates_other: {}",
+                        self.task_identifier, e
+                    )
                 })
             }
             Phase::RenderComposedTemplates => {
@@ -402,9 +410,14 @@ impl WorkUnit for PackageGenerationTask {
                         self.task_identifier
                     )
                 })?;
-                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
-                })
+                self.task
+                    .render_atomic_templates_snippets(tera)
+                    .map_err(|e| {
+                        format!(
+                            "{}::render_atomic_templates_snippets: {}",
+                            self.task_identifier, e
+                        )
+                    })
             }
             Phase::RenderAtomicTemplatesOther => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
@@ -414,7 +427,10 @@ impl WorkUnit for PackageGenerationTask {
                     )
                 })?;
                 self.task.render_atomic_templates_other(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
+                    format!(
+                        "{}::render_atomic_templates_other: {}",
+                        self.task_identifier, e
+                    )
                 })
             }
             Phase::RenderComposedTemplates => {
@@ -572,9 +588,14 @@ impl WorkUnit for ModuleGenerationTask {
                         self.task_identifier
                     )
                 })?;
-                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
-                })
+                self.task
+                    .render_atomic_templates_snippets(tera)
+                    .map_err(|e| {
+                        format!(
+                            "{}::render_atomic_templates_snippets: {}",
+                            self.task_identifier, e
+                        )
+                    })
             }
             Phase::RenderAtomicTemplatesOther => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
@@ -584,7 +605,10 @@ impl WorkUnit for ModuleGenerationTask {
                     )
                 })?;
                 self.task.render_atomic_templates_other(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
+                    format!(
+                        "{}::render_atomic_templates_other: {}",
+                        self.task_identifier, e
+                    )
                 })
             }
             Phase::RenderComposedTemplates => {
@@ -743,9 +767,14 @@ impl WorkUnit for ItemGenerationTask {
                         self.task_identifier
                     )
                 })?;
-                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
-                })
+                self.task
+                    .render_atomic_templates_snippets(tera)
+                    .map_err(|e| {
+                        format!(
+                            "{}::render_atomic_templates_snippets: {}",
+                            self.task_identifier, e
+                        )
+                    })
             }
             Phase::RenderAtomicTemplatesOther => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
@@ -755,7 +784,10 @@ impl WorkUnit for ItemGenerationTask {
                     )
                 })?;
                 self.task.render_atomic_templates_other(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
+                    format!(
+                        "{}::render_atomic_templates_other: {}",
+                        self.task_identifier, e
+                    )
                 })
             }
             Phase::RenderComposedTemplates => {

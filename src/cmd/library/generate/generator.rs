@@ -137,7 +137,10 @@ impl Generator {
         if !work_units.is_empty() {
             log::debug!("Executing {} snippet rendering tasks", work_units.len());
             pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!("Render Atomic Templates (Snippets) phase failed: {}", e))
+                anyhow::Error::msg(format!(
+                    "Render Atomic Templates (Snippets) phase failed: {}",
+                    e
+                ))
             })?;
             log::debug!("Snippet rendering tasks completed");
         }
@@ -151,7 +154,7 @@ impl Generator {
         let pool = ThreadPool::new(thread_config);
 
         let tera_arc = Arc::new(tera.clone());
-        
+
         // Execute other atomic template rendering tasks (all tasks except ElementSnippetTask).
         // These tasks may read files created by snippet tasks.
         let work_units: Vec<Box<dyn WorkUnit>> = self
@@ -170,7 +173,10 @@ impl Generator {
         if !work_units.is_empty() {
             log::debug!("Executing {} other rendering tasks", work_units.len());
             pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!("Render Atomic Templates (Other) phase failed: {}", e))
+                anyhow::Error::msg(format!(
+                    "Render Atomic Templates (Other) phase failed: {}",
+                    e
+                ))
             })?;
             log::debug!("Other rendering tasks completed");
         }
