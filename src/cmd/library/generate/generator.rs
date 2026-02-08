@@ -77,10 +77,9 @@ impl Generator {
         })
     }
 
-    fn cleanup(&self, scopes: &[CleanupScope]) -> Result<()> {
+    fn cleanup(&self, scopes: &[CleanupScope], thread_config: &ThreadConfig) -> Result<()> {
         log::info!("Start the Cleanup phase.");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
+        let pool = ThreadPool::new(thread_config.clone());
 
         let scopes_arc = Arc::new(scopes.to_vec());
         let work_units: Vec<Box<dyn WorkUnit>> = self
@@ -112,10 +111,9 @@ impl Generator {
         }
         Ok(())
     }
-    fn render_sources(&self, plantuml: &PlantUML) -> Result<()> {
+    fn render_sources(&self, plantuml: &PlantUML, thread_config: &ThreadConfig) -> Result<()> {
         log::info!("Start the Render Sources phase.");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
+        let pool = ThreadPool::new(thread_config.clone());
 
         let plantuml_arc = Arc::new(plantuml.clone());
         let work_units: Vec<Box<dyn WorkUnit>> = self
@@ -147,6 +145,7 @@ impl Generator {
         //
         // This method executes phases sequentially to respect inter-phase dependencies.
         // Thread count is configurable via PLANTUML_GENERATOR_THREADS env var (default: CPU core count).
+        // Thread config is read once and reused across all phases to avoid repeated logging.
         //
         // Phase 1: Cleanup
         //   - Removes old generated files
@@ -183,22 +182,23 @@ impl Generator {
         // where tasks from later phases read files not yet created by earlier phases.
         //
         // Tera is wrapped in Arc once to avoid cloning across all phases.
+        // ThreadConfig is read once to avoid repeated logging and environment mutations.
+        let thread_config = ThreadConfig::from_env();
         let tera_arc = Arc::new(tera.clone());
 
-        self.cleanup(cleanup_scopes)?;
+        self.cleanup(cleanup_scopes, &thread_config)?;
         self.create_resources()?;
         // Split render_atomic_templates into two phases to handle intra-phase dependencies
-        self.render_atomic_templates_snippets_with_tera(&tera_arc)?;
-        self.render_atomic_templates_other_with_tera(&tera_arc)?;
-        self.render_composed_templates_with_tera(&tera_arc)?;
-        self.render_sources(plantuml)?;
+        self.render_atomic_templates_snippets_with_tera(&tera_arc, &thread_config)?;
+        self.render_atomic_templates_other_with_tera(&tera_arc, &thread_config)?;
+        self.render_composed_templates_with_tera(&tera_arc, &thread_config)?;
+        self.render_sources(plantuml, &thread_config)?;
         Ok(())
     }
 
-    fn render_atomic_templates_snippets_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+    fn render_atomic_templates_snippets_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
         log::info!("Start the Render Atomic Templates phase (Snippets).");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
+        let pool = ThreadPool::new(thread_config.clone());
 
         // Execute snippet rendering tasks (ElementSnippetTask).
         // These must complete before ItemDocumentationTask reads the snippet files.
@@ -231,14 +231,13 @@ impl Generator {
         Ok(())
     }
 
-    fn render_atomic_templates_other_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+    fn render_atomic_templates_other_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
         log::info!("Start the Render Atomic Templates phase (Other).");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
+        let pool = ThreadPool::new(thread_config.clone());
 
         // Execute other atomic template rendering tasks (all tasks except ElementSnippetTask).
         // These tasks may read files created by snippet tasks.
-        // Filter to only tasks that actually implement rendering to avoid scheduling overhead.
+        // Filter to non-snippet tasks; tasks without other rendering logic may still be scheduled.
         let work_units: Vec<Box<dyn WorkUnit>> = self
             .tasks
             .iter()
@@ -267,10 +266,9 @@ impl Generator {
         Ok(())
     }
 
-    fn render_composed_templates_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+    fn render_composed_templates_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
         log::info!("Start the Render Composed Templates phase.");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
+        let pool = ThreadPool::new(thread_config.clone());
 
         let work_units: Vec<Box<dyn WorkUnit>> = self
             .tasks

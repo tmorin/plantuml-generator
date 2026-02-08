@@ -24,7 +24,6 @@ use crate::threading::WorkUnit;
 ///
 /// - `Cleanup`: Requires cleanup scopes, no other context needed
 /// - `CreateResources`: No context required
-/// - `RenderAtomicTemplates`: Legacy phase - no longer used (split into Snippets + Other)
 /// - `RenderAtomicTemplatesSnippets`: Requires Tera context; renders ElementSnippetTask outputs
 /// - `RenderAtomicTemplatesOther`: Requires Tera context; renders remaining atomic template tasks
 /// - `RenderComposedTemplates`: Requires Tera context (will error if missing)
@@ -35,7 +34,6 @@ use crate::threading::WorkUnit;
 enum Phase {
     Cleanup(Arc<Vec<CleanupScope>>),
     CreateResources,
-    RenderAtomicTemplates,
     RenderAtomicTemplatesSnippets,
     RenderAtomicTemplatesOther,
     RenderComposedTemplates,
@@ -48,7 +46,6 @@ impl Phase {
         match self {
             Phase::Cleanup(_) => "cleanup",
             Phase::CreateResources => "create_resources",
-            Phase::RenderAtomicTemplates => "render_atomic_templates",
             Phase::RenderAtomicTemplatesSnippets => "render_atomic_templates_snippets",
             Phase::RenderAtomicTemplatesOther => "render_atomic_templates_other",
             Phase::RenderComposedTemplates => "render_composed_templates",
@@ -109,23 +106,6 @@ impl LibraryGenerationTask {
             phase: Phase::CreateResources,
             context: PhaseContext {
                 tera: None,
-                plantuml: None,
-            },
-        }
-    }
-
-    /// Creates a new LibraryGenerationTask for the render_atomic_templates phase.
-    pub fn render_atomic_templates(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-        tera: Arc<Tera>,
-    ) -> Self {
-        Self {
-            task,
-            task_identifier,
-            phase: Phase::RenderAtomicTemplates,
-            context: PhaseContext {
-                tera: Some(tera),
                 plantuml: None,
             },
         }
@@ -215,17 +195,6 @@ impl WorkUnit for LibraryGenerationTask {
                 .task
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
-            Phase::RenderAtomicTemplates => {
-                let tera = self.context.tera.as_ref().ok_or_else(|| {
-                    format!(
-                        "{}::render_atomic_templates: Tera context missing",
-                        self.task_identifier
-                    )
-                })?;
-                self.task.render_atomic_templates(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
-                })
-            }
             Phase::RenderAtomicTemplatesSnippets => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
                     format!(
@@ -327,23 +296,6 @@ impl PackageGenerationTask {
         }
     }
 
-    /// Creates a new PackageGenerationTask for the render_atomic_templates phase.
-    pub fn render_atomic_templates(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-        tera: Arc<Tera>,
-    ) -> Self {
-        Self {
-            task,
-            task_identifier,
-            phase: Phase::RenderAtomicTemplates,
-            context: PhaseContext {
-                tera: Some(tera),
-                plantuml: None,
-            },
-        }
-    }
-
     /// Creates a new PackageGenerationTask for the render_composed_templates phase.
     pub fn render_composed_templates(
         task: Arc<dyn Task + Send + Sync>,
@@ -394,17 +346,6 @@ impl WorkUnit for PackageGenerationTask {
                 .task
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
-            Phase::RenderAtomicTemplates => {
-                let tera = self.context.tera.as_ref().ok_or_else(|| {
-                    format!(
-                        "{}::render_atomic_templates: Tera context missing",
-                        self.task_identifier
-                    )
-                })?;
-                self.task.render_atomic_templates(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
-                })
-            }
             Phase::RenderAtomicTemplatesSnippets => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
                     format!(
@@ -505,23 +446,6 @@ impl ModuleGenerationTask {
         }
     }
 
-    /// Creates a new ModuleGenerationTask for the render_atomic_templates phase.
-    pub fn render_atomic_templates(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-        tera: Arc<Tera>,
-    ) -> Self {
-        Self {
-            task,
-            task_identifier,
-            phase: Phase::RenderAtomicTemplates,
-            context: PhaseContext {
-                tera: Some(tera),
-                plantuml: None,
-            },
-        }
-    }
-
     /// Creates a new ModuleGenerationTask for the render_composed_templates phase.
     pub fn render_composed_templates(
         task: Arc<dyn Task + Send + Sync>,
@@ -572,17 +496,6 @@ impl WorkUnit for ModuleGenerationTask {
                 .task
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
-            Phase::RenderAtomicTemplates => {
-                let tera = self.context.tera.as_ref().ok_or_else(|| {
-                    format!(
-                        "{}::render_atomic_templates: Tera context missing",
-                        self.task_identifier
-                    )
-                })?;
-                self.task.render_atomic_templates(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
-                })
-            }
             Phase::RenderAtomicTemplatesSnippets => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
                     format!(
@@ -684,23 +597,6 @@ impl ItemGenerationTask {
         }
     }
 
-    /// Creates a new ItemGenerationTask for the render_atomic_templates phase.
-    pub fn render_atomic_templates(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-        tera: Arc<Tera>,
-    ) -> Self {
-        Self {
-            task,
-            task_identifier,
-            phase: Phase::RenderAtomicTemplates,
-            context: PhaseContext {
-                tera: Some(tera),
-                plantuml: None,
-            },
-        }
-    }
-
     /// Creates a new ItemGenerationTask for the render_composed_templates phase.
     pub fn render_composed_templates(
         task: Arc<dyn Task + Send + Sync>,
@@ -751,17 +647,6 @@ impl WorkUnit for ItemGenerationTask {
                 .task
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
-            Phase::RenderAtomicTemplates => {
-                let tera = self.context.tera.as_ref().ok_or_else(|| {
-                    format!(
-                        "{}::render_atomic_templates: Tera context missing",
-                        self.task_identifier
-                    )
-                })?;
-                self.task.render_atomic_templates(tera).map_err(|e| {
-                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
-                })
-            }
             Phase::RenderAtomicTemplatesSnippets => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
                     format!(
