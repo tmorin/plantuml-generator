@@ -1,5 +1,6 @@
 /// End-to-end tests for library generation determinism
-/// These tests verify that parallel execution produces identical output
+/// These tests verify that multiple sequential executions produce identical output
+use sha2::Digest;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
@@ -7,27 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
-/// Helper to get the binary path
-fn get_binary_path() -> PathBuf {
-    let mut path = std::env::current_exe()
-        .expect("Failed to get current executable path")
-        .parent()
-        .expect("Failed to get parent directory")
-        .parent()
-        .expect("Failed to get parent directory")
-        .to_path_buf();
-
-    // Handle both debug and release builds
-    if path.ends_with("deps") {
-        path.pop();
-    }
-
-    path.push(format!(
-        "plantuml-generator{}",
-        std::env::consts::EXE_SUFFIX
-    ));
-    path
-}
+mod common;
 
 /// Compute SHA256 checksum for a file
 fn compute_file_checksum(path: &Path) -> Result<String, std::io::Error> {
@@ -44,7 +25,6 @@ fn compute_file_checksum(path: &Path) -> Result<String, std::io::Error> {
         hasher.update(&buffer[..bytes_read]);
     }
 
-    use sha2::Digest;
     Ok(format!("{:x}", hasher.finalize()))
 }
 
@@ -90,12 +70,12 @@ fn compute_directory_checksums(dir: &Path) -> Result<HashMap<PathBuf, String>, s
 /// Test that library generation produces deterministic output across multiple runs
 #[test]
 fn test_library_generate_determinism() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
 
     // Create cache directory (shared across all runs)
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
-    // Create 5 separate output directories for parallel runs
+    // Create 5 separate output directories for multiple runs
     let mut output_dirs = Vec::new();
     for _ in 0..5 {
         output_dirs.push(TempDir::new().expect("Failed to create output dir"));
@@ -103,7 +83,7 @@ fn test_library_generate_determinism() {
 
     println!("Running library generation 5 times...");
 
-    // Run library generation 5 times with separate output directories
+    // Run library generation 5 times sequentially with separate output directories
     for (i, output_dir) in output_dirs.iter().enumerate() {
         println!("  Run {}/5...", i + 1);
 
