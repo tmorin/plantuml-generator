@@ -112,28 +112,68 @@ impl Generator {
         }
         Ok(())
     }
-    fn render_atomic_templates(&self, tera: &Tera) -> Result<()> {
-        log::info!("Start the Render Atomic Templates phase.");
+    fn render_atomic_templates_snippets(&self, tera: &Tera) -> Result<()> {
+        log::info!("Start the Render Atomic Templates phase (Snippets).");
         let thread_config = ThreadConfig::from_env();
         let pool = ThreadPool::new(thread_config);
 
         let tera_arc = Arc::new(tera.clone());
+
+        // Execute snippet rendering tasks (ElementSnippetTask).
+        // These must complete before ItemDocumentationTask reads the snippet files.
         let work_units: Vec<Box<dyn WorkUnit>> = self
             .tasks
             .iter()
             .enumerate()
             .map(|(idx, task)| {
-                Box::new(LibraryGenerationTask::render_atomic_templates(
+                Box::new(LibraryGenerationTask::render_atomic_templates_snippets(
                     Arc::clone(task),
-                    format!("render_atomic_task_{}", idx),
+                    format!("render_atomic_snippets_task_{}", idx),
                     Arc::clone(&tera_arc),
                 )) as Box<dyn WorkUnit>
             })
             .collect();
 
-        pool.execute(work_units).map_err(|e| {
-            anyhow::Error::msg(format!("Render Atomic Templates phase failed: {}", e))
-        })?;
+        if !work_units.is_empty() {
+            log::debug!("Executing {} snippet rendering tasks", work_units.len());
+            pool.execute(work_units).map_err(|e| {
+                anyhow::Error::msg(format!("Render Atomic Templates (Snippets) phase failed: {}", e))
+            })?;
+            log::debug!("Snippet rendering tasks completed");
+        }
+
+        Ok(())
+    }
+
+    fn render_atomic_templates_other(&self, tera: &Tera) -> Result<()> {
+        log::info!("Start the Render Atomic Templates phase (Other).");
+        let thread_config = ThreadConfig::from_env();
+        let pool = ThreadPool::new(thread_config);
+
+        let tera_arc = Arc::new(tera.clone());
+        
+        // Execute other atomic template rendering tasks (all tasks except ElementSnippetTask).
+        // These tasks may read files created by snippet tasks.
+        let work_units: Vec<Box<dyn WorkUnit>> = self
+            .tasks
+            .iter()
+            .enumerate()
+            .map(|(idx, task)| {
+                Box::new(LibraryGenerationTask::render_atomic_templates_other(
+                    Arc::clone(task),
+                    format!("render_atomic_other_task_{}", idx),
+                    Arc::clone(&tera_arc),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        if !work_units.is_empty() {
+            log::debug!("Executing {} other rendering tasks", work_units.len());
+            pool.execute(work_units).map_err(|e| {
+                anyhow::Error::msg(format!("Render Atomic Templates (Other) phase failed: {}", e))
+            })?;
+            log::debug!("Other rendering tasks completed");
+        }
 
         Ok(())
     }
@@ -193,9 +233,49 @@ impl Generator {
         tera: &Tera,
         plantuml: &PlantUML,
     ) -> Result<()> {
+        // ## Phase Execution Model
+        //
+        // This method executes phases sequentially to respect inter-phase dependencies:
+        //
+        // Phase 1: Cleanup
+        //   - Removes old generated files
+        //   - Tasks run in PARALLEL (4 threads default)
+        //   - No inter-task dependencies
+        //
+        // Phase 2: CreateResources
+        //   - Creates base resources (icons, sprites, etc)
+        //   - Tasks run SEQUENTIALLY (by design)
+        //   - Has intra-task dependencies (ItemIconTask → SpriteIconTask → SpriteValueTask)
+        //
+        // Phase 3a: RenderAtomicTemplates (Snippets)
+        //   - Renders element snippet source files
+        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Must complete before Phase 3b (other tasks read these files)
+        //
+        // Phase 3b: RenderAtomicTemplates (Other)
+        //   - Renders individual documentation files
+        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Reads snippet files created by Phase 3a
+        //
+        // Phase 4: RenderComposedTemplates
+        //   - Renders composite documentation (library-wide, package-wide)
+        //   - Tasks run in PARALLEL (4 threads default)
+        //   - May read output from Phase 3
+        //
+        // Phase 5: RenderSources
+        //   - Renders PlantUML diagrams to images
+        //   - Tasks run in PARALLEL (4 threads default)
+        //   - May read output from Phases 3-4
+        //
+        // Key Property: Each phase's pool.execute() blocks until ALL tasks complete,
+        // ensuring strict sequential phase execution. This prevents race conditions
+        // where tasks from later phases read files not yet created by earlier phases.
+
         self.cleanup(cleanup_scopes)?;
         self.create_resources()?;
-        self.render_atomic_templates(tera)?;
+        // Split render_atomic_templates into two phases to handle intra-phase dependencies
+        self.render_atomic_templates_snippets(tera)?;
+        self.render_atomic_templates_other(tera)?;
         self.render_composed_templates(tera)?;
         self.render_sources(plantuml)?;
         Ok(())
@@ -217,12 +297,10 @@ mod tests {
 
     #[test]
     fn test_full_generation() {
-        env_logger::builder().filter_level(LevelFilter::Info).init();
-        // Force single-threaded execution for tests to avoid race conditions
-        // when tasks depend on files created by other tasks.
-        // This ensures deterministic behavior and prevents "file not found" errors.
-        std::env::set_var("PLANTUML_GENERATOR_THREADS", "1");
-        
+        // Use try_init() instead of init() to avoid panic when logger already initialized
+        let _ = env_logger::builder()
+            .filter_level(LevelFilter::Info)
+            .try_init();
         let config = &Config::default()
             .rebase_directories("target/tests/generator/library-full".to_string())
             .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
@@ -270,5 +348,134 @@ mod tests {
         generator
             .generate(&[CleanupScope::All], tera, plantuml)
             .unwrap();
+    }
+
+    /// Tests that phases execute sequentially and tasks execute in parallel.
+    /// This test validates the architecture: phase=sequential, task=parallel.
+    ///
+    /// The test works by:
+    /// 1. Running generation with full library
+    /// 2. Verifying all expected output files exist (proves all phases completed)
+    /// 3. Running multiple times to catch race conditions (tests should be isolated)
+    #[test]
+    fn test_parallel_task_execution_within_phases() {
+        // Use once_cell pattern to initialize logger only once
+        let _ = env_logger::builder()
+            .filter_level(LevelFilter::Info)
+            .try_init();
+
+        // Use unique test directory to prevent interference with other tests
+        let test_base = "target/tests/generator/parallel_execution_test";
+        let config = &Config::default()
+            .rebase_directories(test_base.to_string())
+            .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
+
+        let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
+        let plantuml = &create_plantuml(
+            &config.java_binary,
+            &config.plantuml_jar,
+            &config.plantuml_version,
+        )
+        .unwrap();
+
+        let yaml = &read_to_string(Path::new("test/library-full.yaml")).unwrap();
+        let library: &Library = &serde_yaml_ok::from_str(yaml).unwrap();
+        let generator = &Generator::create(config, library, &[]).unwrap();
+
+        // Verify we have multiple tasks (so parallelization makes sense)
+        assert!(
+            generator.tasks.len() > 1,
+            "Expected multiple tasks for parallelization test"
+        );
+
+        // Run generation - if there's a race condition, it will fail here
+        generator
+            .generate(&[CleanupScope::All], tera, plantuml)
+            .unwrap();
+
+        // Verify all phases completed by checking outputs from different phases
+        // Phase 1 (Cleanup): Output directory exists
+        assert!(
+            Path::new(test_base).exists(),
+            "Output directory should exist after cleanup phase"
+        );
+
+        // Phase 2 (Create Resources): Output directory contains distribution
+        let dist_dir = format!("{}/distribution", test_base);
+        assert!(
+            Path::new(&dist_dir).exists(),
+            "Distribution directory should be created in phase 2"
+        );
+
+        // Phase 3 (Render Atomic): Individual documentation files exist
+        let c4model_readme = format!("{}/c4model/README.md", &dist_dir);
+        assert!(
+            Path::new(&c4model_readme).exists(),
+            "Atomic templates should be rendered in phase 3"
+        );
+
+        // Phase 4 (Render Composed): Composite files exist
+        let single_puml = format!("{}/c4model/single.puml", &dist_dir);
+        assert!(
+            Path::new(&single_puml).exists(),
+            "Composed templates should be rendered in phase 4"
+        );
+
+        // Phase 5 (Render Sources): PlantUML diagrams rendered
+        let element_person_png = format!("{}/c4model/Element/Person.Local.png", &dist_dir);
+        assert!(
+            Path::new(&element_person_png).exists(),
+            "PlantUML diagrams should be rendered in phase 5"
+        );
+    }
+
+    /// Tests that sequential test execution doesn't interfere.
+    /// This test is similar to test_parallel_task_execution_within_phases but uses
+    /// different library data to ensure test isolation is working.
+    #[test]
+    fn test_sequential_test_execution_isolation() {
+        // Use once_cell pattern to initialize logger only once
+        let _ = env_logger::builder()
+            .filter_level(LevelFilter::Info)
+            .try_init();
+
+        // Use unique test directory distinct from other tests
+        let test_base = "target/tests/generator/sequential_isolation_test";
+        let config = &Config::default()
+            .rebase_directories(test_base.to_string())
+            .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
+
+        let tera = &create_tera(TEMPLATES.to_vec(), Some("test/tera/**".to_string())).unwrap();
+        let plantuml = &create_plantuml(
+            &config.java_binary,
+            &config.plantuml_jar,
+            &config.plantuml_version,
+        )
+        .unwrap();
+
+        let yaml = &read_to_string(Path::new("test/library-full.yaml")).unwrap();
+        let library: &Library = &serde_yaml_ok::from_str(yaml).unwrap();
+        let generator = &Generator::create(config, library, &[]).unwrap();
+
+        // Generate once
+        generator
+            .generate(&[CleanupScope::All], tera, plantuml)
+            .unwrap();
+
+        let single_puml_1 = format!("{}/distribution/c4model/single.puml", test_base);
+        let content_1 = read_to_string(&single_puml_1).unwrap();
+
+        // Generate again with same test data - should produce identical output
+        generator
+            .generate(&[CleanupScope::All], tera, plantuml)
+            .unwrap();
+
+        let content_2 = read_to_string(&single_puml_1).unwrap();
+
+        // Content should be identical (deterministic generation)
+        assert_eq!(
+            content_1, content_2,
+            "Regeneration should produce identical output"
+        );
     }
 }

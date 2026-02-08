@@ -34,6 +34,8 @@ enum Phase {
     Cleanup(Arc<Vec<CleanupScope>>),
     CreateResources,
     RenderAtomicTemplates,
+    RenderAtomicTemplatesSnippets,
+    RenderAtomicTemplatesOther,
     RenderComposedTemplates,
     RenderSources,
 }
@@ -45,6 +47,8 @@ impl Phase {
             Phase::Cleanup(_) => "cleanup",
             Phase::CreateResources => "create_resources",
             Phase::RenderAtomicTemplates => "render_atomic_templates",
+            Phase::RenderAtomicTemplatesSnippets => "render_atomic_templates_snippets",
+            Phase::RenderAtomicTemplatesOther => "render_atomic_templates_other",
             Phase::RenderComposedTemplates => "render_composed_templates",
             Phase::RenderSources => "render_sources",
         }
@@ -125,6 +129,40 @@ impl LibraryGenerationTask {
         }
     }
 
+    /// Creates a new LibraryGenerationTask for the render_atomic_templates_snippets phase.
+    pub fn render_atomic_templates_snippets(
+        task: Arc<dyn Task + Send + Sync>,
+        task_identifier: String,
+        tera: Arc<Tera>,
+    ) -> Self {
+        Self {
+            task,
+            task_identifier,
+            phase: Phase::RenderAtomicTemplatesSnippets,
+            context: PhaseContext {
+                tera: Some(tera),
+                plantuml: None,
+            },
+        }
+    }
+
+    /// Creates a new LibraryGenerationTask for the render_atomic_templates_other phase.
+    pub fn render_atomic_templates_other(
+        task: Arc<dyn Task + Send + Sync>,
+        task_identifier: String,
+        tera: Arc<Tera>,
+    ) -> Self {
+        Self {
+            task,
+            task_identifier,
+            phase: Phase::RenderAtomicTemplatesOther,
+            context: PhaseContext {
+                tera: Some(tera),
+                plantuml: None,
+            },
+        }
+    }
+
     /// Creates a new LibraryGenerationTask for the render_composed_templates phase.
     pub fn render_composed_templates(
         task: Arc<dyn Task + Send + Sync>,
@@ -184,6 +222,28 @@ impl WorkUnit for LibraryGenerationTask {
                 })?;
                 self.task.render_atomic_templates(tera).map_err(|e| {
                     format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesSnippets => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_snippets: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesOther => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_other: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_other(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
                 })
             }
             Phase::RenderComposedTemplates => {
@@ -335,6 +395,28 @@ impl WorkUnit for PackageGenerationTask {
                     format!("{}::render_atomic_templates: {}", self.task_identifier, e)
                 })
             }
+            Phase::RenderAtomicTemplatesSnippets => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_snippets: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesOther => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_other: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_other(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
+                })
+            }
             Phase::RenderComposedTemplates => {
                 let tera = self.context.tera.as_ref().ok_or_else(|| {
                     format!(
@@ -481,6 +563,28 @@ impl WorkUnit for ModuleGenerationTask {
                 })?;
                 self.task.render_atomic_templates(tera).map_err(|e| {
                     format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesSnippets => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_snippets: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesOther => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_other: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_other(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
                 })
             }
             Phase::RenderComposedTemplates => {
@@ -630,6 +734,28 @@ impl WorkUnit for ItemGenerationTask {
                 })?;
                 self.task.render_atomic_templates(tera).map_err(|e| {
                     format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesSnippets => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_snippets: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_snippets(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_snippets: {}", self.task_identifier, e)
+                })
+            }
+            Phase::RenderAtomicTemplatesOther => {
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates_other: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates_other(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates_other: {}", self.task_identifier, e)
                 })
             }
             Phase::RenderComposedTemplates => {

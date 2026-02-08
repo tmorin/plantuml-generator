@@ -192,6 +192,11 @@ impl Task for ElementSnippetTask {
     }
 
     fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
+        // This task uses render_atomic_templates_snippets() instead
+        Ok(())
+    }
+
+    fn render_atomic_templates_snippets(&self, tera: &Tera) -> Result<()> {
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - render templates",
             &self.item_urn,
@@ -216,7 +221,7 @@ impl Task for ElementSnippetTask {
 
         let mut context = Context::new();
         context.insert("data", &self);
-        _tera
+        tera
             .render_to(&self.template, &context, destination_file)
             .map_err(|e| {
                 anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
