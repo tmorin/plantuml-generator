@@ -86,6 +86,9 @@ impl WorkUnit for DiagramWorkUnit {
             log::info!("generate {:?}", self.source_path);
             
             // Render the diagram
+            // Note: PlantUML subprocess writes to stdout/stderr.
+            // With parallel execution, these writes will interleave.
+            // Consider buffering or redirecting output to reduce noise.
             self.plantuml
                 .render(&self.source_path, Some(self.plantuml_args.clone()))
                 .map_err(|e| format!("Failed to render: {}", e))?;
@@ -344,6 +347,32 @@ Execution failed with 2 errors:
   2. [path/to/diagram2.puml] Failed to render: ...
 ```
 
+### stdout/stderr Output Handling
+
+**Important**: With parallel execution, subprocess stdout/stderr outputs from multiple work units will interleave, making CLI output noisy and potentially hard to read.
+
+**Recommendations for TASK-3.2+:**
+
+1. **Phase 1 (MVP - Current Spec)**: Accept interleaved output; users can redirect to file or increase `RUST_LOG` level
+2. **Phase 2 (Enhancement)**: Buffer per-work-unit output and:
+   - Only print on error (recommended)
+   - OR provide `--verbose` flag for detailed output
+   - OR serialize output under a mutex
+
+**Example Phase 2 approach:**
+```rust
+// Buffer each work unit's output separately
+struct DiagramWorkUnit {
+    // ... existing fields ...
+    output: Arc<Mutex<String>>,  // Buffer subprocess output
+}
+
+// On error: print buffered output for context
+if rendering_failed {
+    eprintln!("Failed to generate {}:\n{}", path, output);
+}
+```
+
 ### Error Scenarios
 
 1. **PlantUML rendering fails**: Captured in work unit, added to aggregated error
@@ -372,9 +401,25 @@ Given N threads and M diagram files:
 
 ### Overhead
 
-- Thread spawn/join: ~1-2ms per thread
-- Channel communication: ~microseconds per file
-- Error aggregation: ~microseconds per error
+Thread pool overhead is typically negligible compared to PlantUML rendering time:
+
+- **Thread spawn/join**: Non-trivial per-thread cost; avoid creating significantly more threads than available CPU cores
+- **Channel communication**: Small per-file overhead, typically negligible compared to diagram rendering time
+- **Error aggregation**: Small per-error overhead, negligible compared to I/O and rendering costs
+
+**Note**: Actual overhead depends heavily on hardware (CPU count, clock speed, cache), JVM settings (heap, GC), and workload characteristics (diagram complexity, file system performance). For precise measurements, benchmark in this repository or your target environment using the pattern shown below.
+
+**Example benchmark approach** (for Phase 2 enhancement):
+```bash
+# Sequential (1 thread)
+time PLANTUML_GENERATOR_THREADS=1 plantuml-generator diagram generate
+
+# Parallel (auto-detect cores)
+time plantuml-generator diagram generate
+
+# Custom thread count
+time PLANTUML_GENERATOR_THREADS=8 plantuml-generator diagram generate
+```
 
 ### Recommendations
 

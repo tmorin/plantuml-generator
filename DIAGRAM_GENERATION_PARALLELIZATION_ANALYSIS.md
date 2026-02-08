@@ -112,9 +112,9 @@ struct DiagramGenerationWorkUnit {
    - Can be cloned or shared via `Arc<Config>`
    - No mutable configuration during execution
 
-**Potential Race Conditions: ONE IDENTIFIED**
+**Potential Race Conditions: TWO IDENTIFIED**
 
-**⚠️ Same Diagram Names Across Files:**
+**⚠️ 1. Same Diagram Names Across Files:**
 - PlantUML generates output filenames based on diagram names (e.g., `@startuml my_diagram` → `my_diagram.png`)
 - Output files are written to the same directory as the source file by default
 - **Risk**: Two `.puml` files in the same directory that define diagrams with the same name will race to write the same output file, potentially causing corruption
@@ -125,6 +125,18 @@ struct DiagramGenerationWorkUnit {
 3. **Name prefixing**: Prefix diagram names with source filename
 
 **Recommendation**: Document this as a constraint for users. Most projects naturally avoid duplicate diagram names within the same directory for organizational clarity.
+
+**⚠️ 2. stdout/stderr Interleaving:**
+- Each work unit spawns a PlantUML subprocess that writes to process-wide stdout/stderr
+- With parallel execution, subprocess outputs can interleave, making CLI output noisy and nondeterministic
+- **Risk**: Unreadable mixed output, making it difficult to identify which work unit produced which output
+
+**Mitigation Options:**
+1. **Buffer per work unit**: Collect stdout/stderr per work unit, print atomically (serialized) or only on error
+2. **Log level control**: Only emit output at debug level or on errors
+3. **Suppress output**: Redirect subprocess output to /dev/null by default, show on error only
+
+**Recommendation**: Buffer output per work unit and print only on error, or provide a `--verbose` flag for detailed output. This keeps CLI output clean and deterministic.
 
 ### ⚠️ Criterion 3: Timestamp Synchronization
 
@@ -360,6 +372,7 @@ Typical project:
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Race condition in file writes | Medium | Document requirement for unique diagram names per directory and/or use per-file output directories to avoid collisions |
+| stdout/stderr interleaving | Medium | Buffer per work unit, print atomically on error or use --verbose flag for debug output |
 | Timestamp synchronization bug | Low | Keep simple approach (Option A), well-tested |
 | Memory exhaustion with many threads | Low | Default to CPU core count, document limits |
 | PlantUML JAR corruption during concurrent download | Low | Download before parallel execution |
