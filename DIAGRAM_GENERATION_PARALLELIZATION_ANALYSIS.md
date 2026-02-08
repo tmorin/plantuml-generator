@@ -50,28 +50,14 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
 
 **Evidence:**
 1. **File Discovery** (lines 76-95): Glob patterns discover `.puml` and `.plantuml` files
-   ```rust
-   fn get_puml_paths(config: &Config) -> Vec<PathBuf> {
-       config
-           .source_patterns
-           .split(",")
-           .map(str::trim)
-           .map(|pattern| format!("{}/{}", config.source_directory, pattern))
-           .flat_map(|glob_pattern| {
-               glob(&glob_pattern)
-                   .map(|paths| paths.flatten())
-                   .map_err(|e| {
-                       anyhow::Error::new(e).context(format!(
-                           "unable to parse the glob pattern ({})",
-                           &glob_pattern
-                       ))
-                   })
-                   .map(|paths| paths.collect::<Vec<PathBuf>>())
-                   .unwrap()
-           })
-           .collect::<Vec<PathBuf>>()
-   }
-   ```
+   
+   The `get_puml_paths` implementation (see `src/cmd/diagram/generate/mod.rs`):
+   - Split `config.source_patterns` on ','
+   - Trim each pattern and ignore any empty entries
+   - Join each pattern with `config.source_directory` to form glob patterns
+   - For each glob pattern, iterate matching paths and collect them, handling `glob()` errors according to the real implementation
+   
+   The result is a `Vec<PathBuf>` of source `.puml` / `.plantuml` files that serve as independent work units for diagram generation.
 
 2. **Independent Processing**: Each file is processed completely independently
    - Input: Source `.puml` file path

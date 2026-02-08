@@ -10,7 +10,7 @@ This document provides detailed implementation specifications for parallelizing 
 
 ## Implementation Steps
 
-### 1. Make PlantUML Thread-Safe
+### 1. Make PlantUML Clonable
 
 **File**: `src/plantuml.rs`
 
@@ -28,9 +28,9 @@ pub struct PlantUML {
 **Rationale**: 
 - PlantUML contains only String fields (no mutable state)
 - Clone is cheap (3 String clones)
-- Each work unit needs its own PlantUML instance
+- Each work unit can own its own copy for Send + 'static requirement
 
-**Alternative**: Use `Arc<PlantUML>` if Clone proves expensive in practice
+**Alternative**: Use `Arc<PlantUML>` if Clone proves expensive in practice (recommended for sharing read-only data)
 
 ### 2. Create DiagramWorkUnit
 
@@ -277,7 +277,7 @@ fn test_parallel_execution_produces_same_outputs() {
 
 Add section about parallelization:
 
-```markdown
+~~~markdown
 ## Performance
 
 ### Parallel Diagram Generation
@@ -301,7 +301,7 @@ Thread count should be between 1 and 256. Invalid values fall back to CPU core c
 - **Many files (8 cores)**: ~6-7× faster
 
 Performance scales linearly up to the number of CPU cores for CPU-bound rendering.
-```
+~~~
 
 #### 6.2 CHANGELOG.md
 
@@ -339,9 +339,9 @@ export PLANTUML_GENERATOR_THREADS=8
 When parallel execution encounters errors, the `AggregatedError` will contain:
 
 ```
-Failed to generate 2 diagram(s):
-  - Work unit 'path/to/diagram1.puml' failed: Failed to render: ...
-  - Work unit 'path/to/diagram2.puml' failed: Failed to render: ...
+Execution failed with 2 errors:
+  1. [path/to/diagram1.puml] Failed to render: ...
+  2. [path/to/diagram2.puml] Failed to render: ...
 ```
 
 ### Error Scenarios
