@@ -96,7 +96,7 @@ impl Generator {
             .collect();
 
         pool.execute(work_units)
-            .map_err(|e| anyhow::Error::msg(format!("Cleanup phase failed: {}", e)))?;
+            .map_err(|e| anyhow::Error::new(e).context("Cleanup phase failed"))?;
 
         Ok(())
     }
@@ -130,7 +130,7 @@ impl Generator {
             .collect();
 
         pool.execute(work_units)
-            .map_err(|e| anyhow::Error::msg(format!("Render Sources phase failed: {}", e)))?;
+            .map_err(|e| anyhow::Error::new(e).context("Render Sources phase failed"))?;
 
         Ok(())
     }
@@ -196,7 +196,11 @@ impl Generator {
         Ok(())
     }
 
-    fn render_atomic_templates_snippets_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
+    fn render_atomic_templates_snippets_with_tera(
+        &self,
+        tera_arc: &Arc<Tera>,
+        thread_config: &ThreadConfig,
+    ) -> Result<()> {
         log::info!("Start the Render Atomic Templates phase (Snippets).");
         let pool = ThreadPool::new(thread_config.clone());
 
@@ -220,10 +224,7 @@ impl Generator {
         if !work_units.is_empty() {
             log::debug!("Executing {} snippet rendering tasks", work_units.len());
             pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!(
-                    "Render Atomic Templates (Snippets) phase failed: {}",
-                    e
-                ))
+                anyhow::Error::new(e).context("Render Atomic Templates (Snippets) phase failed")
             })?;
             log::debug!("Snippet rendering tasks completed");
         }
@@ -231,7 +232,11 @@ impl Generator {
         Ok(())
     }
 
-    fn render_atomic_templates_other_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
+    fn render_atomic_templates_other_with_tera(
+        &self,
+        tera_arc: &Arc<Tera>,
+        thread_config: &ThreadConfig,
+    ) -> Result<()> {
         log::info!("Start the Render Atomic Templates phase (Other).");
         let pool = ThreadPool::new(thread_config.clone());
 
@@ -255,10 +260,7 @@ impl Generator {
         if !work_units.is_empty() {
             log::debug!("Executing {} other rendering tasks", work_units.len());
             pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!(
-                    "Render Atomic Templates (Other) phase failed: {}",
-                    e
-                ))
+                anyhow::Error::new(e).context("Render Atomic Templates (Other) phase failed")
             })?;
             log::debug!("Other rendering tasks completed");
         }
@@ -266,7 +268,11 @@ impl Generator {
         Ok(())
     }
 
-    fn render_composed_templates_with_tera(&self, tera_arc: &Arc<Tera>, thread_config: &ThreadConfig) -> Result<()> {
+    fn render_composed_templates_with_tera(
+        &self,
+        tera_arc: &Arc<Tera>,
+        thread_config: &ThreadConfig,
+    ) -> Result<()> {
         log::info!("Start the Render Composed Templates phase.");
         let pool = ThreadPool::new(thread_config.clone());
 
@@ -283,9 +289,8 @@ impl Generator {
             })
             .collect();
 
-        pool.execute(work_units).map_err(|e| {
-            anyhow::Error::msg(format!("Render Composed Templates phase failed: {}", e))
-        })?;
+        pool.execute(work_units)
+            .map_err(|e| anyhow::Error::new(e).context("Render Composed Templates phase failed"))?;
 
         Ok(())
     }
@@ -440,8 +445,9 @@ mod tests {
     }
 
     /// Tests that sequential test execution doesn't interfere.
-    /// This test validates test isolation is working by running full generation
-    /// with different library data in a different output directory.
+    /// This test validates test isolation and deterministic regeneration by
+    /// running full generation twice with the same library data in a unique
+    /// output directory and asserting the generated output is identical.
     #[test]
     fn test_sequential_test_execution_isolation() {
         // Initialize logger for this test; ignore error if already initialized
