@@ -74,6 +74,8 @@ copilot \
   --allow-tool 'shell(rustc *)' \
   --allow-tool 'shell(rustfmt *)' \
   --allow-tool 'shell(git *)' \
+  --allow-tool 'shell(gh *)' \
+  --allow-tool 'shell(xargs *)' \
   --allow-tool 'mcp(github-mcp-server)' \
   --allow-tool 'read' \
   --allow-tool 'write'
