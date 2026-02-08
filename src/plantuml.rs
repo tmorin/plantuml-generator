@@ -13,7 +13,7 @@ use anyhow::Result;
 /// that per-diagram output from concurrent `render` calls is not interleaved.
 static OUTPUT_MUTEX: Mutex<()> = Mutex::new(());
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlantUML {
     /// The command/path of the java binary.
     java_binary: String,
