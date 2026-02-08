@@ -5,7 +5,7 @@ use tera::Tera;
 
 use crate::plantuml::PlantUML;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub enum CleanupScope {
     All,
     Example,
@@ -82,7 +82,7 @@ impl CleanupScope {
     }
 }
 
-pub trait Task {
+pub trait Task: Send + Sync {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
         Ok(())
     }
@@ -92,6 +92,29 @@ pub trait Task {
     fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         Ok(())
     }
+
+    /// Renders atomic templates for snippet files (Phase 3a).
+    /// Only ElementSnippetTask implements this; all other tasks use the default no-op.
+    /// This phase must complete before render_atomic_templates_other runs.
+    fn render_atomic_templates_snippets(&self, _tera: &Tera) -> Result<()> {
+        Ok(())
+    }
+
+    /// Indicates whether this task implements snippet rendering.
+    /// Only ElementSnippetTask returns true; all other tasks return false.
+    /// Used to filter tasks for the snippet rendering phase to avoid scheduling overhead.
+    fn is_snippet_task(&self) -> bool {
+        false
+    }
+
+    /// Renders atomic templates for documentation files (Phase 3b).
+    /// All tasks except ElementSnippetTask implement this.
+    /// This phase runs after render_atomic_templates_snippets completes.
+    /// Default implementation calls render_atomic_templates for backward compatibility.
+    fn render_atomic_templates_other(&self, tera: &Tera) -> Result<()> {
+        self.render_atomic_templates(tera)
+    }
+
     fn render_composed_templates(&self, _tera: &Tera) -> Result<()> {
         Ok(())
     }
