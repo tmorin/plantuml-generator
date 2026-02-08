@@ -196,6 +196,10 @@ impl Task for ElementSnippetTask {
         Ok(())
     }
 
+    fn is_snippet_task(&self) -> bool {
+        true
+    }
+
     fn render_atomic_templates_snippets(&self, tera: &Tera) -> Result<()> {
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - render templates",

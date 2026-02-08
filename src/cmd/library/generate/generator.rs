@@ -121,9 +121,11 @@ impl Generator {
 
         // Execute snippet rendering tasks (ElementSnippetTask).
         // These must complete before ItemDocumentationTask reads the snippet files.
+        // Filter to only tasks that actually implement snippet rendering to avoid scheduling overhead.
         let work_units: Vec<Box<dyn WorkUnit>> = self
             .tasks
             .iter()
+            .filter(|task| task.is_snippet_task())
             .enumerate()
             .map(|(idx, task)| {
                 Box::new(LibraryGenerationTask::render_atomic_templates_snippets(

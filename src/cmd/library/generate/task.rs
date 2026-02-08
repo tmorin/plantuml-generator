@@ -100,6 +100,13 @@ pub trait Task: Send + Sync {
         Ok(())
     }
 
+    /// Indicates whether this task implements snippet rendering.
+    /// Only ElementSnippetTask returns true; all other tasks return false.
+    /// Used to filter tasks for the snippet rendering phase to avoid scheduling overhead.
+    fn is_snippet_task(&self) -> bool {
+        false
+    }
+
     /// Renders atomic templates for documentation files (Phase 3b).
     /// All tasks except ElementSnippetTask implement this.
     /// This phase runs after render_atomic_templates_snippets completes.
