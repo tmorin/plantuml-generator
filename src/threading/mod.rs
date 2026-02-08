@@ -55,8 +55,8 @@
 //!     let files = vec!["file1.txt", "file2.txt", "file3.txt"];
 //!     let tasks: Vec<Box<dyn WorkUnit>> = files
 //!         .into_iter()
-//!         .map(|file| Box::new(FileProcessor { 
-//!             file_path: file.to_string() 
+//!         .map(|file| Box::new(FileProcessor {
+//!             file_path: file.to_string()
 //!         }) as Box<dyn WorkUnit>)
 //!         .collect();
 //!     

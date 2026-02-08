@@ -18,7 +18,6 @@ use crate::cmd::library::generate::task::{CleanupScope, Task};
 use crate::plantuml::PlantUML;
 use crate::threading::WorkUnit;
 
-
 /// Enumeration of library generation phases.
 ///
 /// # Phase/Context Dependencies
@@ -30,6 +29,7 @@ use crate::threading::WorkUnit;
 /// - `RenderSources`: Requires PlantUML context (will error if missing)
 ///
 /// Using a factory method ensures the correct context is provided for each phase.
+#[allow(dead_code)]
 enum Phase {
     Cleanup(Arc<Vec<CleanupScope>>),
     CreateResources,
@@ -38,6 +38,7 @@ enum Phase {
     RenderSources,
 }
 
+#[allow(dead_code)]
 impl Phase {
     fn name(&self) -> &str {
         match self {
@@ -57,6 +58,7 @@ impl Phase {
 /// - `plantuml`: Required for the sources rendering phase
 ///
 /// Missing context will result in a descriptive error during execution.
+#[allow(dead_code)]
 struct PhaseContext {
     tera: Option<Arc<Tera>>,
     plantuml: Option<Arc<PlantUML>>,
@@ -66,6 +68,7 @@ struct PhaseContext {
 ///
 /// Wraps library-level tasks (`LibraryBootstrapTask`, `LibraryDocumentationTask`,
 /// `LibrarySummaryTask`) to enable parallel execution via the thread pool.
+#[allow(dead_code)]
 pub struct LibraryGenerationTask {
     task: Arc<dyn Task + Send + Sync>,
     task_identifier: String,
@@ -73,6 +76,7 @@ pub struct LibraryGenerationTask {
     context: PhaseContext,
 }
 
+#[allow(dead_code)]
 impl LibraryGenerationTask {
     /// Creates a new LibraryGenerationTask for the cleanup phase.
     pub fn cleanup(
@@ -92,10 +96,7 @@ impl LibraryGenerationTask {
     }
 
     /// Creates a new LibraryGenerationTask for the create_resources phase.
-    pub fn create_resources(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-    ) -> Self {
+    pub fn create_resources(task: Arc<dyn Task + Send + Sync>, task_identifier: String) -> Self {
         Self {
             task,
             task_identifier,
@@ -175,37 +176,34 @@ impl WorkUnit for LibraryGenerationTask {
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_atomic_templates(tera)
-                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderComposedTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_composed_templates(tera)
-                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_composed_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_composed_templates(tera).map_err(|e| {
+                    format!("{}::render_composed_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderSources => {
-                let plantuml = self
-                    .context
-                    .plantuml
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
-                    })?;
+                let plantuml = self.context.plantuml.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_sources: PlantUML context missing",
+                        self.task_identifier
+                    )
+                })?;
                 self.task
                     .render_sources(plantuml)
                     .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
@@ -219,6 +217,7 @@ impl WorkUnit for LibraryGenerationTask {
 /// Wraps package-level tasks (`PackageBootstrapTask`, `PackageDocumentationTask`,
 /// `PackageEmbeddedTask`, `PackageExampleTask`) to enable parallel execution via
 /// the thread pool.
+#[allow(dead_code)]
 pub struct PackageGenerationTask {
     task: Arc<dyn Task + Send + Sync>,
     task_identifier: String,
@@ -226,6 +225,7 @@ pub struct PackageGenerationTask {
     context: PhaseContext,
 }
 
+#[allow(dead_code)]
 impl PackageGenerationTask {
     /// Creates a new PackageGenerationTask for the cleanup phase.
     pub fn cleanup(
@@ -245,10 +245,7 @@ impl PackageGenerationTask {
     }
 
     /// Creates a new PackageGenerationTask for the create_resources phase.
-    pub fn create_resources(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-    ) -> Self {
+    pub fn create_resources(task: Arc<dyn Task + Send + Sync>, task_identifier: String) -> Self {
         Self {
             task,
             task_identifier,
@@ -328,37 +325,34 @@ impl WorkUnit for PackageGenerationTask {
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_atomic_templates(tera)
-                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderComposedTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_composed_templates(tera)
-                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_composed_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_composed_templates(tera).map_err(|e| {
+                    format!("{}::render_composed_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderSources => {
-                let plantuml = self
-                    .context
-                    .plantuml
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
-                    })?;
+                let plantuml = self.context.plantuml.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_sources: PlantUML context missing",
+                        self.task_identifier
+                    )
+                })?;
                 self.task
                     .render_sources(plantuml)
                     .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
@@ -371,6 +365,7 @@ impl WorkUnit for PackageGenerationTask {
 ///
 /// Wraps module-level tasks (`ModuleDocumentationTask`) to enable parallel
 /// execution via the thread pool.
+#[allow(dead_code)]
 pub struct ModuleGenerationTask {
     task: Arc<dyn Task + Send + Sync>,
     task_identifier: String,
@@ -378,6 +373,7 @@ pub struct ModuleGenerationTask {
     context: PhaseContext,
 }
 
+#[allow(dead_code)]
 impl ModuleGenerationTask {
     /// Creates a new ModuleGenerationTask for the cleanup phase.
     pub fn cleanup(
@@ -397,10 +393,7 @@ impl ModuleGenerationTask {
     }
 
     /// Creates a new ModuleGenerationTask for the create_resources phase.
-    pub fn create_resources(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-    ) -> Self {
+    pub fn create_resources(task: Arc<dyn Task + Send + Sync>, task_identifier: String) -> Self {
         Self {
             task,
             task_identifier,
@@ -480,37 +473,34 @@ impl WorkUnit for ModuleGenerationTask {
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_atomic_templates(tera)
-                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderComposedTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_composed_templates(tera)
-                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_composed_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_composed_templates(tera).map_err(|e| {
+                    format!("{}::render_composed_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderSources => {
-                let plantuml = self
-                    .context
-                    .plantuml
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
-                    })?;
+                let plantuml = self.context.plantuml.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_sources: PlantUML context missing",
+                        self.task_identifier
+                    )
+                })?;
                 self.task
                     .render_sources(plantuml)
                     .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
@@ -524,6 +514,7 @@ impl WorkUnit for ModuleGenerationTask {
 /// Wraps item-level tasks (`ItemIconTask`, `SpriteIconTask`, `SpriteValueTask`,
 /// `ElementSnippetTask`, `ItemDocumentationTask`, `ItemSourceTask`) to enable
 /// parallel execution via the thread pool.
+#[allow(dead_code)]
 pub struct ItemGenerationTask {
     task: Arc<dyn Task + Send + Sync>,
     task_identifier: String,
@@ -531,6 +522,7 @@ pub struct ItemGenerationTask {
     context: PhaseContext,
 }
 
+#[allow(dead_code)]
 impl ItemGenerationTask {
     /// Creates a new ItemGenerationTask for the cleanup phase.
     pub fn cleanup(
@@ -550,10 +542,7 @@ impl ItemGenerationTask {
     }
 
     /// Creates a new ItemGenerationTask for the create_resources phase.
-    pub fn create_resources(
-        task: Arc<dyn Task + Send + Sync>,
-        task_identifier: String,
-    ) -> Self {
+    pub fn create_resources(task: Arc<dyn Task + Send + Sync>, task_identifier: String) -> Self {
         Self {
             task,
             task_identifier,
@@ -633,37 +622,34 @@ impl WorkUnit for ItemGenerationTask {
                 .create_resources()
                 .map_err(|e| format!("{}::create_resources: {}", self.task_identifier, e)),
             Phase::RenderAtomicTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_atomic_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_atomic_templates(tera)
-                    .map_err(|e| format!("{}::render_atomic_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_atomic_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_atomic_templates(tera).map_err(|e| {
+                    format!("{}::render_atomic_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderComposedTemplates => {
-                let tera = self
-                    .context
-                    .tera
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_composed_templates: Tera context missing", self.task_identifier)
-                    })?;
-                self.task
-                    .render_composed_templates(tera)
-                    .map_err(|e| format!("{}::render_composed_templates: {}", self.task_identifier, e))
+                let tera = self.context.tera.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_composed_templates: Tera context missing",
+                        self.task_identifier
+                    )
+                })?;
+                self.task.render_composed_templates(tera).map_err(|e| {
+                    format!("{}::render_composed_templates: {}", self.task_identifier, e)
+                })
             }
             Phase::RenderSources => {
-                let plantuml = self
-                    .context
-                    .plantuml
-                    .as_ref()
-                    .ok_or_else(|| {
-                        format!("{}::render_sources: PlantUML context missing", self.task_identifier)
-                    })?;
+                let plantuml = self.context.plantuml.as_ref().ok_or_else(|| {
+                    format!(
+                        "{}::render_sources: PlantUML context missing",
+                        self.task_identifier
+                    )
+                })?;
                 self.task
                     .render_sources(plantuml)
                     .map_err(|e| format!("{}::render_sources: {}", self.task_identifier, e))
@@ -687,7 +673,10 @@ mod tests {
         }
 
         fn create_resources(&self) -> anyhow::Result<()> {
-            self.calls.lock().unwrap().push("create_resources".to_string());
+            self.calls
+                .lock()
+                .unwrap()
+                .push("create_resources".to_string());
             Ok(())
         }
 
@@ -736,8 +725,7 @@ mod tests {
         let task = Arc::new(MockTask {
             calls: calls.clone(),
         });
-        let work_unit =
-            LibraryGenerationTask::create_resources(task, "lib_task_2".to_string());
+        let work_unit = LibraryGenerationTask::create_resources(task, "lib_task_2".to_string());
 
         assert_eq!(work_unit.identifier(), "lib_task_2::create_resources");
         assert!(work_unit.execute().is_ok());
