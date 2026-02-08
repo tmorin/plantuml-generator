@@ -64,6 +64,26 @@ The tool provides the following commands:
 - `workspace init` generate a fresh workspace, i.e. a `.pgen-workspace.yaml` file
 - `workspace install` install an artifact in the workspace
 
+## Using with GitHub Copilot CLI
+
+To use this repository with GitHub Copilot CLI with optimal tool configuration:
+
+```bash
+copilot \
+  --allow-tool 'shell(cargo *)' \
+  --allow-tool 'shell(rustc *)' \
+  --allow-tool 'shell(rustfmt *)' \
+  --allow-tool 'shell(git *)' \
+  --allow-tool 'mcp(github-mcp-server)' \
+  --allow-tool 'read' \
+  --allow-tool 'write'
+```
+
+Or inside a Copilot CLI session:
+```
+/allow-all
+```
+
 ## Release
 
 - https://lib.rs/crates/convco
