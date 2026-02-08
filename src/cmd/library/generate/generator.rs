@@ -218,6 +218,11 @@ mod tests {
     #[test]
     fn test_full_generation() {
         env_logger::builder().filter_level(LevelFilter::Info).init();
+        // Force single-threaded execution for tests to avoid race conditions
+        // when tasks depend on files created by other tasks.
+        // This ensures deterministic behavior and prevents "file not found" errors.
+        std::env::set_var("PLANTUML_GENERATOR_THREADS", "1");
+        
         let config = &Config::default()
             .rebase_directories("target/tests/generator/library-full".to_string())
             .update_plantuml_jar("test/plantuml-1.2022.4.jar".to_string());
