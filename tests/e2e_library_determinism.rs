@@ -142,7 +142,7 @@ fn test_library_generate_determinism() {
     let mut all_checksums = Vec::new();
     for (i, output_dir) in output_dirs.iter().enumerate() {
         let checksums = compute_directory_checksums(output_dir.path())
-            .expect(&format!("Failed to compute checksums for run {}", i + 1));
+            .unwrap_or_else(|e| panic!("Failed to compute checksums for run {}: {}", i + 1, e));
         all_checksums.push(checksums);
     }
 
@@ -178,7 +178,7 @@ fn test_library_generate_determinism() {
         for (file_path, checksum) in checksums {
             let first_checksum = first_checksums
                 .get(file_path)
-                .expect(&format!("File {:?} not found in run 1", file_path));
+                .unwrap_or_else(|| panic!("File {:?} not found in run 1", file_path));
 
             assert_eq!(
                 first_checksum,
