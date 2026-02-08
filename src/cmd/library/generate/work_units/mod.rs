@@ -24,7 +24,9 @@ use crate::threading::WorkUnit;
 ///
 /// - `Cleanup`: Requires cleanup scopes, no other context needed
 /// - `CreateResources`: No context required
-/// - `RenderAtomicTemplates`: Requires Tera context (will error if missing)
+/// - `RenderAtomicTemplates`: Legacy phase - no longer used (split into Snippets + Other)
+/// - `RenderAtomicTemplatesSnippets`: Requires Tera context; renders ElementSnippetTask outputs
+/// - `RenderAtomicTemplatesOther`: Requires Tera context; renders remaining atomic template tasks
 /// - `RenderComposedTemplates`: Requires Tera context (will error if missing)
 /// - `RenderSources`: Requires PlantUML context (will error if missing)
 ///

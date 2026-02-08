@@ -112,104 +112,6 @@ impl Generator {
         }
         Ok(())
     }
-    fn render_atomic_templates_snippets(&self, tera: &Tera) -> Result<()> {
-        log::info!("Start the Render Atomic Templates phase (Snippets).");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
-
-        let tera_arc = Arc::new(tera.clone());
-
-        // Execute snippet rendering tasks (ElementSnippetTask).
-        // These must complete before ItemDocumentationTask reads the snippet files.
-        // Filter to only tasks that actually implement snippet rendering to avoid scheduling overhead.
-        let work_units: Vec<Box<dyn WorkUnit>> = self
-            .tasks
-            .iter()
-            .filter(|task| task.is_snippet_task())
-            .enumerate()
-            .map(|(idx, task)| {
-                Box::new(LibraryGenerationTask::render_atomic_templates_snippets(
-                    Arc::clone(task),
-                    format!("render_atomic_snippets_task_{}", idx),
-                    Arc::clone(&tera_arc),
-                )) as Box<dyn WorkUnit>
-            })
-            .collect();
-
-        if !work_units.is_empty() {
-            log::debug!("Executing {} snippet rendering tasks", work_units.len());
-            pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!(
-                    "Render Atomic Templates (Snippets) phase failed: {}",
-                    e
-                ))
-            })?;
-            log::debug!("Snippet rendering tasks completed");
-        }
-
-        Ok(())
-    }
-
-    fn render_atomic_templates_other(&self, tera: &Tera) -> Result<()> {
-        log::info!("Start the Render Atomic Templates phase (Other).");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
-
-        let tera_arc = Arc::new(tera.clone());
-
-        // Execute other atomic template rendering tasks (all tasks except ElementSnippetTask).
-        // These tasks may read files created by snippet tasks.
-        let work_units: Vec<Box<dyn WorkUnit>> = self
-            .tasks
-            .iter()
-            .enumerate()
-            .map(|(idx, task)| {
-                Box::new(LibraryGenerationTask::render_atomic_templates_other(
-                    Arc::clone(task),
-                    format!("render_atomic_other_task_{}", idx),
-                    Arc::clone(&tera_arc),
-                )) as Box<dyn WorkUnit>
-            })
-            .collect();
-
-        if !work_units.is_empty() {
-            log::debug!("Executing {} other rendering tasks", work_units.len());
-            pool.execute(work_units).map_err(|e| {
-                anyhow::Error::msg(format!(
-                    "Render Atomic Templates (Other) phase failed: {}",
-                    e
-                ))
-            })?;
-            log::debug!("Other rendering tasks completed");
-        }
-
-        Ok(())
-    }
-    fn render_composed_templates(&self, tera: &Tera) -> Result<()> {
-        log::info!("Start the Render Composed Templates phase.");
-        let thread_config = ThreadConfig::from_env();
-        let pool = ThreadPool::new(thread_config);
-
-        let tera_arc = Arc::new(tera.clone());
-        let work_units: Vec<Box<dyn WorkUnit>> = self
-            .tasks
-            .iter()
-            .enumerate()
-            .map(|(idx, task)| {
-                Box::new(LibraryGenerationTask::render_composed_templates(
-                    Arc::clone(task),
-                    format!("render_composed_task_{}", idx),
-                    Arc::clone(&tera_arc),
-                )) as Box<dyn WorkUnit>
-            })
-            .collect();
-
-        pool.execute(work_units).map_err(|e| {
-            anyhow::Error::msg(format!("Render Composed Templates phase failed: {}", e))
-        })?;
-
-        Ok(())
-    }
     fn render_sources(&self, plantuml: &PlantUML) -> Result<()> {
         log::info!("Start the Render Sources phase.");
         let thread_config = ThreadConfig::from_env();
@@ -243,11 +145,12 @@ impl Generator {
     ) -> Result<()> {
         // ## Phase Execution Model
         //
-        // This method executes phases sequentially to respect inter-phase dependencies:
+        // This method executes phases sequentially to respect inter-phase dependencies.
+        // Thread count is configurable via PLANTUML_GENERATOR_THREADS env var (default: CPU core count).
         //
         // Phase 1: Cleanup
         //   - Removes old generated files
-        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Tasks run in PARALLEL (thread count from env/default)
         //   - No inter-task dependencies
         //
         // Phase 2: CreateResources
@@ -257,35 +160,135 @@ impl Generator {
         //
         // Phase 3a: RenderAtomicTemplates (Snippets)
         //   - Renders element snippet source files
-        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Tasks run in PARALLEL (thread count from env/default)
         //   - Must complete before Phase 3b (other tasks read these files)
         //
         // Phase 3b: RenderAtomicTemplates (Other)
         //   - Renders individual documentation files
-        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Tasks run in PARALLEL (thread count from env/default)
         //   - Reads snippet files created by Phase 3a
         //
         // Phase 4: RenderComposedTemplates
         //   - Renders composite documentation (library-wide, package-wide)
-        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Tasks run in PARALLEL (thread count from env/default)
         //   - May read output from Phase 3
         //
         // Phase 5: RenderSources
         //   - Renders PlantUML diagrams to images
-        //   - Tasks run in PARALLEL (4 threads default)
+        //   - Tasks run in PARALLEL (thread count from env/default)
         //   - May read output from Phases 3-4
         //
         // Key Property: Each phase's pool.execute() blocks until ALL tasks complete,
         // ensuring strict sequential phase execution. This prevents race conditions
         // where tasks from later phases read files not yet created by earlier phases.
+        //
+        // Tera is wrapped in Arc once to avoid cloning across all phases.
+        let tera_arc = Arc::new(tera.clone());
 
         self.cleanup(cleanup_scopes)?;
         self.create_resources()?;
         // Split render_atomic_templates into two phases to handle intra-phase dependencies
-        self.render_atomic_templates_snippets(tera)?;
-        self.render_atomic_templates_other(tera)?;
-        self.render_composed_templates(tera)?;
+        self.render_atomic_templates_snippets_with_tera(&tera_arc)?;
+        self.render_atomic_templates_other_with_tera(&tera_arc)?;
+        self.render_composed_templates_with_tera(&tera_arc)?;
         self.render_sources(plantuml)?;
+        Ok(())
+    }
+
+    fn render_atomic_templates_snippets_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+        log::info!("Start the Render Atomic Templates phase (Snippets).");
+        let thread_config = ThreadConfig::from_env();
+        let pool = ThreadPool::new(thread_config);
+
+        // Execute snippet rendering tasks (ElementSnippetTask).
+        // These must complete before ItemDocumentationTask reads the snippet files.
+        // Filter to only tasks that actually implement snippet rendering to avoid scheduling overhead.
+        let work_units: Vec<Box<dyn WorkUnit>> = self
+            .tasks
+            .iter()
+            .filter(|task| task.is_snippet_task())
+            .enumerate()
+            .map(|(idx, task)| {
+                Box::new(LibraryGenerationTask::render_atomic_templates_snippets(
+                    Arc::clone(task),
+                    format!("render_atomic_snippets_task_{}", idx),
+                    Arc::clone(tera_arc),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        if !work_units.is_empty() {
+            log::debug!("Executing {} snippet rendering tasks", work_units.len());
+            pool.execute(work_units).map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "Render Atomic Templates (Snippets) phase failed: {}",
+                    e
+                ))
+            })?;
+            log::debug!("Snippet rendering tasks completed");
+        }
+
+        Ok(())
+    }
+
+    fn render_atomic_templates_other_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+        log::info!("Start the Render Atomic Templates phase (Other).");
+        let thread_config = ThreadConfig::from_env();
+        let pool = ThreadPool::new(thread_config);
+
+        // Execute other atomic template rendering tasks (all tasks except ElementSnippetTask).
+        // These tasks may read files created by snippet tasks.
+        // Filter to only tasks that actually implement rendering to avoid scheduling overhead.
+        let work_units: Vec<Box<dyn WorkUnit>> = self
+            .tasks
+            .iter()
+            .filter(|task| !task.is_snippet_task())
+            .enumerate()
+            .map(|(idx, task)| {
+                Box::new(LibraryGenerationTask::render_atomic_templates_other(
+                    Arc::clone(task),
+                    format!("render_atomic_other_task_{}", idx),
+                    Arc::clone(tera_arc),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        if !work_units.is_empty() {
+            log::debug!("Executing {} other rendering tasks", work_units.len());
+            pool.execute(work_units).map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "Render Atomic Templates (Other) phase failed: {}",
+                    e
+                ))
+            })?;
+            log::debug!("Other rendering tasks completed");
+        }
+
+        Ok(())
+    }
+
+    fn render_composed_templates_with_tera(&self, tera_arc: &Arc<Tera>) -> Result<()> {
+        log::info!("Start the Render Composed Templates phase.");
+        let thread_config = ThreadConfig::from_env();
+        let pool = ThreadPool::new(thread_config);
+
+        let work_units: Vec<Box<dyn WorkUnit>> = self
+            .tasks
+            .iter()
+            .enumerate()
+            .map(|(idx, task)| {
+                Box::new(LibraryGenerationTask::render_composed_templates(
+                    Arc::clone(task),
+                    format!("render_composed_task_{}", idx),
+                    Arc::clone(tera_arc),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        pool.execute(work_units).map_err(|e| {
+            anyhow::Error::msg(format!("Render Composed Templates phase failed: {}", e))
+        })?;
+
         Ok(())
     }
 }
@@ -358,16 +361,17 @@ mod tests {
             .unwrap();
     }
 
-    /// Tests that phases execute sequentially and tasks execute in parallel.
-    /// This test validates the architecture: phase=sequential, task=parallel.
+    /// Regression test for full generation across all phases.
+    /// This test validates that multi-phase generation completes successfully
+    /// and produces expected outputs from each phase, helping to catch
+    /// race conditions or ordering issues in task execution.
     ///
     /// The test works by:
     /// 1. Running generation with full library
     /// 2. Verifying all expected output files exist (proves all phases completed)
-    /// 3. Running multiple times to catch race conditions (tests should be isolated)
     #[test]
-    fn test_parallel_task_execution_within_phases() {
-        // Use once_cell pattern to initialize logger only once
+    fn test_generation_race_condition_regression() {
+        // Initialize logger for this test; ignore error if already initialized
         let _ = env_logger::builder()
             .filter_level(LevelFilter::Info)
             .try_init();
@@ -438,11 +442,11 @@ mod tests {
     }
 
     /// Tests that sequential test execution doesn't interfere.
-    /// This test is similar to test_parallel_task_execution_within_phases but uses
-    /// different library data to ensure test isolation is working.
+    /// This test validates test isolation is working by running full generation
+    /// with different library data in a different output directory.
     #[test]
     fn test_sequential_test_execution_isolation() {
-        // Use once_cell pattern to initialize logger only once
+        // Initialize logger for this test; ignore error if already initialized
         let _ = env_logger::builder()
             .filter_level(LevelFilter::Info)
             .try_init();
