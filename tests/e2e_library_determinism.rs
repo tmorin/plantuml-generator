@@ -98,6 +98,7 @@ fn test_library_generate_determinism() {
             .arg(cache_dir.path())
             .arg("-P")
             .arg("test/plantuml-1.2022.4.jar")
+            .env("PLANTUML_GENERATOR_THREADS", "4") // Force multi-threaded execution
             .output()
             .expect("Failed to execute library generate");
 
