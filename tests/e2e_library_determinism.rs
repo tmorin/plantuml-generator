@@ -134,6 +134,11 @@ fn test_library_generate_determinism() {
         files
     };
 
+    assert!(
+        !first_files.is_empty(),
+        "Determinism test produced no output files; expected at least one generated file before comparing checksums"
+    );
+
     for (i, checksums) in all_checksums.iter().enumerate().skip(1) {
         let mut current_files: Vec<_> = checksums.keys().cloned().collect();
         current_files.sort();
@@ -191,6 +196,6 @@ fn test_library_generate_determinism() {
     println!("  ✓ Content checksums: IDENTICAL across all 5 runs");
     println!("  ✓ Byte-for-byte verification: PASSED");
     println!("\nConclusion:");
-    println!("  Library generation is DETERMINISTIC - parallel execution");
-    println!("  produces identical output.");
+    println!("  Library generation is DETERMINISTIC - repeated sequential");
+    println!("  executions with a shared cache produce identical output.");
 }
