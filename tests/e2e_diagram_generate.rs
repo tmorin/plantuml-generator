@@ -5,27 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
-/// Helper to get the binary path
-fn get_binary_path() -> PathBuf {
-    let mut path = std::env::current_exe()
-        .expect("Failed to get current executable path")
-        .parent()
-        .expect("Failed to get parent directory")
-        .parent()
-        .expect("Failed to get parent directory")
-        .to_path_buf();
-
-    // Handle both debug and release builds
-    if path.ends_with("deps") {
-        path.pop();
-    }
-
-    path.push(format!(
-        "plantuml-generator{}",
-        std::env::consts::EXE_SUFFIX
-    ));
-    path
-}
+mod common;
 
 /// Helper to create a test PlantUML file
 fn create_test_puml(dir: &Path, name: &str, content: &str) -> PathBuf {
@@ -36,7 +16,7 @@ fn create_test_puml(dir: &Path, name: &str, content: &str) -> PathBuf {
 
 #[test]
 fn test_e2e_help_command() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let output = Command::new(&binary)
         .arg("--help")
         .output()
@@ -61,7 +41,7 @@ fn test_e2e_help_command() {
 
 #[test]
 fn test_e2e_diagram_generate_simple() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
@@ -100,7 +80,7 @@ Bob -> Alice: Hi there!
 
 #[test]
 fn test_e2e_diagram_with_args() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
@@ -144,7 +124,7 @@ class User {
 
 #[test]
 fn test_e2e_smetana_fallback_message() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
@@ -187,7 +167,7 @@ A -> B
 
 #[test]
 fn test_e2e_multiple_diagrams() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
@@ -225,7 +205,7 @@ fn test_e2e_multiple_diagrams() {
 
 #[test]
 fn test_e2e_invalid_source_directory() {
-    let binary = get_binary_path();
+    let binary = common::get_binary_path();
     let cache_dir = TempDir::new().expect("Failed to create cache dir");
 
     // Try to generate from non-existent directory
