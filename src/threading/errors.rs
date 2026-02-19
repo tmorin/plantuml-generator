@@ -85,6 +85,14 @@ impl AggregatedError {
     pub fn len(&self) -> usize {
         self.errors.len()
     }
+
+    /// Returns `false` since `AggregatedError` always contains at least one error.
+    ///
+    /// This method exists to satisfy the `len_without_is_empty` lint. An
+    /// `AggregatedError` is guaranteed non-empty by construction.
+    pub fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 impl fmt::Display for AggregatedError {
