@@ -48,15 +48,14 @@ fn collect_files(dir: &Path, base: &Path) -> Result<Vec<PathBuf>, std::io::Error
         }
     }
 
-    // Sort files for consistent ordering
-    files.sort();
     Ok(files)
 }
 
 /// Compute checksums for all files in a directory
 fn compute_directory_checksums(dir: &Path) -> Result<HashMap<PathBuf, String>, std::io::Error> {
     let mut checksums = HashMap::new();
-    let files = collect_files(dir, dir)?;
+    let mut files = collect_files(dir, dir)?;
+    files.sort();
 
     for file_path in files {
         let full_path = dir.join(&file_path);
