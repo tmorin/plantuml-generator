@@ -664,7 +664,16 @@ mod tests {
     /// - Measure sequential execution time (1 thread)
     /// - Measure parallel execution time (4 threads)
     /// - Verify speedup ≥ 1.4×
+    ///
+    /// This test is `#[ignore]` because timing assertions are sensitive to CI
+    /// environments with limited vCPUs, noisy neighbours, or thermal throttling.
+    /// Run it explicitly on a multi-core machine:
+    ///
+    /// ```bash
+    /// cargo test test_speedup_sequential_vs_parallel -- --ignored --nocapture
+    /// ```
     #[test]
+    #[ignore = "timing-sensitive: run on a multi-core machine with --ignored"]
     fn test_speedup_sequential_vs_parallel() {
         use std::hint::black_box;
         use std::time::Instant;

@@ -86,12 +86,13 @@ impl AggregatedError {
         self.errors.len()
     }
 
-    /// Returns `false` since `AggregatedError` always contains at least one error.
+    /// Returns `true` if there are no errors in this `AggregatedError`.
     ///
-    /// This method exists to satisfy the `len_without_is_empty` lint. An
-    /// `AggregatedError` is guaranteed non-empty by construction.
+    /// Under normal construction via `new`, an `AggregatedError` is guaranteed
+    /// to be non-empty and this will return `false`, but this implementation
+    /// reflects the actual state of the underlying error collection.
     pub fn is_empty(&self) -> bool {
-        false
+        self.errors.is_empty()
     }
 }
 

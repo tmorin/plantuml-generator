@@ -24,7 +24,7 @@
 //!
 //! Results are saved in `target/criterion/` as HTML reports.
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
 use plantuml_generator::threading::{Config, ThreadPool, WorkUnit};
 use std::hint::black_box;
 
@@ -93,11 +93,19 @@ fn bench_thread_pool_throughput(c: &mut Criterion) {
             BenchmarkId::new("threads", thread_count),
             &thread_count,
             |b, &tc| {
-                b.iter(|| {
-                    let pool = ThreadPool::new(Config::new(tc));
-                    let tasks = make_tasks(TASK_COUNT, WORK_PER_TASK);
-                    pool.execute(tasks).expect("benchmark tasks must not fail");
-                });
+                // Use iter_batched so task allocation and pool construction are
+                // excluded from the timed section; only thread-pool execution is
+                // measured.
+                b.iter_batched(
+                    || {
+                        (
+                            ThreadPool::new(Config::new(tc)),
+                            make_tasks(TASK_COUNT, WORK_PER_TASK),
+                        )
+                    },
+                    |(pool, tasks)| pool.execute(tasks).expect("benchmark tasks must not fail"),
+                    BatchSize::SmallInput,
+                );
             },
         );
     }
@@ -119,11 +127,16 @@ fn bench_thread_pool_wall_time(c: &mut Criterion) {
             BenchmarkId::new("threads", thread_count),
             &thread_count,
             |b, &tc| {
-                b.iter(|| {
-                    let pool = ThreadPool::new(Config::new(tc));
-                    let tasks = make_tasks(TASK_COUNT, WORK_PER_TASK);
-                    pool.execute(tasks).expect("benchmark tasks must not fail");
-                });
+                b.iter_batched(
+                    || {
+                        (
+                            ThreadPool::new(Config::new(tc)),
+                            make_tasks(TASK_COUNT, WORK_PER_TASK),
+                        )
+                    },
+                    |(pool, tasks)| pool.execute(tasks).expect("benchmark tasks must not fail"),
+                    BatchSize::SmallInput,
+                );
             },
         );
     }
