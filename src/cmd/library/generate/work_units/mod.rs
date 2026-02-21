@@ -903,4 +903,333 @@ mod tests {
         is_send_sync::<ModuleGenerationTask>();
         is_send_sync::<ItemGenerationTask>();
     }
+
+    // ── Error-handling tests for TASK-2.6 ────────────────────────────────────
+
+    /// A task whose every phase can be configured to fail with a given message.
+    struct FailingTask {
+        error_message: String,
+    }
+
+    impl Task for FailingTask {
+        fn cleanup(&self, _scopes: &[CleanupScope]) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+
+        fn create_resources(&self) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+
+        fn render_atomic_templates(&self, _tera: &Tera) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+
+        fn render_composed_templates(&self, _tera: &Tera) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+
+        fn render_sources(&self, _plantuml: &PlantUML) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+    }
+
+    /// A task that panics unconditionally during cleanup.
+    struct PanickingTask;
+
+    impl Task for PanickingTask {
+        fn cleanup(&self, _scopes: &[CleanupScope]) -> anyhow::Result<()> {
+            panic!("simulated panic in cleanup");
+        }
+
+        fn render_atomic_templates(&self, _tera: &Tera) -> anyhow::Result<()> {
+            panic!("simulated panic in render_atomic_templates");
+        }
+    }
+
+    // ── I/O failure handling ─────────────────────────────────────────────────
+
+    /// Verifies that an I/O failure in the cleanup phase is surfaced by the
+    /// work unit with an error message that includes both the task identifier
+    /// and the original I/O error text.
+    #[test]
+    fn test_io_failure_in_cleanup_phase() {
+        let task = Arc::new(FailingTask {
+            error_message: "I/O error: failed to remove file".to_string(),
+        });
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let work_unit =
+            LibraryGenerationTask::cleanup(task, "lib_io_fail_cleanup".to_string(), scopes);
+
+        let result = work_unit.execute();
+        assert!(result.is_err(), "Expected error from failing cleanup task");
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_cleanup"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("I/O error"),
+            "Error should propagate the original I/O message; got: {msg}"
+        );
+    }
+
+    /// Verifies that an I/O failure in the create_resources phase is surfaced
+    /// with identifier and error text in the message.
+    #[test]
+    fn test_io_failure_in_create_resources_phase() {
+        let task = Arc::new(FailingTask {
+            error_message: "I/O error: disk full".to_string(),
+        });
+        let work_unit =
+            LibraryGenerationTask::create_resources(task, "lib_io_fail_create".to_string());
+
+        let result = work_unit.execute();
+        assert!(result.is_err());
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_create"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("disk full"),
+            "Error should propagate the original message; got: {msg}"
+        );
+    }
+
+    /// Verifies that an I/O failure in the render_composed_templates phase is
+    /// surfaced with identifier and error text.
+    #[test]
+    fn test_io_failure_in_render_composed_templates_phase() {
+        let task: Arc<dyn Task + Send + Sync> = Arc::new(FailingTask {
+            error_message: "I/O error: permission denied".to_string(),
+        });
+        let tera = Arc::new(Tera::default());
+        let work_unit = LibraryGenerationTask::render_composed_templates(
+            task,
+            "lib_io_fail_composed".to_string(),
+            tera,
+        );
+
+        let result = work_unit.execute();
+        assert!(result.is_err());
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_composed"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("permission denied"),
+            "Error should propagate the original message; got: {msg}"
+        );
+    }
+
+    // ── Error message format ──────────────────────────────────────────────────
+
+    /// Verifies that the error message produced by a failing work unit contains
+    /// both the task identifier and the phase name so operators can locate the
+    /// failing task quickly.
+    #[test]
+    fn test_error_message_contains_identifier_and_phase() {
+        let task = Arc::new(FailingTask {
+            error_message: "underlying failure".to_string(),
+        });
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let work_unit = LibraryGenerationTask::cleanup(
+            task,
+            "identifiable_task_xyz".to_string(),
+            scopes,
+        );
+
+        let msg = work_unit.execute().unwrap_err();
+        assert!(
+            msg.contains("identifiable_task_xyz"),
+            "Error message must name the failing task; got: {msg}"
+        );
+        assert!(
+            msg.contains("cleanup"),
+            "Error message must name the failing phase; got: {msg}"
+        );
+    }
+
+    // ── Panic handling in threads ─────────────────────────────────────────────
+
+    /// Verifies that a task panic during parallel execution via ThreadPool is
+    /// caught and reported as an error rather than crashing the process.
+    #[test]
+    fn test_panic_in_library_task_is_caught_by_thread_pool() {
+        use crate::threading::{Config as ThreadConfig, ThreadPool};
+
+        let task: Arc<dyn Task + Send + Sync> = Arc::new(PanickingTask);
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let work_units: Vec<Box<dyn WorkUnit>> = vec![Box::new(LibraryGenerationTask::cleanup(
+            task,
+            "panicking_lib_task".to_string(),
+            scopes,
+        ))];
+
+        let pool = ThreadPool::new(ThreadConfig::new(2));
+        let result = pool.execute(work_units);
+
+        assert!(result.is_err(), "Expected error because task panicked");
+        let agg = result.unwrap_err();
+        assert!(
+            agg.len() >= 1,
+            "At least one error should be present after a panic"
+        );
+        let has_panic_msg = agg.errors().iter().any(|e| e.message.contains("panicked"));
+        assert!(
+            has_panic_msg,
+            "Error message should mention 'panicked'; got: {:?}",
+            agg.errors()
+                .iter()
+                .map(|e| &e.message)
+                .collect::<Vec<_>>()
+        );
+    }
+
+    // ── Concurrent multiple failures ──────────────────────────────────────────
+
+    /// Verifies that when several library-generation work units fail concurrently
+    /// in the thread pool, ALL failures are collected rather than only the first
+    /// one being reported.
+    #[test]
+    fn test_concurrent_task_failures_all_collected() {
+        use crate::threading::{Config as ThreadConfig, ThreadPool};
+
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let task_count = 5_usize;
+
+        let work_units: Vec<Box<dyn WorkUnit>> = (0..task_count)
+            .map(|i| {
+                let task: Arc<dyn Task + Send + Sync> = Arc::new(FailingTask {
+                    error_message: format!("concurrent failure {i}"),
+                });
+                Box::new(LibraryGenerationTask::cleanup(
+                    task,
+                    format!("concurrent_task_{i}"),
+                    Arc::clone(&scopes),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let pool = ThreadPool::new(ThreadConfig::new(4));
+        let result = pool.execute(work_units);
+
+        assert!(
+            result.is_err(),
+            "Expected aggregated error from concurrent failures"
+        );
+        let agg = result.unwrap_err();
+        assert_eq!(
+            agg.len(),
+            task_count,
+            "All {task_count} concurrent failures should be collected; got {}",
+            agg.len()
+        );
+    }
+
+    /// Verifies that mixed success/failure scenarios in concurrent execution
+    /// report only the failing tasks and not the successful ones.
+    #[test]
+    fn test_concurrent_mixed_success_and_failure() {
+        use crate::threading::{Config as ThreadConfig, ThreadPool};
+
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let task_count = 6_usize;
+        let failing_indices: std::collections::HashSet<usize> = std::collections::HashSet::from([1, 3, 5]);
+
+        let work_units: Vec<Box<dyn WorkUnit>> = (0..task_count)
+            .map(|i| {
+                let task: Arc<dyn Task + Send + Sync> = if failing_indices.contains(&i) {
+                    Arc::new(FailingTask {
+                        error_message: format!("failure at index {i}"),
+                    })
+                } else {
+                    Arc::new(MockTask {
+                        calls: Arc::new(std::sync::Mutex::new(Vec::new())),
+                    })
+                };
+                Box::new(LibraryGenerationTask::cleanup(
+                    task,
+                    format!("mixed_task_{i}"),
+                    Arc::clone(&scopes),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let pool = ThreadPool::new(ThreadConfig::new(4));
+        let result = pool.execute(work_units);
+
+        assert!(result.is_err(), "Expected error from failing tasks");
+        let agg = result.unwrap_err();
+        assert_eq!(
+            agg.len(),
+            failing_indices.len(),
+            "Only failing tasks should be reported; expected {}, got {}",
+            failing_indices.len(),
+            agg.len()
+        );
+        for err in agg.errors() {
+            assert!(
+                err.message.contains("failure at index"),
+                "Error message should identify the failing task; got: {}",
+                err.message
+            );
+        }
+    }
+
+    // ── Cleanup on error ─────────────────────────────────────────────────────
+
+    /// Verifies that when the cleanup phase fails for some tasks, the errors
+    /// are all collected and execution continues for the remaining tasks
+    /// (thread pool does NOT abort mid-run on first failure).
+    #[test]
+    fn test_cleanup_phase_failure_continues_remaining_tasks() {
+        use crate::threading::{Config as ThreadConfig, ThreadPool};
+
+        let scopes = Arc::new(vec![CleanupScope::All]);
+        let completed_calls = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+
+        // Alternating failing/succeeding tasks.
+        let work_units: Vec<Box<dyn WorkUnit>> = (0..4_usize)
+            .map(|i| {
+                let task: Arc<dyn Task + Send + Sync> = if i % 2 == 0 {
+                    Arc::new(FailingTask {
+                        error_message: format!("cleanup I/O error task {i}"),
+                    })
+                } else {
+                    Arc::new(MockTask {
+                        calls: Arc::clone(&completed_calls),
+                    })
+                };
+                Box::new(LibraryGenerationTask::cleanup(
+                    task,
+                    format!("cleanup_err_task_{i}"),
+                    Arc::clone(&scopes),
+                )) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let pool = ThreadPool::new(ThreadConfig::new(4));
+        let result = pool.execute(work_units);
+
+        // Two tasks should have failed.
+        assert!(result.is_err());
+        let agg = result.unwrap_err();
+        assert_eq!(
+            agg.len(),
+            2,
+            "Exactly 2 tasks should have failed; got {}",
+            agg.len()
+        );
+
+        // The 2 succeeding tasks should have run their cleanup despite the failures.
+        let calls = completed_calls.lock().unwrap();
+        assert_eq!(
+            calls.len(),
+            2,
+            "Both successful tasks should have executed cleanup; got {}",
+            calls.len()
+        );
+    }
 }
