@@ -1,6 +1,7 @@
 use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::Result;
@@ -9,10 +10,53 @@ use clap::ArgMatches;
 use glob::glob;
 
 use crate::cmd::diagram::generate::config::Config;
-use crate::plantuml::create_plantuml;
+use crate::plantuml::{create_plantuml, PlantUML};
+use crate::threading::{Config as ThreadConfig, ThreadPool, WorkUnit};
 use crate::utils::create_parent_directory;
 
 mod config;
+
+/// A work unit that renders a single `.puml` source file via PlantUML.
+///
+/// Each instance is fully self-contained so that instances can be dispatched
+/// to different worker threads without shared mutable state.
+struct DiagramRenderTask {
+    /// Path to the `.puml` (or `.plantuml`) source file.
+    source_path: PathBuf,
+    /// Cloned PlantUML renderer (already `Clone + Send + 'static`).
+    plantuml: PlantUML,
+    /// Extra arguments forwarded to PlantUML (e.g. `-png -v`).
+    /// Wrapped in `Arc` so all tasks share the same allocation.
+    plantuml_args: Arc<Vec<String>>,
+    /// When `true` every file is rendered regardless of modification time.
+    force_generation: bool,
+    /// Nanosecond timestamp of the previous generation run.
+    last_generation_timestamp: i64,
+}
+
+impl WorkUnit for DiagramRenderTask {
+    fn identifier(&self) -> String {
+        self.source_path.to_string_lossy().into_owned()
+    }
+
+    fn execute(&self) -> Result<(), String> {
+        let last_modification_timestamp =
+            get_last_modified(&self.source_path).map_err(|e| e.to_string())?;
+        log::debug!(
+            "{} > {} = {}",
+            last_modification_timestamp,
+            self.last_generation_timestamp,
+            last_modification_timestamp > self.last_generation_timestamp,
+        );
+        if self.force_generation || last_modification_timestamp > self.last_generation_timestamp {
+            log::info!("generate {:?}", self.source_path);
+            self.plantuml
+                .render(&self.source_path, Some((*self.plantuml_args).clone()))
+                .map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
+}
 
 fn get_last_modified(path: &Path) -> Result<i64> {
     match path.exists() {
@@ -118,27 +162,31 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     plantuml.download()?;
     // get latest generation
     let last_generation_timestamp = get_last_generation_timestamp(last_gen_path)?;
-    // discover source files
-    let puml_paths = get_puml_paths(config);
-    // generate source files
-    for source_path in puml_paths {
-        let last_modification_timestamp = get_last_modified(&source_path)?;
-        log::debug!(
-            "{} > {} = {}",
-            last_modification_timestamp,
-            last_generation_timestamp,
-            last_modification_timestamp > last_generation_timestamp,
-        );
-        if force_generation || last_modification_timestamp > last_generation_timestamp {
-            log::info!("generate {:?}", source_path);
-            let plantuml_args = arg_matches
-                .get_many::<String>("plantuml_args")
-                .unwrap_or_default()
-                .map(|v| v.to_string())
-                .collect::<Vec<_>>();
-            plantuml.render(&source_path, Some(plantuml_args))?;
-        }
-    }
+    // collect plantuml args once so they can be shared across all work units
+    let plantuml_args: Arc<Vec<String>> = Arc::new(
+        arg_matches
+            .get_many::<String>("plantuml_args")
+            .unwrap_or_default()
+            .map(|v| v.to_string())
+            .collect(),
+    );
+    // discover source files and build one work unit per file
+    let work_units: Vec<Box<dyn WorkUnit>> = get_puml_paths(config)
+        .into_iter()
+        .map(|source_path| {
+            Box::new(DiagramRenderTask {
+                source_path,
+                plantuml: plantuml.clone(),
+                plantuml_args: Arc::clone(&plantuml_args),
+                force_generation,
+                last_generation_timestamp,
+            }) as Box<dyn WorkUnit>
+        })
+        .collect();
+    // execute all work units in parallel
+    ThreadPool::new(ThreadConfig::from_env())
+        .execute(work_units)
+        .map_err(|e| anyhow::Error::msg(e.to_string()))?;
     save_last_generation_timestamp(last_gen_path)?;
     Ok(())
 }
