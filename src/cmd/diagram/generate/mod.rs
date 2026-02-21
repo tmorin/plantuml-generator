@@ -186,7 +186,7 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     // execute all work units in parallel
     ThreadPool::new(ThreadConfig::from_env())
         .execute(work_units)
-        .map_err(|e| anyhow::Error::msg(e.to_string()))?;
+        .map_err(anyhow::Error::new)?;
     save_last_generation_timestamp(last_gen_path)?;
     Ok(())
 }

@@ -4,9 +4,23 @@ use std::io;
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Mutex, OnceLock};
 
 use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
+
+/// Global lock used to serialize stdout/stderr writes from parallel render calls.
+///
+/// Each call to `PlantUML::render` captures subprocess output into an in-memory
+/// buffer via `Command::output()`.  When multiple renders run concurrently the
+/// individual `write_all` calls can interleave on the shared stdout/stderr file
+/// descriptors, making output hard to read.  Acquiring this lock before writing
+/// ensures each file's output is emitted as a contiguous block.
+static OUTPUT_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn output_lock() -> &'static Mutex<()> {
+    OUTPUT_LOCK.get_or_init(|| Mutex::new(()))
+}
 
 #[derive(Debug, Clone)]
 pub struct PlantUML {
@@ -68,8 +82,13 @@ impl PlantUML {
             .args(p_args.unwrap_or_default())
             .output()
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
-        io::stdout().write_all(&output.stdout)?;
-        io::stderr().write_all(&output.stderr)?;
+        {
+            let _guard = output_lock()
+                .lock()
+                .expect("output lock poisoned: a render thread panicked while holding the lock");
+            io::stdout().write_all(&output.stdout)?;
+            io::stderr().write_all(&output.stderr)?;
+        }
         // check the generation
         if !output.status.success() {
             return Err(anyhow::Error::msg(format!("failed to render {}", source)));
