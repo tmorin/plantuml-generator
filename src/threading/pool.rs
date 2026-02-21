@@ -656,4 +656,97 @@ mod tests {
         assert!(completed.contains(&3));
         assert!(completed.contains(&4));
     }
+
+    /// Verifies that parallel execution achieves ≥ 1.4× speedup over sequential
+    /// execution for CPU-bound workloads representative of library generation tasks.
+    ///
+    /// Acceptance criteria for TASK-2.5:
+    /// - Measure sequential execution time (1 thread)
+    /// - Measure parallel execution time (4 threads)
+    /// - Verify speedup ≥ 1.4×
+    ///
+    /// This test is `#[ignore]` because timing assertions are sensitive to CI
+    /// environments with limited vCPUs, noisy neighbours, or thermal throttling.
+    /// Run it explicitly on a multi-core machine:
+    ///
+    /// ```bash
+    /// cargo test test_speedup_sequential_vs_parallel -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore = "timing-sensitive: run on a multi-core machine with --ignored"]
+    fn test_speedup_sequential_vs_parallel() {
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        /// CPU-bound task simulating template rendering / image processing work.
+        struct CpuBoundTask {
+            id: usize,
+        }
+
+        impl WorkUnit for CpuBoundTask {
+            fn identifier(&self) -> String {
+                format!("cpu_task_{}", self.id)
+            }
+
+            fn execute(&self) -> Result<(), String> {
+                // Simulate CPU-bound work representative of library generation
+                // (template rendering, string manipulation).
+                let mut acc: u64 = self.id as u64;
+                for i in 0u32..100_000 {
+                    acc = black_box(acc.wrapping_mul(6364136223846793005).wrapping_add(i as u64));
+                    acc ^= acc >> 32;
+                }
+                let _ = black_box(acc);
+                Ok(())
+            }
+        }
+
+        fn make_tasks(count: usize) -> Vec<Box<dyn WorkUnit>> {
+            (0..count)
+                .map(|i| Box::new(CpuBoundTask { id: i }) as Box<dyn WorkUnit>)
+                .collect()
+        }
+
+        const TASK_COUNT: usize = 32;
+        const MIN_SPEEDUP: f64 = 1.4;
+
+        // --- Sequential baseline (1 thread) ---
+        let seq_pool = ThreadPool::new(Config::new(1));
+        let seq_start = Instant::now();
+        seq_pool
+            .execute(make_tasks(TASK_COUNT))
+            .expect("sequential tasks must not fail");
+        let seq_duration = seq_start.elapsed();
+
+        // --- Parallel execution (4 threads) ---
+        let par_pool = ThreadPool::new(Config::new(4));
+        let par_start = Instant::now();
+        par_pool
+            .execute(make_tasks(TASK_COUNT))
+            .expect("parallel tasks must not fail");
+        let par_duration = par_start.elapsed();
+
+        let speedup = seq_duration.as_secs_f64() / par_duration.as_secs_f64();
+
+        println!("Speedup benchmark results ({} tasks):", TASK_COUNT);
+        println!(
+            "  Sequential (1 thread):  {:.2}ms",
+            seq_duration.as_secs_f64() * 1000.0
+        );
+        println!(
+            "  Parallel   (4 threads): {:.2}ms",
+            par_duration.as_secs_f64() * 1000.0
+        );
+        println!("  Speedup: {:.2}× (target ≥ {:.1}×)", speedup, MIN_SPEEDUP);
+
+        assert!(
+            speedup >= MIN_SPEEDUP,
+            "Parallelization speedup {:.2}× is below the required {:.1}× minimum. \
+             Sequential: {:.2}ms, Parallel (4 threads): {:.2}ms",
+            speedup,
+            MIN_SPEEDUP,
+            seq_duration.as_secs_f64() * 1000.0,
+            par_duration.as_secs_f64() * 1000.0,
+        );
+    }
 }
