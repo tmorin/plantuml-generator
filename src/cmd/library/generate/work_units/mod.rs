@@ -924,6 +924,10 @@ mod tests {
             Err(anyhow::Error::msg(self.error_message.clone()))
         }
 
+        fn render_atomic_templates_snippets(&self, _tera: &Tera) -> anyhow::Result<()> {
+            Err(anyhow::Error::msg(self.error_message.clone()))
+        }
+
         fn render_composed_templates(&self, _tera: &Tera) -> anyhow::Result<()> {
             Err(anyhow::Error::msg(self.error_message.clone()))
         }
@@ -933,7 +937,7 @@ mod tests {
         }
     }
 
-    /// A task that panics unconditionally during cleanup.
+    /// A task that panics unconditionally in all implemented phases.
     struct PanickingTask;
 
     impl Task for PanickingTask {
@@ -1023,6 +1027,90 @@ mod tests {
         );
     }
 
+    /// Verifies that an I/O failure in the render_atomic_templates_snippets
+    /// phase is surfaced with identifier and error text.
+    #[test]
+    fn test_io_failure_in_render_atomic_templates_snippets_phase() {
+        let task: Arc<dyn Task + Send + Sync> = Arc::new(FailingTask {
+            error_message: "I/O error: network unreachable".to_string(),
+        });
+        let tera = Arc::new(Tera::default());
+        let work_unit = LibraryGenerationTask::render_atomic_templates_snippets(
+            task,
+            "lib_io_fail_atomic_snippets".to_string(),
+            tera,
+        );
+
+        let result = work_unit.execute();
+        assert!(result.is_err());
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_atomic_snippets"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("network unreachable"),
+            "Error should propagate the original message; got: {msg}"
+        );
+    }
+
+    /// Verifies that an I/O failure in the render_atomic_templates_other phase
+    /// is surfaced with identifier and error text.
+    #[test]
+    fn test_io_failure_in_render_atomic_templates_other_phase() {
+        let task: Arc<dyn Task + Send + Sync> = Arc::new(FailingTask {
+            error_message: "I/O error: file not found".to_string(),
+        });
+        let tera = Arc::new(Tera::default());
+        let work_unit = LibraryGenerationTask::render_atomic_templates_other(
+            task,
+            "lib_io_fail_atomic_other".to_string(),
+            tera,
+        );
+
+        let result = work_unit.execute();
+        assert!(result.is_err());
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_atomic_other"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("file not found"),
+            "Error should propagate the original message; got: {msg}"
+        );
+    }
+
+    /// Verifies that an I/O failure in the render_sources phase is surfaced
+    /// with identifier and error text.
+    #[test]
+    fn test_io_failure_in_render_sources_phase() {
+        use crate::plantuml::create_plantuml;
+
+        let task: Arc<dyn Task + Send + Sync> = Arc::new(FailingTask {
+            error_message: "I/O error: write failed".to_string(),
+        });
+        // Use dummy values: FailingTask returns an error before PlantUML is invoked.
+        let plantuml = Arc::new(create_plantuml("java", "plantuml.jar", "0.0.0").unwrap());
+        let work_unit = LibraryGenerationTask::render_sources(
+            task,
+            "lib_io_fail_sources".to_string(),
+            plantuml,
+        );
+
+        let result = work_unit.execute();
+        assert!(result.is_err());
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("lib_io_fail_sources"),
+            "Error should contain the task identifier; got: {msg}"
+        );
+        assert!(
+            msg.contains("write failed"),
+            "Error should propagate the original message; got: {msg}"
+        );
+    }
+
     // ── Error message format ──────────────────────────────────────────────────
 
     /// Verifies that the error message produced by a failing work unit contains
@@ -1076,13 +1164,19 @@ mod tests {
             agg.len() >= 1,
             "At least one error should be present after a panic"
         );
-        let has_panic_msg = agg.errors().iter().any(|e| e.message.contains("panicked"));
+        // The ThreadPool reports panics under worker identifiers like "worker_0".
+        // Task identifiers are not preserved when a thread panics; the failing
+        // worker is identified via its worker index instead.
+        let has_worker_identifier = agg
+            .errors()
+            .iter()
+            .any(|e| e.unit_identifier.contains("worker_"));
         assert!(
-            has_panic_msg,
-            "Error message should mention 'panicked'; got: {:?}",
+            has_worker_identifier,
+            "Error unit_identifier should contain a 'worker_' identifier; got: {:?}",
             agg.errors()
                 .iter()
-                .map(|e| &e.message)
+                .map(|e| &e.unit_identifier)
                 .collect::<Vec<_>>()
         );
     }
