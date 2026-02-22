@@ -83,9 +83,15 @@ impl PlantUML {
             .output()
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
         {
-            let _guard = output_lock()
-                .lock()
-                .expect("output lock poisoned: a render thread panicked while holding the lock");
+            let _guard = match output_lock().lock() {
+                Ok(guard) => guard,
+                Err(poisoned) => {
+                    log::warn!(
+                        "output lock poisoned: a render thread panicked while holding the lock; continuing with inner guard"
+                    );
+                    poisoned.into_inner()
+                }
+            };
             io::stdout().write_all(&output.stdout)?;
             io::stderr().write_all(&output.stderr)?;
         }
