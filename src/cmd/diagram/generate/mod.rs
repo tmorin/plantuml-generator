@@ -1,6 +1,7 @@
 use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::Result;
@@ -17,7 +18,7 @@ mod config;
 
 struct RenderWorkUnit {
     source_path: PathBuf,
-    plantuml: PlantUML,
+    plantuml: Arc<PlantUML>,
     plantuml_args: Vec<String>,
 }
 
@@ -132,11 +133,11 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     let last_gen_path = last_gen_path_buff.as_path();
     create_parent_directory(last_gen_path)?;
     // create PlantUML
-    let plantuml = create_plantuml(
+    let plantuml = Arc::new(create_plantuml(
         &config.java_binary,
         &config.plantuml_jar,
         &config.plantuml_version,
-    )?;
+    )?);
     plantuml.download()?;
     // get latest generation
     let last_generation_timestamp = get_last_generation_timestamp(last_gen_path)?;
@@ -160,7 +161,7 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
         if force_generation || last_modification_timestamp > last_generation_timestamp {
             work_units.push(Box::new(RenderWorkUnit {
                 source_path,
-                plantuml: plantuml.clone(),
+                plantuml: Arc::clone(&plantuml),
                 plantuml_args: plantuml_args.clone(),
             }));
         }
@@ -168,7 +169,7 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     // render all work units in parallel
     let pool = ThreadPool::new(ThreadConfig::from_env());
     pool.execute(work_units)
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
+        .map_err(anyhow::Error::new)?;
     save_last_generation_timestamp(last_gen_path, start_time)?;
     Ok(())
 }
