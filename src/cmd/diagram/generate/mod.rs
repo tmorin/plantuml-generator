@@ -148,7 +148,9 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
         .map(|v| v.to_string())
         .collect::<Vec<_>>();
     // discover source files and collect work units
-    let puml_paths = get_puml_paths(config);
+    let mut puml_paths = get_puml_paths(config);
+    puml_paths.sort();
+    puml_paths.dedup();
     let mut work_units: Vec<Box<dyn WorkUnit>> = Vec::new();
     for source_path in puml_paths {
         let last_modification_timestamp = get_last_modified(&source_path)?;
