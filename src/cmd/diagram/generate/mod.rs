@@ -1,18 +1,39 @@
 use std::fs::{read_to_string, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::ArgMatches;
 use glob::glob;
 
 use crate::cmd::diagram::generate::config::Config;
-use crate::plantuml::create_plantuml;
+use crate::plantuml::{create_plantuml, PlantUML};
+use crate::threading::{Config as ThreadConfig, ThreadPool, WorkUnit};
 use crate::utils::create_parent_directory;
 
 mod config;
+
+struct RenderWorkUnit {
+    source_path: PathBuf,
+    plantuml: Arc<PlantUML>,
+    plantuml_args: Vec<String>,
+}
+
+impl WorkUnit for RenderWorkUnit {
+    fn identifier(&self) -> String {
+        self.source_path.to_string_lossy().to_string()
+    }
+
+    fn execute(&self) -> std::result::Result<(), String> {
+        log::info!("generate {:?}", self.source_path);
+        self.plantuml
+            .render(&self.source_path, Some(&self.plantuml_args))
+            .map_err(|e| e.to_string())
+    }
+}
 
 fn get_last_modified(path: &Path) -> Result<i64> {
     match path.exists() {
@@ -54,8 +75,8 @@ fn get_last_generation_timestamp(last_gen_path: &Path) -> Result<i64> {
     }
 }
 
-fn save_last_generation_timestamp(last_gen_path: &Path) -> Result<()> {
-    let now: DateTime<Local> = DateTime::from(SystemTime::now());
+fn save_last_generation_timestamp(last_gen_path: &Path, time: SystemTime) -> Result<()> {
+    let now: DateTime<Local> = DateTime::from(time);
     let value = now.timestamp_nanos_opt().unwrap().to_string();
     log::debug!("save_last_generation_timestamp {}", value);
     let mut last_gen_file = OpenOptions::new()
@@ -105,22 +126,32 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
         log::info!("java_binary: {}", &config.java_binary);
         log::info!("force_generation: {}", force_generation);
     }
+    // capture timestamp once at start
+    let start_time = SystemTime::now();
     // resolve the LAST_GENERATION file
     let last_gen_path_buff = Path::new(config.cache_directory.as_str()).join("LAST_GENERATION");
     let last_gen_path = last_gen_path_buff.as_path();
     create_parent_directory(last_gen_path)?;
     // create PlantUML
-    let plantuml = create_plantuml(
+    let plantuml = Arc::new(create_plantuml(
         &config.java_binary,
         &config.plantuml_jar,
         &config.plantuml_version,
-    )?;
+    )?);
     plantuml.download()?;
     // get latest generation
     let last_generation_timestamp = get_last_generation_timestamp(last_gen_path)?;
-    // discover source files
-    let puml_paths = get_puml_paths(config);
-    // generate source files
+    // collect plantuml args once
+    let plantuml_args = arg_matches
+        .get_many::<String>("plantuml_args")
+        .unwrap_or_default()
+        .map(|v| v.to_string())
+        .collect::<Vec<_>>();
+    // discover source files and collect work units
+    let mut puml_paths = get_puml_paths(config);
+    puml_paths.sort();
+    puml_paths.dedup();
+    let mut work_units: Vec<Box<dyn WorkUnit>> = Vec::new();
     for source_path in puml_paths {
         let last_modification_timestamp = get_last_modified(&source_path)?;
         log::debug!(
@@ -130,16 +161,19 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
             last_modification_timestamp > last_generation_timestamp,
         );
         if force_generation || last_modification_timestamp > last_generation_timestamp {
-            log::info!("generate {:?}", source_path);
-            let plantuml_args = arg_matches
-                .get_many::<String>("plantuml_args")
-                .unwrap_or_default()
-                .map(|v| v.to_string())
-                .collect::<Vec<_>>();
-            plantuml.render(&source_path, Some(plantuml_args))?;
+            work_units.push(Box::new(RenderWorkUnit {
+                source_path,
+                plantuml: Arc::clone(&plantuml),
+                plantuml_args: plantuml_args.clone(),
+            }));
         }
     }
-    save_last_generation_timestamp(last_gen_path)?;
+    // render all work units in parallel
+    let pool = ThreadPool::new(ThreadConfig::from_env());
+    pool.execute(work_units)
+        .map_err(anyhow::Error::new)
+        .context("diagram rendering phase failed")?;
+    save_last_generation_timestamp(last_gen_path, start_time)?;
     Ok(())
 }
 
