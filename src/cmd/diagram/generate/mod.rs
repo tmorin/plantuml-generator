@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::ArgMatches;
 use glob::glob;
@@ -27,7 +27,7 @@ impl WorkUnit for RenderWorkUnit {
         self.source_path.to_string_lossy().to_string()
     }
 
-    fn execute(&self) -> Result<(), String> {
+    fn execute(&self) -> std::result::Result<(), String> {
         log::info!("generate {:?}", self.source_path);
         self.plantuml
             .render(&self.source_path, Some(self.plantuml_args.clone()))
@@ -169,7 +169,8 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     // render all work units in parallel
     let pool = ThreadPool::new(ThreadConfig::from_env());
     pool.execute(work_units)
-        .map_err(anyhow::Error::new)?;
+        .map_err(anyhow::Error::new)
+        .context("diagram rendering phase failed")?;
     save_last_generation_timestamp(last_gen_path, start_time)?;
     Ok(())
 }
