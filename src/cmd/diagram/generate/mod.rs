@@ -106,6 +106,12 @@ fn render_sequential(
 ) -> Result<()> {
     for source_path in puml_paths {
         let last_modification_timestamp = get_last_modified(source_path)?;
+        log::debug!(
+            "{} > {} = {}",
+            last_modification_timestamp,
+            last_generation_timestamp,
+            last_modification_timestamp > last_generation_timestamp,
+        );
         if force_generation || last_modification_timestamp > last_generation_timestamp {
             log::info!("generate {:?}", source_path);
             plantuml.render(source_path, Some(plantuml_args.to_vec()))?;
@@ -115,6 +121,10 @@ fn render_sequential(
 }
 
 /// Renders diagrams in parallel using rayon for improved throughput.
+///
+/// All source paths are processed concurrently. If one or more renders fail,
+/// their errors are combined into a single error message so that no failure is
+/// silently discarded.
 fn render_parallel(
     puml_paths: &[PathBuf],
     plantuml: &PlantUML,
@@ -122,25 +132,31 @@ fn render_parallel(
     force_generation: bool,
     last_generation_timestamp: i64,
 ) -> Result<()> {
-    let errors: Vec<anyhow::Error> = puml_paths
+    let errors: Vec<String> = puml_paths
         .par_iter()
         .filter_map(|source_path| {
             let result: Result<()> = (|| {
                 let last_modification_timestamp = get_last_modified(source_path)?;
+                log::debug!(
+                    "{} > {} = {}",
+                    last_modification_timestamp,
+                    last_generation_timestamp,
+                    last_modification_timestamp > last_generation_timestamp,
+                );
                 if force_generation || last_modification_timestamp > last_generation_timestamp {
                     log::info!("generate {:?}", source_path);
                     plantuml.render(source_path, Some(plantuml_args.to_vec()))?;
                 }
                 Ok(())
             })();
-            result.err()
+            result.err().map(|e| e.to_string())
         })
         .collect();
 
-    if let Some(err) = errors.into_iter().next() {
-        return Err(err);
+    if errors.is_empty() {
+        return Ok(());
     }
-    Ok(())
+    Err(anyhow::anyhow!("{}", errors.join("; ")))
 }
 
 pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
@@ -299,18 +315,23 @@ mod test {
         let diagram_count = 6;
         let puml_paths: Vec<PathBuf> = (0..diagram_count)
             .map(|i| {
-                let path = dir.path().join(format!("bench_diagram_{}.puml", i));
+                let path = dir.path().join(format!("bench_diagram_{i}.puml"));
                 std::fs::write(
                     &path,
                     format!(
-                        "@startuml bench_{}\nobject A_{i}\nobject B_{i}\nA_{i} -> B_{i}\n@enduml\n",
-                        i
+                        "@startuml bench_{i}\nobject A_{i}\nobject B_{i}\nA_{i} -> B_{i}\n@enduml\n"
                     ),
                 )
                 .expect("failed to write puml file");
                 path
             })
             .collect();
+
+        // Warm-up: one sequential pass to populate the JVM class-data caches
+        // so that neither the sequential nor the parallel timed run is penalised
+        // by cold JVM start-up overhead.
+        render_sequential(&puml_paths, &plantuml, &[], true, 0)
+            .expect("warm-up render failed");
 
         // Measure sequential rendering time.
         let seq_start = Instant::now();

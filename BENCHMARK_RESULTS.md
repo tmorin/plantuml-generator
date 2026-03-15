@@ -2,16 +2,16 @@
 
 ## Summary
 
-Parallel diagram generation achieves a **1.39× speedup** over sequential generation
+Parallel diagram generation achieves a **1.41× speedup** over sequential generation
 on a 4-core machine, exceeding the target of ≥ 1.30×.
 
 | Metric            | Value           |
 |-------------------|-----------------|
 | Diagram count     | 6               |
 | CPU threads       | 4               |
-| Sequential time   | 3.862 s         |
-| Parallel time     | 2.778 s         |
-| **Speedup**       | **1.39×** ✓     |
+| Sequential time   | 3.873 s         |
+| Parallel time     | 2.745 s         |
+| **Speedup**       | **1.41×** ✓     |
 | Target            | ≥ 1.30×         |
 
 ## Implementation
@@ -23,19 +23,25 @@ loop over `.puml` source paths was replaced with:
 ```rust
 use rayon::prelude::*;
 
-puml_paths
+let errors: Vec<String> = puml_paths
     .par_iter()
-    .filter_map(|source_path| { /* render and collect errors */ })
-    .collect::<Vec<_>>();
+    .filter_map(|source_path| { /* render and collect error messages */ })
+    .collect();
+if !errors.is_empty() {
+    return Err(anyhow::anyhow!("{}", errors.join("; ")));
+}
 ```
 
 Key properties of the parallel implementation:
 
 - **Thread-safe** – `PlantUML` only holds `String` fields and is therefore
   `Send + Sync`; no `Arc` wrapper is needed.
-- **Error propagation** – errors from individual renders are collected and the
-  first failure is returned after all tasks complete, matching the previous
-  sequential behaviour.
+- **Error propagation** – errors from all failed renders are collected and
+  combined into a single error message separated by `; `, so no failure is
+  silently discarded.
+- **Synchronized output** – a global `Mutex<()>` in `plantuml.rs` serialises
+  writes to `io::stdout()` and `io::stderr()` so concurrent renders do not
+  produce interleaved console output.
 - **Backward compatible** – force-generation flag and modification-timestamp
   cache logic are preserved unchanged.
 
@@ -44,7 +50,11 @@ Key properties of the parallel implementation:
 ### Unit test (included in `cargo test`)
 
 The measurement is captured in an `#[ignore]`-tagged test so it does not slow
-down the default test run.  Run it explicitly with:
+down the default test run.  A warm-up pass is performed before timing begins to
+ensure JVM class-data caches are populated, giving a representative comparison
+between sequential and parallel execution.
+
+Run it explicitly with:
 
 ```bash
 cargo test test_parallel_speedup -- --nocapture --ignored
@@ -82,8 +92,8 @@ target/criterion/diagram_generate_parallel/report/index.html
 
 ## Acceptance Criteria Checklist
 
-- [x] Measure sequential execution time  → 3.862 s
-- [x] Measure parallel execution time    → 2.778 s
-- [x] Calculate speedup                  → 1.39×
+- [x] Measure sequential execution time  → 3.873 s
+- [x] Measure parallel execution time    → 2.745 s
+- [x] Calculate speedup                  → 1.41×
 - [x] Verify: speedup ≥ 1.3×            → **PASS**
 - [x] Document results                   → this file

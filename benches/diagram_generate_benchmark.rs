@@ -1,21 +1,21 @@
 //! Benchmark: diagram generate sequential vs parallel performance.
 //!
 //! Measures wall-clock time for rendering a batch of PlantUML diagrams both
-//! sequentially and in parallel using rayon, then verifies that the parallel
-//! implementation achieves at least 1.3× speedup.
+//! sequentially and in parallel using rayon.
+//!
+//! These Criterion benchmarks only record and report timings; they do **not**
+//! assert any minimum speedup. The 1.3× speedup check is implemented
+//! separately in the ignored unit test `test_parallel_speedup`.
 //!
 //! Run with:
 //!   cargo bench --bench diagram_generate_benchmark
-//!
-//! For a quick summary without the full criterion statistical pass, use:
-//!   cargo bench --bench diagram_generate_benchmark -- --test
 //!
 //! Results are also reproducible via the ignored unit test:
 //!   cargo test test_parallel_speedup -- --nocapture --ignored
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use rayon::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 use tempfile::TempDir;
@@ -44,16 +44,25 @@ fn create_test_diagrams(dir: &TempDir) -> Vec<PathBuf> {
 }
 
 /// Renders a single PlantUML source file by invoking the bundled JAR via Java.
-/// Uses the smetana layout engine so no GraphViz installation is required.
-fn render_one(path: &PathBuf) {
-    let status = Command::new("java")
+///
+/// Uses `Command::output()` to capture stdout/stderr (mirroring `PlantUML::render`).
+/// The layout engine can be overridden via the `PLANTUML_LAYOUT` environment
+/// variable; it defaults to `smetana` so no GraphViz installation is required.
+fn render_one(path: &Path) {
+    let layout = std::env::var("PLANTUML_LAYOUT").unwrap_or_else(|_| "smetana".to_string());
+    let output = Command::new("java")
         .arg("-jar")
         .arg(PLANTUML_JAR)
         .arg(path)
-        .arg("-Playout=smetana")
-        .status()
+        .arg(format!("-Playout={layout}"))
+        .output()
         .unwrap_or_else(|e| panic!("failed to invoke java for {:?}: {e}", path));
-    assert!(status.success(), "plantuml returned failure for {:?}", path);
+    assert!(
+        output.status.success(),
+        "plantuml returned failure for {:?}: {}",
+        path,
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 /// Criterion benchmark group: sequential diagram rendering.

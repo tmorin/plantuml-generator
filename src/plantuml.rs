@@ -4,9 +4,14 @@ use std::io;
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
+use std::sync::Mutex;
 
 use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
+
+/// Global mutex to serialise writes to stdout/stderr across rayon threads so
+/// that per-diagram output from concurrent `render` calls is not interleaved.
+static OUTPUT_MUTEX: Mutex<()> = Mutex::new(());
 
 #[derive(Debug)]
 pub struct PlantUML {
@@ -66,8 +71,13 @@ impl PlantUML {
             .args(p_args.unwrap_or_default())
             .output()
             .map_err(|e| anyhow::Error::new(e).context(format!("unable to render {}", source)))?;
-        io::stdout().write_all(&output.stdout)?;
-        io::stderr().write_all(&output.stderr)?;
+        {
+            // Hold the lock only while writing to stdout/stderr so that output
+            // from concurrent rayon threads is not interleaved.
+            let _guard = OUTPUT_MUTEX.lock().unwrap();
+            io::stdout().write_all(&output.stdout)?;
+            io::stderr().write_all(&output.stderr)?;
+        }
         // check the generation
         if !output.status.success() {
             return Err(anyhow::Error::msg(format!("failed to render {}", source)));
