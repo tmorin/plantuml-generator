@@ -74,7 +74,9 @@ impl PlantUML {
         {
             // Hold the lock only while writing to stdout/stderr so that output
             // from concurrent rayon threads is not interleaved.
-            let _guard = OUTPUT_MUTEX.lock().unwrap();
+            // Recover from a poisoned mutex rather than panicking: the lock is
+            // used purely for I/O serialisation and holds no invariants.
+            let _guard = OUTPUT_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
             io::stdout().write_all(&output.stdout)?;
             io::stderr().write_all(&output.stderr)?;
         }

@@ -123,8 +123,9 @@ fn render_sequential(
 /// Renders diagrams in parallel using rayon for improved throughput.
 ///
 /// All source paths are processed concurrently. If one or more renders fail,
-/// their errors are combined into a single error message so that no failure is
-/// silently discarded.
+/// their errors are collected, sorted by source path for deterministic output,
+/// and combined into a single error (one failure per line) so that no failure
+/// is silently discarded.
 fn render_parallel(
     puml_paths: &[PathBuf],
     plantuml: &PlantUML,
@@ -132,7 +133,7 @@ fn render_parallel(
     force_generation: bool,
     last_generation_timestamp: i64,
 ) -> Result<()> {
-    let errors: Vec<String> = puml_paths
+    let mut errors: Vec<(PathBuf, String)> = puml_paths
         .par_iter()
         .filter_map(|source_path| {
             let result: Result<()> = (|| {
@@ -149,14 +150,21 @@ fn render_parallel(
                 }
                 Ok(())
             })();
-            result.err().map(|e| e.to_string())
+            result.err().map(|e| (source_path.clone(), e.to_string()))
         })
         .collect();
 
     if errors.is_empty() {
         return Ok(());
     }
-    Err(anyhow::anyhow!("{}", errors.join("; ")))
+    // Sort by path so the combined message is deterministic across runs.
+    errors.sort_by(|(a, _), (b, _)| a.cmp(b));
+    let message = errors
+        .into_iter()
+        .map(|(path, msg)| format!("{}: {}", path.display(), msg))
+        .collect::<Vec<_>>()
+        .join("\n");
+    Err(anyhow::anyhow!("{}", message))
 }
 
 pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
@@ -369,6 +377,61 @@ mod test {
             speedup,
             seq_duration.as_secs_f64(),
             par_duration.as_secs_f64(),
+        );
+    }
+
+    /// Verifies that `render_parallel` collects ALL failures and that the
+    /// combined error message includes every failing path, sorted alphabetically.
+    ///
+    /// Two `.puml` files are created and rendered against a non-existent JAR so
+    /// that both renders fail with a non-zero Java exit code.  The test asserts
+    /// that neither error is silently discarded and that the paths appear in
+    /// sorted order (deterministic output).
+    #[test]
+    fn test_parallel_error_aggregation() {
+        use crate::plantuml::create_plantuml;
+        use tempfile::TempDir;
+
+        let dir = TempDir::new().expect("failed to create temp dir");
+        // Construct a path within the temp dir that is never created, so that
+        // java exits with a non-zero status for every render attempt.
+        let fake_jar = dir.path().join("nonexistent_plantuml.jar");
+        let plantuml = create_plantuml("java", fake_jar.to_str().unwrap(), "")
+            .expect("failed to create plantuml");
+
+        let path_a = dir.path().join("aaa_diagram.puml");
+        let path_b = dir.path().join("zzz_diagram.puml");
+        std::fs::write(&path_a, "@startuml\nobject A\n@enduml\n").unwrap();
+        std::fs::write(&path_b, "@startuml\nobject B\n@enduml\n").unwrap();
+
+        let puml_paths = vec![path_a.clone(), path_b.clone()];
+
+        let result = render_parallel(&puml_paths, &plantuml, &[], true, 0);
+        assert!(result.is_err(), "expected render_parallel to fail");
+
+        let err_msg = result.unwrap_err().to_string();
+
+        // Both failing paths must appear in the combined error.
+        assert!(
+            err_msg.contains(path_a.to_str().unwrap()),
+            "expected error to mention {}, got: {}",
+            path_a.display(),
+            err_msg
+        );
+        assert!(
+            err_msg.contains(path_b.to_str().unwrap()),
+            "expected error to mention {}, got: {}",
+            path_b.display(),
+            err_msg
+        );
+
+        // aaa_diagram should appear before zzz_diagram (sorted by path).
+        let pos_a = err_msg.find(path_a.to_str().unwrap()).unwrap();
+        let pos_b = err_msg.find(path_b.to_str().unwrap()).unwrap();
+        assert!(
+            pos_a < pos_b,
+            "expected errors sorted by path (aaa before zzz), got: {}",
+            err_msg
         );
     }
 }
