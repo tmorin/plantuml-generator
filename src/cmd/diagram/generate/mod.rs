@@ -316,8 +316,8 @@ mod test {
 
         let dir = TempDir::new().expect("failed to create temp dir");
         let plantuml_jar = "test/plantuml-1.2022.4.jar";
-        let plantuml = create_plantuml("java", plantuml_jar, "")
-            .expect("failed to create plantuml");
+        let plantuml =
+            create_plantuml("java", plantuml_jar, "").expect("failed to create plantuml");
 
         // Create 6 simple PlantUML source files for a meaningful parallel workload.
         let diagram_count = 6;
@@ -338,19 +338,16 @@ mod test {
         // Warm-up: one sequential pass to populate the JVM class-data caches
         // so that neither the sequential nor the parallel timed run is penalised
         // by cold JVM start-up overhead.
-        render_sequential(&puml_paths, &plantuml, &[], true, 0)
-            .expect("warm-up render failed");
+        render_sequential(&puml_paths, &plantuml, &[], true, 0).expect("warm-up render failed");
 
         // Measure sequential rendering time.
         let seq_start = Instant::now();
-        render_sequential(&puml_paths, &plantuml, &[], true, 0)
-            .expect("sequential render failed");
+        render_sequential(&puml_paths, &plantuml, &[], true, 0).expect("sequential render failed");
         let seq_duration = seq_start.elapsed();
 
         // Measure parallel rendering time.
         let par_start = Instant::now();
-        render_parallel(&puml_paths, &plantuml, &[], true, 0)
-            .expect("parallel render failed");
+        render_parallel(&puml_paths, &plantuml, &[], true, 0).expect("parallel render failed");
         let par_duration = par_start.elapsed();
 
         let speedup = seq_duration.as_secs_f64() / par_duration.as_secs_f64();
@@ -365,7 +362,11 @@ mod test {
         println!("  Target speedup      : ≥ 1.30x");
         println!(
             "  Result              : {}",
-            if speedup >= 1.3 { "PASS ✓" } else { "FAIL ✗" }
+            if speedup >= 1.3 {
+                "PASS ✓"
+            } else {
+                "FAIL ✗"
+            }
         );
         println!("================================================");
 
@@ -378,6 +379,112 @@ mod test {
             seq_duration.as_secs_f64(),
             par_duration.as_secs_f64(),
         );
+    }
+
+    /// Verifies that parallel diagram generation produces identical output across 5 consecutive runs.
+    ///
+    /// This test exercises the determinism of `render_parallel` by:
+    ///   1. Creating several `.puml` source files.
+    ///   2. Running `render_parallel` with force=true five times.
+    ///   3. Reading the byte contents of every generated PNG after each run.
+    ///   4. Asserting that the byte contents are identical across all runs.
+    ///
+    /// Run with: `cargo test test_diagram_generate_determinism -- --nocapture --ignored`
+    #[test]
+    #[ignore]
+    fn test_diagram_generate_determinism() {
+        use crate::plantuml::create_plantuml;
+        use tempfile::TempDir;
+
+        const RUNS: usize = 5;
+        let source_dir = TempDir::new().expect("failed to create temp source dir");
+
+        // Create several PlantUML source files to exercise parallel generation.
+        let diagrams: &[(&str, &str)] = &[
+            (
+                "seq.puml",
+                "@startuml seq\nAlice -> Bob: Hello\nBob --> Alice: Hi\n@enduml\n",
+            ),
+            (
+                "class.puml",
+                "@startuml class\nclass User {\n+name: String\n}\n@enduml\n",
+            ),
+            (
+                "obj.puml",
+                "@startuml obj\nobject A\nobject B\nA -> B\n@enduml\n",
+            ),
+        ];
+        for (name, content) in diagrams {
+            std::fs::write(source_dir.path().join(name), content)
+                .expect("failed to write puml file");
+        }
+
+        let plantuml_jar = "test/plantuml-1.2022.4.jar";
+        let plantuml =
+            create_plantuml("java", plantuml_jar, "").expect("failed to create plantuml");
+
+        let puml_paths: Vec<PathBuf> = diagrams
+            .iter()
+            .map(|(name, _)| source_dir.path().join(name))
+            .collect();
+
+        // Use smetana so the test runs without GraphViz being installed.
+        let plantuml_args = vec!["-png".to_string(), "-Playout=smetana".to_string()];
+
+        // Collect raw file bytes for each run.
+        let mut run_contents: Vec<Vec<Vec<u8>>> = Vec::with_capacity(RUNS);
+        for run in 0..RUNS {
+            render_parallel(&puml_paths, &plantuml, &plantuml_args, true, 0)
+                .unwrap_or_else(|e| panic!("render_parallel failed on run {}: {}", run + 1, e));
+
+            let contents: Vec<Vec<u8>> = diagrams
+                .iter()
+                .map(|(name, _)| {
+                    let png_path = source_dir.path().join(name.replace(".puml", ".png"));
+                    std::fs::read(&png_path).unwrap_or_else(|e| {
+                        panic!(
+                            "failed to read {} on run {}: {}",
+                            png_path.display(),
+                            run + 1,
+                            e
+                        )
+                    })
+                })
+                .collect();
+            run_contents.push(contents);
+        }
+
+        // Compare every subsequent run against the first run.
+        let reference = &run_contents[0];
+        for (run_idx, contents) in run_contents.iter().enumerate().skip(1) {
+            for (diagram_idx, (name, _)) in diagrams.iter().enumerate() {
+                assert_eq!(
+                    reference[diagram_idx],
+                    contents[diagram_idx],
+                    "output for '{}' differs between run 1 and run {} — generation is not deterministic",
+                    name.replace(".puml", ".png"),
+                    run_idx + 1,
+                );
+            }
+        }
+
+        println!();
+        println!("=== Diagram Generation Determinism Test ===");
+        println!("  Runs          : {}", RUNS);
+        println!("  Diagrams      : {}", diagrams.len());
+        for (diagram_idx, (name, _)) in diagrams.iter().enumerate() {
+            println!(
+                "  {} : {} bytes (consistent across all {} runs)",
+                name.replace(".puml", ".png"),
+                reference[diagram_idx].len(),
+                RUNS,
+            );
+        }
+        println!(
+            "  Result        : PASS ✓ (all {} runs produced identical output)",
+            RUNS
+        );
+        println!("===========================================");
     }
 
     /// Verifies that `render_parallel` collects ALL failures and that the

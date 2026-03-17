@@ -148,19 +148,19 @@ mod test {
                                     item_urn: Urn::from(
                                         "aws-q1-2022/Architecture/Analytics/AmazonAthena",
                                     )
-                                        .value,
+                                    .value,
                                 },
                                 Item {
                                     item_urn: Urn::from(
                                         "aws-q1-2022/Architecture/Analytics/AmazonCloudSearch",
                                     )
-                                        .value,
+                                    .value,
                                 },
                                 Item {
                                     item_urn: Urn::from(
                                         "aws-q1-2022/Architecture/Analytics/AmazonEmr",
                                     )
-                                        .value,
+                                    .value,
                                 },
                             ],
                         },
