@@ -32,7 +32,9 @@ errors.sort_by(|(a, _), (b, _)| a.cmp(b));
 if !errors.is_empty() {
     return Err(anyhow::anyhow!(
         "{}",
-        errors.into_iter().map(|(_, msg)| msg).collect::<Vec<_>>().join("\n")
+        errors.into_iter()
+            .map(|(path, msg)| format!("{}: {}", path.display(), msg))
+            .collect::<Vec<_>>().join("\n")
     ));
 }
 ```
@@ -43,8 +45,8 @@ Key properties of the parallel implementation:
   `Send + Sync`; no `Arc` wrapper is needed.
 - **Error propagation** – errors from all failed renders are collected as
   `(path, message)` pairs, sorted by path for deterministic ordering, and
-  combined into a single newline-separated error message (one failure per line),
-  so no failure is silently discarded.
+  combined into a single newline-separated error message where each line is
+  formatted as `"<path>: <message>"`, so no failure is silently discarded.
 - **Synchronized output** – a global `Mutex<()>` in `plantuml.rs` serialises
   writes to `io::stdout()` and `io::stderr()` so concurrent renders do not
   produce interleaved console output.

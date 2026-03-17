@@ -161,7 +161,7 @@ fn render_parallel(
     errors.sort_by(|(a, _), (b, _)| a.cmp(b));
     let message = errors
         .into_iter()
-        .map(|(_, msg)| msg)
+        .map(|(path, msg)| format!("{}: {}", path.display(), msg))
         .collect::<Vec<_>>()
         .join("\n");
     Err(anyhow::anyhow!("{}", message))
