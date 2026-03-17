@@ -23,12 +23,17 @@ loop over `.puml` source paths was replaced with:
 ```rust
 use rayon::prelude::*;
 
-let errors: Vec<String> = puml_paths
+let mut errors: Vec<(PathBuf, String)> = puml_paths
     .par_iter()
-    .filter_map(|source_path| { /* render and collect error messages */ })
+    .filter_map(|source_path| { /* render and collect (path, message) pairs */ })
     .collect();
+// Sort by path for deterministic, greppable CLI output.
+errors.sort_by(|(a, _), (b, _)| a.cmp(b));
 if !errors.is_empty() {
-    return Err(anyhow::anyhow!("{}", errors.join("; ")));
+    return Err(anyhow::anyhow!(
+        "{}",
+        errors.into_iter().map(|(_, msg)| msg).collect::<Vec<_>>().join("\n")
+    ));
 }
 ```
 
@@ -36,9 +41,10 @@ Key properties of the parallel implementation:
 
 - **Thread-safe** – `PlantUML` only holds `String` fields and is therefore
   `Send + Sync`; no `Arc` wrapper is needed.
-- **Error propagation** – errors from all failed renders are collected and
-  combined into a single error message separated by `; `, so no failure is
-  silently discarded.
+- **Error propagation** – errors from all failed renders are collected as
+  `(path, message)` pairs, sorted by path for deterministic ordering, and
+  combined into a single newline-separated error message (one failure per line),
+  so no failure is silently discarded.
 - **Synchronized output** – a global `Mutex<()>` in `plantuml.rs` serialises
   writes to `io::stdout()` and `io::stderr()` so concurrent renders do not
   produce interleaved console output.
