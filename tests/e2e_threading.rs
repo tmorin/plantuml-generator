@@ -306,12 +306,10 @@ fn test_threading_parallel_correctness_same_file_set() {
         pngs1
     );
     assert_eq!(
-        pngs1,
-        pngs4,
+        pngs1, pngs4,
         "Single-thread and multi-thread runs must produce identical file sets.\n\
          Single-thread: {:?}\nMulti-thread: {:?}",
-        pngs1,
-        pngs4
+        pngs1, pngs4
     );
 }
 
@@ -376,8 +374,12 @@ fn test_threading_invalid_env_var_falls_back_gracefully() {
         &simple_sequence("fallback"),
     );
 
-    let output =
-        run_diagram_generate(source_dir.path(), cache_dir.path(), Some("not-a-number"), &[]);
+    let output = run_diagram_generate(
+        source_dir.path(),
+        cache_dir.path(),
+        Some("not-a-number"),
+        &[],
+    );
 
     assert!(
         output.status.success(),
