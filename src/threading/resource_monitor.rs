@@ -634,4 +634,354 @@ mod tests {
         let b = ResourceSnapshot::capture();
         assert!(b.wall_time >= a.wall_time);
     }
+
+    // -----------------------------------------------------------------------
+    // TASK-4.3: Edge case tests
+    // -----------------------------------------------------------------------
+
+    /// Simulate a **1-core system** by running the pool with a single worker
+    /// thread and verifying:
+    ///
+    /// - All work units complete correctly.
+    /// - No worker threads are leaked after `execute()` returns (Linux only).
+    /// - Serialised execution: at most one task runs concurrently because only
+    ///   one worker thread is spawned.
+    #[test]
+    #[serial]
+    fn test_edge_single_core_system() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        const TASK_COUNT: usize = 32;
+
+        // Track the peak number of tasks executing simultaneously.
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak_active = Arc::new(AtomicUsize::new(0));
+
+        struct TrackedTask {
+            id: usize,
+            iterations: u32,
+            active: Arc<AtomicUsize>,
+            peak_active: Arc<AtomicUsize>,
+        }
+
+        impl WorkUnit for TrackedTask {
+            fn identifier(&self) -> String {
+                format!("tracked_{}", self.id)
+            }
+
+            fn execute(&self) -> Result<(), String> {
+                let current = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+                // Update peak if this is the highest concurrency observed.
+                let mut peak = self.peak_active.load(Ordering::SeqCst);
+                while current > peak {
+                    match self.peak_active.compare_exchange(
+                        peak,
+                        current,
+                        Ordering::SeqCst,
+                        Ordering::SeqCst,
+                    ) {
+                        Ok(_) => break,
+                        Err(actual) => peak = actual,
+                    }
+                }
+                // Simulate the same CPU work used by make_cpu_tasks.
+                let mut acc: u64 = self.id as u64;
+                for i in 0..self.iterations {
+                    acc = std::hint::black_box(
+                        acc.wrapping_mul(6_364_136_223_846_793_005)
+                            .wrapping_add(i as u64),
+                    );
+                    acc ^= acc >> 32;
+                }
+                let _ = std::hint::black_box(acc);
+                self.active.fetch_sub(1, Ordering::SeqCst);
+                Ok(())
+            }
+        }
+
+        let baseline = ResourceSnapshot::capture();
+
+        let tasks: Vec<Box<dyn WorkUnit>> = (0..TASK_COUNT)
+            .map(|i| {
+                Box::new(TrackedTask {
+                    id: i,
+                    iterations: 1_000,
+                    active: Arc::clone(&active),
+                    peak_active: Arc::clone(&peak_active),
+                }) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let pool = ThreadPool::new(Config::new(1));
+        let result = pool.execute(tasks);
+
+        assert!(
+            result.is_ok(),
+            "Single-core pool must complete all {} tasks: {:?}",
+            TASK_COUNT,
+            result.err(),
+        );
+
+        // With only 1 worker thread, at most 1 task should ever be active at once.
+        let observed_peak = peak_active.load(Ordering::SeqCst);
+        assert!(
+            observed_peak <= 1,
+            "Single-core pool must run at most 1 task concurrently, \
+             but peak concurrent tasks was {}",
+            observed_peak,
+        );
+
+        // Thread cleanup: after execute() all worker threads must be joined.
+        // Use the same noise allowance (10) as the existing leak test.
+        #[cfg(target_os = "linux")]
+        {
+            let after = ResourceSnapshot::capture();
+            let delta = after.thread_delta(&baseline);
+            assert!(
+                delta <= 10,
+                "Single-core pool leaked {} threads (before={}, after={})",
+                delta,
+                baseline.thread_count,
+                after.thread_count,
+            );
+        }
+
+        // Suppress unused-variable warning on non-Linux.
+        let _ = &baseline;
+    }
+
+    /// Simulate a **high-core-count configuration** by creating a pool
+    /// configured for 64 worker threads. Note that `ThreadPool::execute()`
+    /// only spawns `min(configured_threads, task_count)` workers, so in the
+    /// first sub-case with 10 tasks it will create at most 10 workers, not 64.
+    ///
+    /// The test exercises two sub-cases:
+    ///
+    /// 1. **Configured threads > tasks** (`THREAD_COUNT > TASK_COUNT` with
+    ///    `TASK_COUNT = 10`): pool must not panic or deadlock when the
+    ///    configured thread count exceeds the available work.
+    /// 2. **More tasks than configured threads** (`TASK_COUNT > THREAD_COUNT`
+    ///    with `TASK_COUNT = 128`): pool must distribute all tasks across the
+    ///    available workers and complete correctly.
+    #[test]
+    #[serial]
+    fn test_edge_high_core_count_system() {
+        const THREAD_COUNT: usize = 64;
+
+        // Sub-case 1: fewer tasks than threads.
+        {
+            let pool = ThreadPool::new(Config::new(THREAD_COUNT));
+            let result = pool.execute(make_cpu_tasks(10, 500));
+            assert!(
+                result.is_ok(),
+                "64-thread pool with 10 tasks (threads > tasks) must succeed: {:?}",
+                result.err(),
+            );
+        }
+
+        // Sub-case 2: more tasks than threads (normal distribution).
+        {
+            let pool = ThreadPool::new(Config::new(THREAD_COUNT));
+            let result = pool.execute(make_cpu_tasks(128, 500));
+            assert!(
+                result.is_ok(),
+                "64-thread pool with 128 tasks must complete all tasks: {:?}",
+                result.err(),
+            );
+        }
+    }
+
+    /// Simulate a **container with CPU limits** by capping the pool to 2
+    /// threads (representative of a container configured with `--cpus=2`).
+    ///
+    /// Verifies:
+    ///
+    /// - All work units complete under the constrained thread count.
+    /// - Memory overhead remains below 10% on Linux.
+    #[test]
+    #[serial]
+    fn test_edge_container_with_cpu_limits() {
+        const CONTAINER_THREADS: usize = 2;
+        const TASK_COUNT: usize = 50;
+
+        // Warm up to stabilise RSS before the baseline measurement.
+        {
+            let warmup = ThreadPool::new(Config::new(CONTAINER_THREADS));
+            warmup
+                .execute(make_cpu_tasks(8, 500))
+                .expect("container warmup failed");
+        }
+
+        let baseline = ResourceSnapshot::capture();
+
+        let pool = ThreadPool::new(Config::new(CONTAINER_THREADS));
+        let result = pool.execute(make_cpu_tasks(TASK_COUNT, 2_000));
+
+        assert!(
+            result.is_ok(),
+            "Container-limited pool ({} threads) must complete all {} tasks: {:?}",
+            CONTAINER_THREADS,
+            TASK_COUNT,
+            result.err(),
+        );
+
+        // Memory overhead must remain acceptable even under constrained threads.
+        if baseline.rss_kb != 0 {
+            let after = ResourceSnapshot::capture();
+            let overhead_pct = after.memory_overhead_pct(&baseline);
+            assert!(
+                overhead_pct < 10.0,
+                "Memory overhead {:.2}% exceeds 10% under container CPU limits \
+                 (threads={}, tasks={}). baseline={} kB, after={} kB",
+                overhead_pct,
+                CONTAINER_THREADS,
+                TASK_COUNT,
+                baseline.rss_kb,
+                after.rss_kb,
+            );
+        }
+    }
+
+    /// Verify the pool handles a **very large input** (1024 work units)
+    /// without panicking, deadlocking, or leaking threads.
+    ///
+    /// Uses a lightweight iteration count per task so the test completes
+    /// in reasonable wall-clock time even on constrained CI runners.
+    #[test]
+    #[serial]
+    fn test_edge_very_large_input() {
+        const TASK_COUNT: usize = 1_024;
+        const THREAD_COUNT: usize = 4;
+
+        let baseline = ResourceSnapshot::capture();
+
+        let pool = ThreadPool::new(Config::new(THREAD_COUNT));
+        let result = pool.execute(make_cpu_tasks(TASK_COUNT, 100));
+
+        assert!(
+            result.is_ok(),
+            "Large-input pool must complete all {} tasks: {:?}",
+            TASK_COUNT,
+            result.err(),
+        );
+
+        // Thread cleanup check on Linux.
+        #[cfg(target_os = "linux")]
+        {
+            let after = ResourceSnapshot::capture();
+            let delta = after.thread_delta(&baseline);
+            assert!(
+                delta <= 10,
+                "Large-input pool leaked {} threads after {} tasks \
+                 (before={}, after={})",
+                delta,
+                TASK_COUNT,
+                baseline.thread_count,
+                after.thread_count,
+            );
+        }
+
+        // Suppress unused-variable warning on non-Linux.
+        let _ = &baseline;
+    }
+
+    /// Verify the pool handles a **very large input with partial failures**
+    /// correctly: all failures are collected and returned as an
+    /// `AggregatedError`; no tasks are silently dropped.
+    #[test]
+    #[serial]
+    fn test_edge_very_large_input_with_errors() {
+        use crate::threading::ExecutionError;
+
+        struct MixedTask {
+            id: usize,
+            /// Fail every N-th task.
+            fail_every: usize,
+        }
+
+        impl WorkUnit for MixedTask {
+            fn identifier(&self) -> String {
+                format!("mixed_{}", self.id)
+            }
+
+            fn execute(&self) -> Result<(), String> {
+                if self.fail_every > 0 && self.id > 0 && self.id % self.fail_every == 0 {
+                    Err(format!("task {} failed (every {} tasks fail)", self.id, self.fail_every))
+                } else {
+                    Ok(())
+                }
+            }
+        }
+
+        const TASK_COUNT: usize = 512;
+        const FAIL_EVERY: usize = 10;
+
+        // Tasks 10, 20, 30, …, 510 fail (task 0 is excluded by the `id > 0` guard)
+        // → expected_failures = TASK_COUNT / FAIL_EVERY = 512 / 10 = 51
+        let expected_failures = TASK_COUNT / FAIL_EVERY;
+
+        let tasks: Vec<Box<dyn WorkUnit>> = (0..TASK_COUNT)
+            .map(|i| {
+                Box::new(MixedTask {
+                    id: i,
+                    fail_every: FAIL_EVERY,
+                }) as Box<dyn WorkUnit>
+            })
+            .collect();
+
+        let pool = ThreadPool::new(Config::new(4));
+        let result = pool.execute(tasks);
+
+        assert!(
+            result.is_err(),
+            "Pool with {} failures expected an Err result",
+            expected_failures,
+        );
+
+        if let Err(agg) = result {
+            assert_eq!(
+                agg.len(),
+                expected_failures,
+                "Expected {} errors but got {}. Errors: {:?}",
+                expected_failures,
+                agg.len(),
+                agg.errors()
+                    .iter()
+                    .map(|e: &ExecutionError| e.unit_identifier.as_str())
+                    .collect::<Vec<_>>(),
+            );
+        }
+    }
+
+    /// Verify the pool is correct when **thread count exactly equals task
+    /// count** — a common boundary case where the pool has no idle workers.
+    #[test]
+    fn test_edge_thread_count_equals_task_count() {
+        const N: usize = 8;
+
+        let pool = ThreadPool::new(Config::new(N));
+        let result = pool.execute(make_cpu_tasks(N, 500));
+
+        assert!(
+            result.is_ok(),
+            "Pool with thread_count == task_count ({}) must succeed: {:?}",
+            N,
+            result.err(),
+        );
+    }
+
+    /// Verify the pool succeeds with a **single work unit** regardless of how
+    /// many threads are configured — covers the case where thread_count is
+    /// reduced to 1 because `min(configured, work_count)` collapses it.
+    #[test]
+    fn test_edge_single_task_high_thread_count() {
+        let pool = ThreadPool::new(Config::new(32));
+        let result = pool.execute(make_cpu_tasks(1, 1_000));
+
+        assert!(
+            result.is_ok(),
+            "Pool with 32 threads and 1 task must succeed: {:?}",
+            result.err(),
+        );
+    }
 }
