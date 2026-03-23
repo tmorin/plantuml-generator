@@ -192,10 +192,12 @@
 mod config;
 mod errors;
 mod pool;
+pub mod resource_monitor;
 mod traits;
 
 // Re-export public API
 pub use config::Config;
 pub use errors::{AggregatedError, ErrorCollector, ExecutionError};
 pub use pool::ThreadPool;
+pub use resource_monitor::ResourceSnapshot;
 pub use traits::WorkUnit;
