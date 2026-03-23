@@ -25,8 +25,8 @@ pub struct PlantUML {
 
 impl PlantUML {
     /// Prepare the final arguments list, adding smetana layout if needed
-    fn prepare_args(&self, p_args_as_strings: Option<Vec<String>>) -> Vec<String> {
-        let mut final_args = p_args_as_strings.unwrap_or_default();
+    fn prepare_args(&self, p_args_as_strings: Option<&[String]>) -> Vec<String> {
+        let mut final_args = p_args_as_strings.unwrap_or_default().to_vec();
 
         // Check if we should automatically add smetana layout
         if should_add_smetana_layout(&final_args) {
@@ -39,7 +39,7 @@ impl PlantUML {
         final_args
     }
 
-    pub fn render(&self, source_path: &Path, p_args_as_strings: Option<Vec<String>>) -> Result<()> {
+    pub fn render(&self, source_path: &Path, p_args_as_strings: Option<&[String]>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
             None => {
@@ -173,8 +173,8 @@ mod tests {
         );
 
         // Test with args but no layout - original args must be preserved regardless of dot availability
-        let args = Some(vec!["-png".to_string()]);
-        let result = plantuml.prepare_args(args);
+        let args = vec!["-png".to_string()];
+        let result = plantuml.prepare_args(Some(&args));
 
         // The original argument should still be present and remain the last argument
         assert!(
@@ -201,8 +201,8 @@ mod tests {
         };
 
         // Test with user-specified layout - should NOT add smetana
-        let args = Some(vec!["-Playout=elk".to_string(), "-png".to_string()]);
-        let result = plantuml.prepare_args(args);
+        let args = vec!["-Playout=elk".to_string(), "-png".to_string()];
+        let result = plantuml.prepare_args(Some(&args));
 
         // User's layout should be preserved
         assert_eq!(result[0], "-Playout=elk");
@@ -222,8 +222,8 @@ mod tests {
             plantuml_version: "1.0.0".to_string(),
         };
 
-        let args = Some(vec!["-png".to_string()]);
-        let result = plantuml.prepare_args(args);
+        let args = vec!["-png".to_string()];
+        let result = plantuml.prepare_args(Some(&args));
 
         // Should NOT have smetana added
         assert_eq!(result[0], "-png");
