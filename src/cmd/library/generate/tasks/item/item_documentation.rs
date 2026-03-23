@@ -99,7 +99,7 @@ impl ItemDocumentationTask {
         })
     }
     pub fn get_relative_documentation_path(&self) -> Box<Path> {
-        Box::from(Path::new(format!("{}.md", self.item_urn,).as_str()))
+        Box::from(Path::new(format!("{}.md", self.item_urn, ).as_str()))
     }
     fn get_full_documentation_path(&self) -> Box<Path> {
         Path::new(&self.output_directory)
@@ -199,7 +199,7 @@ mod test {
             "{}/{}.md",
             generator.output_directory, generator.item_urn,
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains(r"# Item"));
         assert!(content.contains(r"| Illustration | Icon | Card | Group |"));
         assert!(content.contains(r"| ![illustration for Illustration](../../.././Icon.png) | ![illustration for Icon](../../.././Item.png) | ![illustration for Card](../../.././ItemCard.png) | ![illustration for Group](../../.././ItemGroup.png) |"));

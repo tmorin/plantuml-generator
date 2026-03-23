@@ -86,7 +86,7 @@ impl ModuleDocumentationTask {
     }
     fn get_relative_destination_path(&self) -> Box<Path> {
         Box::from(Path::new(
-            format!("{}/README.md", self.module_urn,).as_str(),
+            format!("{}/README.md", self.module_urn, ).as_str(),
         ))
     }
     fn get_full_destination_path(&self) -> Box<Path> {
@@ -188,7 +188,7 @@ mod test {
             "{}/Package/Module/README.md",
             generator.output_directory
         ))
-        .unwrap();
+            .unwrap();
         assert!(content.contains("The module contains 4 items."));
         assert!(content.contains("[Package/Module/itemD](../../Package/Module/itemD.md)"));
         assert!(content.contains("## FamilyA"));

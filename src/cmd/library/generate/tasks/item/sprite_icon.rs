@@ -103,12 +103,12 @@ impl Task for SpriteIconTask {
             self.destination_icon_height as i32,
             ResizeMode::ExactHeight,
         )
-        .map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to resize {}: {:?}",
-                &self.full_source_icon, e
-            ))
-        })?;
+            .map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "unable to resize {}: {:?}",
+                    &self.full_source_icon, e
+                ))
+            })?;
 
         // create the destination image
         let mut background_image =
@@ -132,12 +132,12 @@ impl Task for SpriteIconTask {
             0,
             0,
         )
-        .map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to blend {} in {}: {:?}",
-                &self.full_source_icon, &self.full_destination_icon, e
-            ))
-        })?;
+            .map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "unable to blend {} in {}: {:?}",
+                    &self.full_source_icon, &self.full_destination_icon, e
+                ))
+            })?;
 
         // generate the sprite icon
         raster::save(&destination_image, &self.full_destination_icon).map_err(|e| {

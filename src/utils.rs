@@ -80,7 +80,7 @@ pub fn is_dot_available() -> bool {
     if std::env::var("PLANTUML_IGNORE_DOT").is_ok() {
         return false;
     }
-
+    
     static DOT_AVAILABLE: OnceLock<bool> = OnceLock::new();
     *DOT_AVAILABLE.get_or_init(|| {
         Command::new("dot")
@@ -106,10 +106,10 @@ pub fn should_add_smetana_layout(user_args: &[String]) -> bool {
     let dot_available = is_dot_available();
     let graphviz_dot_set = is_graphviz_dot_set();
     let graphviz_configured = dot_available || graphviz_dot_set;
-
+    
     // Check if user already specified a layout argument
     let has_layout_arg = user_args.iter().any(|arg| arg.starts_with("-Playout="));
-
+    
     // Add smetana only if GraphViz is not configured and user hasn't specified a layout
     !graphviz_configured && !has_layout_arg
 }
@@ -132,11 +132,11 @@ mod tests {
         // Test when GRAPHVIZ_DOT is not set
         std::env::remove_var("GRAPHVIZ_DOT");
         assert!(!is_graphviz_dot_set());
-
+        
         // Test when GRAPHVIZ_DOT is set
         std::env::set_var("GRAPHVIZ_DOT", "/usr/bin/dot");
         assert!(is_graphviz_dot_set());
-
+        
         // Clean up
         std::env::remove_var("GRAPHVIZ_DOT");
     }
@@ -148,7 +148,7 @@ mod tests {
         std::env::set_var("GRAPHVIZ_DOT", "/usr/bin/dot");
         let args = vec!["-png".to_string()];
         assert!(!should_add_smetana_layout(&args));
-
+        
         // Clean up
         std::env::remove_var("GRAPHVIZ_DOT");
     }

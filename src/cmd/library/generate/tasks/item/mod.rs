@@ -41,7 +41,7 @@ pub fn parse_item(
                 tasks.push(Box::from(item_icon_task));
                 // create the tasks to generate the sprite values
                 for (sprite_size_name, sprite_size_value) in
-                    _library.customization.list_sprite_sizes()
+                _library.customization.list_sprite_sizes()
                 {
                     // create the task to generate the icon used as input of the sprite value
                     let sprite_icon_task = SpriteIconTask::create(
