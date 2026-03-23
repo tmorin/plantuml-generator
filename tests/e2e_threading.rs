@@ -243,8 +243,8 @@ fn test_threading_multi_thread_all_diagrams_generated() {
 
 /// Verify that single-thread and multi-thread modes produce the same set of output files.
 ///
-/// Both runs use the same source; the second run forces regeneration using a
-/// fresh cache directory so we can compare the set of generated files.
+/// Each run forces regeneration using its own fresh cache directory so we can
+/// compare the set of generated files without interference from prior runs.
 #[test]
 fn test_threading_parallel_correctness_same_file_set() {
     const DIAGRAM_COUNT: usize = 6;
@@ -449,7 +449,7 @@ fn test_threading_out_of_range_threads_falls_back_gracefully() {
 }
 
 // ---------------------------------------------------------------------------
-// Performance: parallel mode must not be slower than sequential for many files
+// Performance: parallel mode must not be substantially slower than sequential
 // ---------------------------------------------------------------------------
 
 /// Verify that multi-thread mode does not take substantially longer than

@@ -31,7 +31,7 @@ impl WorkUnit for RenderWorkUnit {
     fn execute(&self) -> std::result::Result<(), String> {
         log::info!("generate {:?}", self.source_path);
         self.plantuml
-            .render(&self.source_path, Some((*self.plantuml_args).clone()))
+            .render(&self.source_path, Some(self.plantuml_args.as_slice()))
             .map_err(|e| e.to_string())
     }
 }
