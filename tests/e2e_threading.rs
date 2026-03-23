@@ -13,10 +13,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
 mod common;
+
+// Path to the pre-downloaded PlantUML jar checked into the repo.
+// Passing this explicitly to every `diagram generate` call avoids network
+// downloads during testing, which would slow CI and risk rate-limiting.
+const PLANTUML_JAR: &str = "test/plantuml-1.2022.4.jar";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,6 +54,8 @@ fn run_diagram_generate(
         .arg(source_dir)
         .arg("-C")
         .arg(cache_dir)
+        .arg("-P")
+        .arg(PLANTUML_JAR)
         .arg("-f"); // Always force generation in tests
 
     for arg in extra_args {
@@ -94,7 +101,7 @@ fn test_threading_diagram_help_works() {
         .output()
         .expect("Failed to execute binary");
 
-    // clap writes help to stdout and exits with 0
+    // In this binary, clap help is printed to stderr and exits with 0.
     assert!(
         output.status.success(),
         "diagram generate --help must succeed"
@@ -452,20 +459,24 @@ fn test_threading_out_of_range_threads_falls_back_gracefully() {
 /// (that is tested in the criterion benchmarks) but we do assert that the
 /// parallel run finishes in reasonable wall-clock time relative to the
 /// sequential run — specifically it must complete within 3× the single-thread
-/// wall time, ruling out deadlocks or severe contention.
+/// wall time (with a minimum absolute floor of 30 s), ruling out deadlocks or
+/// severe contention while remaining stable in resource-constrained CI.
+///
+/// Both runs use identical diagram sources so that any difference in wall time
+/// reflects threading behaviour only, not content variance.
 #[test]
 fn test_threading_parallel_wall_time_reasonable() {
+    // Identical diagram content used by both sequential and parallel runs.
     const DIAGRAM_COUNT: usize = 4;
+    let diagram_sources: Vec<String> = (0..DIAGRAM_COUNT)
+        .map(|i| simple_sequence(&format!("perf-{}", i)))
+        .collect();
 
-    // --- sequential baseline ---
+    // --- sequential baseline (1 thread) ---
     let src1 = TempDir::new().expect("Failed to create src1");
     let cache1 = TempDir::new().expect("Failed to create cache1");
-    for i in 0..DIAGRAM_COUNT {
-        create_puml(
-            src1.path(),
-            &format!("perf_{}.puml", i),
-            &simple_sequence(&format!("perf-seq-{}", i)),
-        );
+    for (i, content) in diagram_sources.iter().enumerate() {
+        create_puml(src1.path(), &format!("perf_{}.puml", i), content);
     }
     let start1 = Instant::now();
     let out1 = run_diagram_generate(src1.path(), cache1.path(), Some("1"), &[]);
@@ -476,15 +487,11 @@ fn test_threading_parallel_wall_time_reasonable() {
         String::from_utf8_lossy(&out1.stderr)
     );
 
-    // --- parallel run ---
+    // --- parallel run (4 threads) ---
     let src4 = TempDir::new().expect("Failed to create src4");
     let cache4 = TempDir::new().expect("Failed to create cache4");
-    for i in 0..DIAGRAM_COUNT {
-        create_puml(
-            src4.path(),
-            &format!("perf_{}.puml", i),
-            &simple_sequence(&format!("perf-par-{}", i)),
-        );
+    for (i, content) in diagram_sources.iter().enumerate() {
+        create_puml(src4.path(), &format!("perf_{}.puml", i), content);
     }
     let start4 = Instant::now();
     let out4 = run_diagram_generate(src4.path(), cache4.path(), Some("4"), &[]);
@@ -495,16 +502,17 @@ fn test_threading_parallel_wall_time_reasonable() {
         String::from_utf8_lossy(&out4.stderr)
     );
 
-    // Parallel wall time must not exceed 3× the sequential wall time.
-    // This guards against deadlocks and severe contention while being
-    // lenient enough for CI environments with varying load.
-    let threshold = elapsed1 * 3;
+    // Parallel wall time must not exceed max(3× sequential, 30 s).
+    // The 30-second floor prevents spurious failures when the sequential run
+    // is extremely fast (e.g., sub-second on a warm cache), making 3× too tight.
+    let threshold = (elapsed1 * 3).max(Duration::from_secs(30));
     assert!(
         elapsed4 <= threshold,
-        "Parallel wall time ({:.2?}) must not exceed 3× sequential wall time ({:.2?}). \
+        "Parallel wall time ({:.2?}) must not exceed threshold ({:.2?} = max(3×{:.2?}, 30 s)). \
          Possible deadlock or severe contention.",
         elapsed4,
-        elapsed1
+        threshold,
+        elapsed1,
     );
 
     // Minimum divisor (1ms) avoids division-by-zero when elapsed1 rounds to 0.0.

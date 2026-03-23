@@ -19,7 +19,8 @@ mod config;
 struct RenderWorkUnit {
     source_path: PathBuf,
     plantuml: Arc<PlantUML>,
-    plantuml_args: Vec<String>,
+    /// Shared across all work units; cloned to a Vec only when passed to render.
+    plantuml_args: Arc<Vec<String>>,
 }
 
 impl WorkUnit for RenderWorkUnit {
@@ -30,7 +31,7 @@ impl WorkUnit for RenderWorkUnit {
     fn execute(&self) -> std::result::Result<(), String> {
         log::info!("generate {:?}", self.source_path);
         self.plantuml
-            .render(&self.source_path, Some(self.plantuml_args.clone()))
+            .render(&self.source_path, Some((*self.plantuml_args).clone()))
             .map_err(|e| e.to_string())
     }
 }
@@ -141,12 +142,14 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     plantuml.download()?;
     // get latest generation
     let last_generation_timestamp = get_last_generation_timestamp(last_gen_path)?;
-    // collect plantuml args once
-    let plantuml_args = arg_matches
-        .get_many::<String>("plantuml_args")
-        .unwrap_or_default()
-        .map(|v| v.to_string())
-        .collect::<Vec<_>>();
+    // collect plantuml args once and share across all work units via Arc
+    let plantuml_args = Arc::new(
+        arg_matches
+            .get_many::<String>("plantuml_args")
+            .unwrap_or_default()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>(),
+    );
     // discover source files and collect work units
     let mut puml_paths = get_puml_paths(config);
     puml_paths.sort();
@@ -164,7 +167,7 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
             work_units.push(Box::new(RenderWorkUnit {
                 source_path,
                 plantuml: Arc::clone(&plantuml),
-                plantuml_args: plantuml_args.clone(),
+                plantuml_args: Arc::clone(&plantuml_args),
             }));
         }
     }
