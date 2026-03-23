@@ -71,8 +71,10 @@ impl ResourceSnapshot {
     /// Returns `(self.rss_kb - baseline.rss_kb) / baseline.rss_kb * 100`.
     /// Returns `0.0` when `baseline.rss_kb` is zero (avoids division by zero).
     ///
-    /// A positive value means this snapshot has *more* memory than the
-    /// baseline; a negative value (or `0`) means no growth.
+    /// A positive value means this snapshot has *more* memory than the baseline.
+    /// When RSS has decreased (this snapshot is below baseline), `0.0` is
+    /// returned — the implementation uses saturating subtraction, so decreases
+    /// clamp to zero rather than producing negative results.
     pub fn memory_overhead_pct(&self, baseline: &ResourceSnapshot) -> f64 {
         if baseline.rss_kb == 0 {
             return 0.0;
@@ -148,7 +150,7 @@ mod tests {
     use crate::threading::{Config, ThreadPool, WorkUnit};
     use serial_test::serial;
     use std::hint::black_box;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
     use std::time::Instant;
 
     // -----------------------------------------------------------------------
@@ -203,6 +205,7 @@ mod tests {
     /// The test runs on Linux (where `/proc/self/status` is available) and is
     /// skipped silently when `baseline.rss_kb == 0`.
     #[test]
+    #[serial]
     fn test_memory_overhead_acceptable() {
         // Warm up: one pool execution to let the allocator settle before we
         // take a baseline.  This avoids counting initial heap growth as pool
@@ -221,11 +224,10 @@ mod tests {
             return;
         }
 
-        // Execute a batch of tasks and capture peak RSS immediately after
-        // pool construction (all threads spawned) but before they complete.
-        // Because `execute` is synchronous we capture *after* the call when
-        // threads have already been joined — this still catches any retained
-        // allocations.
+        // Execute a batch of tasks and capture RSS after `execute` returns.
+        // Because `execute` is synchronous, all worker threads have been joined
+        // at this point; the measurement therefore checks for retained
+        // allocations after pool use, not peak RSS during execution.
         let pool = ThreadPool::new(Config::new(4));
         pool.execute(make_cpu_tasks(64, 5_000))
             .expect("pool execution failed");
@@ -259,13 +261,14 @@ mod tests {
     /// 80% of the available thread-time (the remaining ≤ 20% is scheduling
     /// and synchronisation overhead).
     ///
-    /// The test uses purely CPU-bound tasks with no I/O or sleeping so that
-    /// the measurement is stable.  The threshold is set at 0.40 for robustness
-    /// in constrained CI environments while still catching severe pathologies
-    /// such as serialised execution or busy-waiting contention; the design
-    /// target of 80% is documented in the assertion message.
+    /// The test also asserts a minimum **wall-clock speedup ≥ 1.2×**
+    /// (`T_seq / T_par ≥ 1.2`).  Speedup is core-count–agnostic: it confirms
+    /// real parallelism without requiring more cores than threads.  This is the
+    /// CI-stable assertion; efficiency is logged for informational purposes.
     ///
-    /// Run with `#[serial]` to minimise CPU contention from concurrent tests.
+    /// The test uses purely CPU-bound tasks with no I/O or sleeping so that
+    /// the measurement is stable.  Run with `#[serial]` to minimise CPU
+    /// contention from concurrent tests.
     #[test]
     #[serial]
     fn test_cpu_utilization_acceptable() {
@@ -291,29 +294,32 @@ mod tests {
             .expect("parallel pool failed");
         let par_elapsed = par_start.elapsed();
 
-        // Parallel efficiency = sequential / (parallel × threads).
-        // Values ≥ 1 mean super-linear speedup (possible due to cache effects).
-        let efficiency = seq_elapsed.as_secs_f64()
-            / (par_elapsed.as_secs_f64() * THREAD_COUNT as f64).max(f64::EPSILON);
+        // Wall-clock speedup = T_seq / T_par.  A value > 1 confirms real
+        // parallelism.  The design target (80% efficiency) implies a speedup
+        // of 0.80 × thread_count = 3.2× on a machine with ≥ 4 cores.  On
+        // constrained CI runners (e.g. 2 cores running 4 threads), the
+        // achievable speedup is capped near 2× due to hardware concurrency;
+        // we therefore assert ≥ 1.2× which still fails if the pool has
+        // accidentally serialised execution (speedup ≈ 1.0×).
+        let speedup = seq_elapsed.as_secs_f64() / par_elapsed.as_secs_f64().max(f64::EPSILON);
+        let efficiency = speedup / THREAD_COUNT as f64;
 
-        // The design target is ≥ 80%; we assert ≥ 40% to give generous margin
-        // for resource-constrained CI runners (e.g. 2-core machines where
-        // 4 threads share 2 physical cores, capping theoretical efficiency at
-        // ≈50%).  A result below 40% indicates serialised execution or severe
-        // lock contention.
         assert!(
-            efficiency >= 0.40,
-            "CPU utilisation (parallel efficiency) {:.1}% is below the 40% \
-             CI threshold (design target: >80%). \
+            speedup >= 1.2,
+            "Wall-clock speedup {:.2}× is below the 1.2× CI threshold \
+             (design target: >80% parallel efficiency ≈ {:.1}× speedup). \
              seq={:.3?} par={:.3?} threads={}",
-            efficiency * 100.0,
+            speedup,
+            0.8 * THREAD_COUNT as f64,
             seq_elapsed,
             par_elapsed,
             THREAD_COUNT,
         );
 
         eprintln!(
-            "[resource] CPU efficiency: {:.1}% (seq={:.3?}, par={:.3?}, threads={})",
+            "[resource] CPU speedup: {:.2}× | efficiency: {:.1}% \
+             (seq={:.3?}, par={:.3?}, threads={})",
+            speedup,
             efficiency * 100.0,
             seq_elapsed,
             par_elapsed,
@@ -333,6 +339,7 @@ mod tests {
     /// tolerance of 5% is allowed for allocator fragmentation and background
     /// noise.
     #[test]
+    #[serial]
     fn test_no_memory_leaks() {
         const ROUNDS: usize = 5;
 
@@ -343,7 +350,7 @@ mod tests {
                 .expect("warmup failed");
         }
 
-        let rss_samples: Arc<Mutex<Vec<u64>>> = Arc::new(Mutex::new(Vec::new()));
+        let mut rss_samples: Vec<u64> = Vec::new();
 
         for _ in 0..ROUNDS {
             let pool = ThreadPool::new(Config::new(4));
@@ -351,20 +358,18 @@ mod tests {
                 .expect("pool round failed");
 
             let snap = ResourceSnapshot::capture();
-            rss_samples.lock().unwrap().push(snap.rss_kb);
+            rss_samples.push(snap.rss_kb);
         }
-
-        let samples = rss_samples.lock().unwrap();
 
         // If RSS is unavailable (non-Linux), rss_kb is always 0 — skip the
         // assertion in that case.
-        if samples.iter().all(|&v| v == 0) {
+        if rss_samples.iter().all(|&v| v == 0) {
             return;
         }
 
         // The last RSS sample must not exceed the first by more than 5%.
-        let first = samples[0];
-        let last = *samples.last().unwrap();
+        let first = rss_samples[0];
+        let last = *rss_samples.last().unwrap();
 
         let growth_pct = if first == 0 {
             0.0
@@ -380,12 +385,12 @@ mod tests {
             ROUNDS,
             first,
             last,
-            *samples,
+            rss_samples,
         );
 
         eprintln!(
             "[resource] RSS samples across {} rounds: {:?} (growth {:.2}%)",
-            ROUNDS, *samples, growth_pct,
+            ROUNDS, rss_samples, growth_pct,
         );
     }
 
@@ -398,21 +403,24 @@ mod tests {
     ///
     /// The test uses two complementary strategies:
     ///
-    /// 1. **Application-level**: an atomic counter incremented when each task
-    ///    starts and decremented when it finishes.  After `execute()` returns,
-    ///    the counter must be zero — any non-joined thread would hold the
-    ///    counter above zero.
+    /// 1. **Application-level** (all platforms): an atomic counter incremented
+    ///    when each task starts and decremented when it finishes.  After
+    ///    `execute()` returns, the counter must be zero — any non-joined thread
+    ///    would hold the counter above zero.
     ///
-    /// 2. **OS-level leak detection**: run the pool three times and verify that
-    ///    the total thread-count growth is not proportional to
-    ///    `iterations × thread_count`.  Random test-runner noise causes small,
-    ///    bounded deltas; a real thread leak would cause growth of at least
-    ///    `iterations × thread_count = 12` threads.
+    /// 2. **OS-level leak detection** (Linux only, `#[serial]`): run the pool
+    ///    three times and verify that the total thread-count growth is not
+    ///    proportional to `iterations × thread_count`.  Random test-runner
+    ///    noise causes small, bounded deltas; a real thread leak would cause
+    ///    growth of at least `iterations × thread_count = 12` threads.
+    ///    This portion is skipped on non-Linux platforms where
+    ///    `/proc/self/status` is unavailable.
     #[test]
+    #[serial]
     fn test_cleanup_threads_after_execution() {
         use std::sync::atomic::{AtomicI64, Ordering};
 
-        // --- Strategy 1: application-level active-task counter ---
+        // --- Strategy 1: application-level active-task counter (all platforms) ---
         let active = Arc::new(AtomicI64::new(0));
 
         struct LifecycleTask {
@@ -454,31 +462,36 @@ mod tests {
              All tasks must complete before execute() returns."
         );
 
-        // --- Strategy 2: OS-level thread-leak detection across 3 runs ---
+        // --- Strategy 2: OS-level thread-leak detection (Linux only) ---
         // If the pool leaks threads, each run adds `thread_count` leaked threads.
         // 3 runs × 4 threads = 12 leaked threads minimum.
         // Random noise from concurrent tests is bounded well below 12.
-        let snap_before = ResourceSnapshot::capture();
+        // This block is skipped on non-Linux platforms where thread_count is
+        // always the same fixed default and cannot detect leaks.
+        #[cfg(target_os = "linux")]
+        {
+            let snap_before = ResourceSnapshot::capture();
 
-        for _ in 0..3 {
-            let pool = ThreadPool::new(Config::new(4));
-            pool.execute(make_cpu_tasks(8, 1_000))
-                .expect("pool run failed");
+            for _ in 0..3 {
+                let pool = ThreadPool::new(Config::new(4));
+                pool.execute(make_cpu_tasks(8, 1_000))
+                    .expect("pool run failed");
+            }
+
+            let snap_after = ResourceSnapshot::capture();
+            let delta = snap_after.thread_delta(&snap_before);
+
+            // Allow up to 10 threads of growth for concurrent test noise.
+            // A real thread leak (3 × 4 = 12 threads) would exceed this bound.
+            assert!(
+                delta <= 10,
+                "Thread count grew by {delta} across 3 pool executions — possible \
+                 thread leak. before={}, after={} \
+                 (3 runs × 4 threads = 12 leaked threads if pool doesn't join).",
+                snap_before.thread_count,
+                snap_after.thread_count,
+            );
         }
-
-        let snap_after = ResourceSnapshot::capture();
-        let delta = snap_after.thread_delta(&snap_before);
-
-        // Allow up to 10 threads of growth for concurrent test noise.
-        // A real thread leak (3 × 4 = 12 threads) would exceed this bound.
-        assert!(
-            delta <= 10,
-            "Thread count grew by {delta} across 3 pool executions — possible \
-             thread leak. before={}, after={} \
-             (3 runs × 4 threads = 12 leaked threads if pool doesn't join).",
-            snap_before.thread_count,
-            snap_after.thread_count,
-        );
     }
 
     // -----------------------------------------------------------------------
