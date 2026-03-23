@@ -1161,7 +1161,7 @@ mod tests {
         assert!(result.is_err(), "Expected error because task panicked");
         let agg = result.unwrap_err();
         assert!(
-            agg.len() >= 1,
+            !agg.is_empty(),
             "At least one error should be present after a panic"
         );
         // The ThreadPool reports panics under worker identifiers like "worker_0".
