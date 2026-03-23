@@ -644,16 +644,76 @@ mod tests {
     ///
     /// - All work units complete correctly.
     /// - No worker threads are leaked after `execute()` returns (Linux only).
-    /// - The serialised execution is correct — tasks run one at a time.
+    /// - Serialised execution: at most one task runs concurrently because only
+    ///   one worker thread is spawned.
     #[test]
     #[serial]
     fn test_edge_single_core_system() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
         const TASK_COUNT: usize = 32;
+
+        // Track the peak number of tasks executing simultaneously.
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak_active = Arc::new(AtomicUsize::new(0));
+
+        struct TrackedTask {
+            id: usize,
+            iterations: u32,
+            active: Arc<AtomicUsize>,
+            peak_active: Arc<AtomicUsize>,
+        }
+
+        impl WorkUnit for TrackedTask {
+            fn identifier(&self) -> String {
+                format!("tracked_{}", self.id)
+            }
+
+            fn execute(&self) -> Result<(), String> {
+                let current = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+                // Update peak if this is the highest concurrency observed.
+                let mut peak = self.peak_active.load(Ordering::SeqCst);
+                while current > peak {
+                    match self.peak_active.compare_exchange(
+                        peak,
+                        current,
+                        Ordering::SeqCst,
+                        Ordering::SeqCst,
+                    ) {
+                        Ok(_) => break,
+                        Err(actual) => peak = actual,
+                    }
+                }
+                // Simulate the same CPU work used by make_cpu_tasks.
+                let mut acc: u64 = self.id as u64;
+                for i in 0..self.iterations {
+                    acc = std::hint::black_box(
+                        acc.wrapping_mul(6_364_136_223_846_793_005)
+                            .wrapping_add(i as u64),
+                    );
+                    acc ^= acc >> 32;
+                }
+                let _ = std::hint::black_box(acc);
+                self.active.fetch_sub(1, Ordering::SeqCst);
+                Ok(())
+            }
+        }
 
         let baseline = ResourceSnapshot::capture();
 
+        let tasks: Vec<Box<dyn WorkUnit>> = (0..TASK_COUNT)
+            .map(|i| {
+                Box::new(TrackedTask {
+                    id: i,
+                    iterations: 1_000,
+                    active: Arc::clone(&active),
+                    peak_active: Arc::clone(&peak_active),
+                }) as Box<dyn WorkUnit>
+            })
+            .collect();
+
         let pool = ThreadPool::new(Config::new(1));
-        let result = pool.execute(make_cpu_tasks(TASK_COUNT, 1_000));
+        let result = pool.execute(tasks);
 
         assert!(
             result.is_ok(),
@@ -662,13 +722,23 @@ mod tests {
             result.err(),
         );
 
+        // With only 1 worker thread, at most 1 task should ever be active at once.
+        let observed_peak = peak_active.load(Ordering::SeqCst);
+        assert!(
+            observed_peak <= 1,
+            "Single-core pool must run at most 1 task concurrently, \
+             but peak concurrent tasks was {}",
+            observed_peak,
+        );
+
         // Thread cleanup: after execute() all worker threads must be joined.
+        // Use the same noise allowance (10) as the existing leak test.
         #[cfg(target_os = "linux")]
         {
             let after = ResourceSnapshot::capture();
             let delta = after.thread_delta(&baseline);
             assert!(
-                delta <= 5,
+                delta <= 10,
                 "Single-core pool leaked {} threads (before={}, after={})",
                 delta,
                 baseline.thread_count,
@@ -680,13 +750,19 @@ mod tests {
         let _ = &baseline;
     }
 
-    /// Simulate a **64+ core system** by creating a pool with 64 worker
-    /// threads.  The test exercises two sub-cases:
+    /// Simulate a **high-core-count configuration** by creating a pool
+    /// configured for 64 worker threads. Note that `ThreadPool::execute()`
+    /// only spawns `min(configured_threads, task_count)` workers, so in the
+    /// first sub-case with 10 tasks it will create at most 10 workers, not 64.
     ///
-    /// 1. **More threads than tasks** (`TASK_COUNT < 64`): pool must not panic
-    ///    or deadlock when thread_count > work_count.
-    /// 2. **More tasks than a single thread** (`TASK_COUNT > 64`): pool must
-    ///    distribute all tasks and complete correctly.
+    /// The test exercises two sub-cases:
+    ///
+    /// 1. **Configured threads > tasks** (`THREAD_COUNT > TASK_COUNT` with
+    ///    `TASK_COUNT = 10`): pool must not panic or deadlock when the
+    ///    configured thread count exceeds the available work.
+    /// 2. **More tasks than configured threads** (`TASK_COUNT > THREAD_COUNT`
+    ///    with `TASK_COUNT = 128`): pool must distribute all tasks across the
+    ///    available workers and complete correctly.
     #[test]
     #[serial]
     fn test_edge_high_core_count_system() {
