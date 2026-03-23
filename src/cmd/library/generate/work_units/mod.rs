@@ -1122,11 +1122,8 @@ mod tests {
             error_message: "underlying failure".to_string(),
         });
         let scopes = Arc::new(vec![CleanupScope::All]);
-        let work_unit = LibraryGenerationTask::cleanup(
-            task,
-            "identifiable_task_xyz".to_string(),
-            scopes,
-        );
+        let work_unit =
+            LibraryGenerationTask::cleanup(task, "identifiable_task_xyz".to_string(), scopes);
 
         let msg = work_unit.execute().unwrap_err();
         assert!(
@@ -1161,7 +1158,7 @@ mod tests {
         assert!(result.is_err(), "Expected error because task panicked");
         let agg = result.unwrap_err();
         assert!(
-            agg.len() >= 1,
+            !agg.is_empty(),
             "At least one error should be present after a panic"
         );
         // The ThreadPool reports panics under worker identifiers like "worker_0".
@@ -1230,7 +1227,8 @@ mod tests {
 
         let scopes = Arc::new(vec![CleanupScope::All]);
         let task_count = 6_usize;
-        let failing_indices: std::collections::HashSet<usize> = std::collections::HashSet::from([1, 3, 5]);
+        let failing_indices: std::collections::HashSet<usize> =
+            std::collections::HashSet::from([1, 3, 5]);
 
         let work_units: Vec<Box<dyn WorkUnit>> = (0..task_count)
             .map(|i| {

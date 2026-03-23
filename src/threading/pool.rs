@@ -461,7 +461,7 @@ mod tests {
         assert!(result.is_err());
         if let Err(agg) = result {
             // Should have at least one error for the panicked worker
-            assert!(agg.len() >= 1);
+            assert!(!agg.is_empty());
             // Check that at least one error is about a worker panic
             let has_panic_error = agg.errors().iter().any(|e| e.message.contains("panicked"));
             assert!(has_panic_error, "Expected panic error in aggregated errors");
@@ -480,7 +480,7 @@ mod tests {
         assert!(result.is_err());
         // All three tasks should cause worker panics
         if let Err(agg) = result {
-            assert!(agg.len() >= 1);
+            assert!(!agg.is_empty());
         }
     }
 
