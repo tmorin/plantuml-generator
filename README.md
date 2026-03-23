@@ -64,6 +64,37 @@ The tool provides the following commands:
 - `workspace init` generate a fresh workspace, i.e. a `.pgen-workspace.yaml` file
 - `workspace install` install an artifact in the workspace
 
+## Multi-threading
+
+`plantuml-generator` renders diagrams and processes library items in parallel using a built-in thread pool. By default it uses one worker thread per logical CPU core.
+
+### Configuration
+
+Set the `PLANTUML_GENERATOR_THREADS` environment variable to control the number of worker threads (accepted range: 1–256). If the variable is absent or contains an invalid value the tool falls back to the CPU core count automatically.
+
+```shell
+# Use 8 worker threads
+export PLANTUML_GENERATOR_THREADS=8
+plantuml-generator diagram generate
+
+# Or inline for a single run
+PLANTUML_GENERATOR_THREADS=4 plantuml-generator diagram generate -s ./diagrams
+```
+
+### Environment Variables
+
+| Variable | Description | Default | Range |
+|---|---|---|---|
+| `PLANTUML_GENERATOR_THREADS` | Number of parallel worker threads | CPU core count | 1–256 |
+
+### Performance Tips
+
+- **CPU-bound work** (diagram rendering): set `PLANTUML_GENERATOR_THREADS` to the number of logical CPU cores (the default). Adding more threads than cores rarely helps and adds scheduling overhead.
+- **Many small diagrams**: a thread count equal to or slightly above the core count gives the best throughput.
+- **I/O-bound scenarios** (slow storage or network-backed file systems): experiment with a thread count 2–4× the core count so threads can stay busy while others are waiting on I/O.
+- **Memory-constrained environments**: each worker thread keeps a PlantUML JVM process alive during execution. Reduce `PLANTUML_GENERATOR_THREADS` if you encounter out-of-memory errors.
+- **Single-diagram workloads**: `PLANTUML_GENERATOR_THREADS=1` disables parallelism and simplifies log output for debugging.
+
 ## Using with GitHub Copilot CLI
 
 To use this repository with GitHub Copilot CLI with optimal tool configuration:
