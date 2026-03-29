@@ -123,9 +123,11 @@ PLANTUML_GENERATOR_THREADS=2 plantuml-generator diagram generate -s ./diagrams
 
 ### Benchmarking
 
-Use the `RUST_LOG=info` environment variable to print per-file timing
-information. Combined with a fixed `PLANTUML_GENERATOR_THREADS` value this
-lets you measure speedup relative to sequential execution:
+Use the `RUST_LOG=info` environment variable to print per-file progress
+information while diagrams are being generated. Combined with a fixed
+`PLANTUML_GENERATOR_THREADS` value and an external timing tool (such as
+`time`), you can compare overall runtime between sequential and parallel
+executions:
 
 ```shell
 # Sequential baseline
@@ -150,8 +152,9 @@ The threading module (`src/threading/`) provides:
 - **`AggregatedError`** — collects all per-work-unit failures so the tool
   reports every failure rather than stopping at the first one.
 
-Stdout/stderr writes are serialised with a global mutex so log lines from
-concurrent workers do not interleave.
+Stdout/stderr writes from concurrent workers are not globally serialised, so
+log lines may interleave when running with multiple threads. If you require
+strictly ordered output, run with a single thread or redirect per-task logs.
 
 ## API Documentation
 
