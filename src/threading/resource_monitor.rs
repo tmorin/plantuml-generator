@@ -906,7 +906,10 @@ mod tests {
 
             fn execute(&self) -> Result<(), String> {
                 if self.fail_every > 0 && self.id > 0 && self.id % self.fail_every == 0 {
-                    Err(format!("task {} failed (every {} tasks fail)", self.id, self.fail_every))
+                    Err(format!(
+                        "task {} failed (every {} tasks fail)",
+                        self.id, self.fail_every
+                    ))
                 } else {
                     Ok(())
                 }
