@@ -16,11 +16,11 @@ giving near-linear throughput improvements for large batches of diagrams.
 ### Environment variable: `PLANTUML_GENERATOR_THREADS`
 
 | Attribute | Value |
-|---|---|
-| Variable name | `PLANTUML_GENERATOR_THREADS` |
+| --- | --- |
+| Variable name   | `PLANTUML_GENERATOR_THREADS` |
 | Accepted values | Integer between **1** and **256** (inclusive) |
-| Default | Number of logical CPU cores |
-| Fallback | CPU core count (used when the variable is absent or invalid) |
+| Default         | Number of logical CPU cores |
+| Fallback        | CPU core count (used when the variable is absent or invalid) |
 
 Invalid values (non-integers, zero, values above 256) produce a warning log
 message and fall back to the default automatically — the tool never exits due
@@ -123,20 +123,20 @@ PLANTUML_GENERATOR_THREADS=2 plantuml-generator diagram generate -s ./diagrams
 
 ### Benchmarking
 
-Use the `RUST_LOG=info` environment variable to print per-file progress
-information while diagrams are being generated. Combined with a fixed
+Use the `--log-level Info` CLI flag to print per-file progress information
+while diagrams are being generated. Combined with a fixed
 `PLANTUML_GENERATOR_THREADS` value and an external timing tool (such as
 `time`), you can compare overall runtime between sequential and parallel
 executions:
 
 ```shell
 # Sequential baseline
-RUST_LOG=info PLANTUML_GENERATOR_THREADS=1 \
-  plantuml-generator diagram generate -s ./diagrams
+PLANTUML_GENERATOR_THREADS=1 \
+  plantuml-generator diagram generate --log-level Info -s ./diagrams
 
 # Parallel run with 8 threads
-RUST_LOG=info PLANTUML_GENERATOR_THREADS=8 \
-  plantuml-generator diagram generate -s ./diagrams
+PLANTUML_GENERATOR_THREADS=8 \
+  plantuml-generator diagram generate --log-level Info -s ./diagrams
 ```
 
 ## Architecture Notes
@@ -152,9 +152,9 @@ The threading module (`src/threading/`) provides:
 - **`AggregatedError`** — collects all per-work-unit failures so the tool
   reports every failure rather than stopping at the first one.
 
-Stdout/stderr writes from concurrent workers are not globally serialised, so
-log lines may interleave when running with multiple threads. If you require
-strictly ordered output, run with a single thread or redirect per-task logs.
+Output from the PlantUML subprocess may interleave when running with multiple
+threads. If you require strictly ordered output, run with a single thread or
+capture and post-process the combined output.
 
 ## API Documentation
 

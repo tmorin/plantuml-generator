@@ -93,7 +93,7 @@ PLANTUML_GENERATOR_THREADS=4 plantuml-generator diagram generate -s ./diagrams
 - **Many small diagrams**: a thread count equal to or slightly above the core count gives the best throughput.
 - **I/O-bound scenarios** (slow storage or network-backed file systems): experiment with a thread count 2–4× the core count so threads can stay busy while others are waiting on I/O.
 - **Memory-constrained environments**: rendering may spawn a separate PlantUML JVM subprocess per diagram. Higher `PLANTUML_GENERATOR_THREADS` values increase the number of concurrent JVMs; reduce it if you encounter out-of-memory errors.
-- **Single-diagram workloads**: `PLANTUML_GENERATOR_THREADS=1` disables parallelism and simplifies log output for debugging.
+- **Serial execution / debugging**: set `PLANTUML_GENERATOR_THREADS=1` to disable parallelism (single-threaded execution) and simplify log output for easier debugging across all workloads.
 
 ## Using with GitHub Copilot CLI
 
