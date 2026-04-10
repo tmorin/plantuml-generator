@@ -186,8 +186,6 @@
 //! - [`AggregatedError`] - Error aggregation for multiple failures
 
 // Allow dead code since this is a foundational module being built incrementally
-#![allow(dead_code)]
-#![allow(unused_imports)]
 
 mod config;
 mod errors;
