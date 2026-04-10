@@ -8,6 +8,10 @@ use std::process::Command;
 use crate::utils::{create_parent_directory, should_add_smetana_layout};
 use anyhow::Result;
 
+/// Encapsulates the configuration and execution of PlantUML commands.
+///
+/// `PlantUML` wraps the Java-based PlantUML tool, handling both rendering
+/// of `.puml` source files and downloading of the PlantUML JAR from GitHub.
 #[derive(Debug, Clone)]
 pub struct PlantUML {
     /// The command/path of the java binary.
@@ -34,6 +38,27 @@ impl PlantUML {
         final_args
     }
 
+    /// Renders a PlantUML source file using the configured Java binary and JAR.
+    ///
+    /// Invokes `java -jar <plantuml_jar> <source_path> [args...]` and streams
+    /// stdout/stderr to the process output. Returns an error if the process
+    /// exits with a non-zero status.
+    ///
+    /// When GraphViz `dot` is not available and the user has not already
+    /// specified a layout engine via `args`, `-Playout=smetana` is prepended
+    /// automatically so that diagrams can still be generated.
+    ///
+    /// # Arguments
+    ///
+    /// * `source_path` - Path to the `.puml` source file to render.
+    /// * `p_args_as_strings` - Optional extra arguments forwarded to PlantUML
+    ///   (e.g. `-png`, `-svg`).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the source path cannot be converted to a string,
+    /// if the Java process fails to start, or if PlantUML exits with a
+    /// non-zero status code.
     pub fn render(&self, source_path: &Path, p_args_as_strings: Option<&[String]>) -> Result<()> {
         //get the source
         let source = match source_path.to_str() {
@@ -77,6 +102,16 @@ impl PlantUML {
 
         Ok(())
     }
+
+    /// Downloads the PlantUML JAR from the official GitHub releases page.
+    ///
+    /// The JAR is placed at the path configured via `plantuml_jar`. If the
+    /// file already exists, the download is skipped.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the parent directory cannot be created, if the
+    /// destination file cannot be opened, or if the HTTP download fails.
     pub fn download(&self) -> Result<()> {
         // https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
         let url = format!(
@@ -108,6 +143,18 @@ impl PlantUML {
     }
 }
 
+/// Creates a new [`PlantUML`] instance with the given configuration.
+///
+/// # Arguments
+///
+/// * `java_binary` - Path or name of the Java binary (e.g. `"java"`).
+/// * `plantuml_jar` - Path to the PlantUML JAR file.
+/// * `plantuml_version` - Version string used to download the JAR if needed
+///   (e.g. `"1.2024.7"`).
+///
+/// # Errors
+///
+/// Currently infallible; returns `Ok` for forward-compatibility.
 pub fn create_plantuml(
     java_binary: &str,
     plantuml_jar: &str,

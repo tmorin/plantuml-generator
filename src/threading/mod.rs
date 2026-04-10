@@ -185,11 +185,10 @@
 //! - [`Config`] - Thread pool configuration options
 //! - [`AggregatedError`] - Error aggregation for multiple failures
 
-// Allow dead code since this is a foundational module being built incrementally
-
 mod config;
 mod errors;
 mod pool;
+#[cfg(any(test, feature = "bench"))]
 pub mod resource_monitor;
 mod traits;
 
@@ -197,5 +196,6 @@ mod traits;
 pub use config::Config;
 pub use errors::{AggregatedError, ErrorCollector, ExecutionError};
 pub use pool::ThreadPool;
+#[cfg(feature = "bench")]
 pub use resource_monitor::ResourceSnapshot;
 pub use traits::WorkUnit;
