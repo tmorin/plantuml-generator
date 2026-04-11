@@ -5,6 +5,7 @@ RUN apt-get update -y && \
 WORKDIR /usr/src/plantuml-generator
 COPY Cargo.toml Cargo.lock /usr/src/plantuml-generator/
 COPY src /usr/src/plantuml-generator/src
+COPY benches /usr/src/plantuml-generator/benches
 RUN cargo build --release --features vendored-openssl
 
 FROM docker.io/ubuntu:22.04
