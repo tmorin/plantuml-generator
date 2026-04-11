@@ -197,5 +197,6 @@ pub use config::Config;
 pub use errors::{AggregatedError, ErrorCollector, ExecutionError};
 pub use pool::ThreadPool;
 #[cfg(feature = "bench")]
+#[allow(unused_imports)]
 pub use resource_monitor::ResourceSnapshot;
 pub use traits::WorkUnit;
