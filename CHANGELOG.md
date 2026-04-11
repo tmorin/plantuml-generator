@@ -1,8 +1,15 @@
 # Changelog
 
-## [1.15.1](https://github.com/tmorin/plantuml-generator/compare/v1.15.0...8cc8f7cee7c65dc06d6597559e42937c5f331482) (2026-04-11)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.15.1...f035e391249f8b6496bd7f58b5c8be298dc357ea) (2026-04-11)
 
 ### Fixes
+
+* **docker:** copy benches into build context
+([d624953](https://github.com/tmorin/plantuml-generator/commit/d62495344aaccbbc8dc4b52519de7690109fdf86))
+
+### [v1.15.1](https://github.com/tmorin/plantuml-generator/compare/v1.15.0...v1.15.1) (2026-04-11)
+
+#### Fixes
 
 * **ci:** pin valid github actions
 ([8cc8f7c](https://github.com/tmorin/plantuml-generator/commit/8cc8f7cee7c65dc06d6597559e42937c5f331482))
