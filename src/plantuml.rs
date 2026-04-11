@@ -44,7 +44,8 @@ impl PlantUML {
     /// stdout/stderr to the process output. Returns an error if the process
     /// exits with a non-zero status.
     ///
-    /// When GraphViz `dot` is not available and the user has not already
+    /// When GraphViz is not configured for use by PlantUML (that is, `dot` is
+    /// unavailable and `GRAPHVIZ_DOT` is not set) and the user has not already
     /// specified a layout engine via `args`, `-Playout=smetana` is prepended
     /// automatically so that diagrams can still be generated.
     ///
