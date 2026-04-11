@@ -1,8 +1,62 @@
 # Changelog
 
-## [1.14.1](https://github.com/tmorin/plantuml-generator/compare/v1.14.0...15a38728e5e8785f725314056f983155c4a1f4ad) (2024-09-30)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.14.1...6e8a4ce2d76453d8a69f0556b1dcd481cbf640ef) (2026-04-11)
+
+### Features
+
+* **threading:** resource monitoring and validation (TASK-4.2) (#92)
+([635553e](https://github.com/tmorin/plantuml-generator/commit/635553e93e22ba2e5ff7409fce57433a49907cdb)),
+closes [#92](https://github.com/tmorin/plantuml-generator/issues/92)
+* **diagram:** integrate ThreadPool into execute_diagram_generate() (#86)
+([d52e807](https://github.com/tmorin/plantuml-generator/commit/d52e807e73c0103c8aca97091dde465d5816b96f)),
+closes [#86](https://github.com/tmorin/plantuml-generator/issues/86)
+* **threading:** benchmark library generation parallelization (TASK-2.5) (#83)
+([1f6538f](https://github.com/tmorin/plantuml-generator/commit/1f6538fb27857327cdc94e5ff785f8637f576f12)),
+closes [#83](https://github.com/tmorin/plantuml-generator/issues/83)
+* **library:** parallelize generate command with thread pool - Issue #41 (#79)
+([179cdd8](https://github.com/tmorin/plantuml-generator/commit/179cdd8a1d509dfd7fafea4b30565c838f3ea793)),
+closes [#41](https://github.com/tmorin/plantuml-generator/issues/41)
+[#79](https://github.com/tmorin/plantuml-generator/issues/79)
+[#41](https://github.com/tmorin/plantuml-generator/issues/41)
+[#81](https://github.com/tmorin/plantuml-generator/issues/81)
+[#79](https://github.com/tmorin/plantuml-generator/issues/79)
+[#79](https://github.com/tmorin/plantuml-generator/issues/79)
+* **library:** implement WorkUnit types for library generation (#78)
+([642efa6](https://github.com/tmorin/plantuml-generator/commit/642efa606a7e7d43127a19990f3c3258d0fb9200)),
+closes [#78](https://github.com/tmorin/plantuml-generator/issues/78)
+[#40](https://github.com/tmorin/plantuml-generator/issues/40)
+* Implement parallel ThreadPool with channel-based work distribution
+([5796c85](https://github.com/tmorin/plantuml-generator/commit/5796c85e83984d3809615c8f17f869d717406071))
+* Add thread-safe ErrorCollector for parallel work execution
+([042d9e5](https://github.com/tmorin/plantuml-generator/commit/042d9e5e534d4e0a2cea32459bedf0b395dc32ca))
+* Update Config struct with num_cpus crate and PLANTUML_GENERATOR_THREADS env
+var
+([645ff73](https://github.com/tmorin/plantuml-generator/commit/645ff7386d7f905a4b224e71d55edbfe200b7b29))
+* **Multithreading:** Create threading module structure with all required
+files
+([15aba10](https://github.com/tmorin/plantuml-generator/commit/15aba10091a26f634f2cf53cd8fe2279b361774e))
+* add GitHub Copilot agent environment setup workflow
+([59eedcf](https://github.com/tmorin/plantuml-generator/commit/59eedcf2a23cec3831d19d51e7c26ea70f4b7158))
+* add E2E test infrastructure for diagram generation
+([ee21836](https://github.com/tmorin/plantuml-generator/commit/ee21836c3a98c168b8930764fb76e81f7ca46549))
+* switch to smetana when GraphViz dependency is not available
+([0a74c6d](https://github.com/tmorin/plantuml-generator/commit/0a74c6d56f657647c688f56fc7c60fef8b426645))
 
 ### Fixes
+
+* **diagram:** align render helpers after rebase
+([6e8a4ce](https://github.com/tmorin/plantuml-generator/commit/6e8a4ce2d76453d8a69f0556b1dcd481cbf640ef))
+* Address clippy warnings (is_multiple_of and DoubleEndedIterator.next_back)
+([7f803fe](https://github.com/tmorin/plantuml-generator/commit/7f803fe941f06f8cb542b424abd05c795012416a))
+* upgrade actions/upload-artifact to v4 and prevent build failure (#23)
+([39ea6e4](https://github.com/tmorin/plantuml-generator/commit/39ea6e48d6352d82d1940ee6f2c77e356509e597)),
+closes [#23](https://github.com/tmorin/plantuml-generator/issues/23)
+* simplify lifetime parameter in UrnVisitor implementation
+([f174394](https://github.com/tmorin/plantuml-generator/commit/f1743943cb65d40b9ef315e133a4cd27348ce6d2))
+
+### [v1.14.1](https://github.com/tmorin/plantuml-generator/compare/v1.14.0...v1.14.1) (2024-09-30)
+
+#### Fixes
 
 * **library:** icons are not loaded when using remote loader
 ([15a3872](https://github.com/tmorin/plantuml-generator/commit/15a38728e5e8785f725314056f983155c4a1f4ad))
