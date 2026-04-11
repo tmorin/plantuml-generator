@@ -71,7 +71,7 @@ impl AggregatedError {
 /// These methods are part of the public interface exposed via the `bench`
 /// feature and used in tests, but are not called on the production code
 /// path of the binary.
-#[cfg_attr(not(feature = "bench"), allow(dead_code))]
+#[allow(dead_code)]
 impl AggregatedError {
     /// Returns a reference to the first error.
     ///
@@ -235,7 +235,7 @@ impl ErrorCollector {
 /// These methods are part of the public interface exposed via the `bench`
 /// feature and used in tests, but are not called on the production code
 /// path of the binary.
-#[cfg_attr(not(feature = "bench"), allow(dead_code))]
+#[allow(dead_code)]
 impl ErrorCollector {
     /// Checks if any errors have been collected.
     ///

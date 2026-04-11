@@ -19,6 +19,8 @@
 //! available on Linux.  On other platforms, `rss_kb` and `thread_count` are
 //! always `0` / `1` respectively, and the Linux-specific tests are skipped.
 
+#![allow(dead_code)]
+
 use std::time::Instant;
 
 // ---------------------------------------------------------------------------
@@ -905,7 +907,7 @@ mod tests {
             }
 
             fn execute(&self) -> Result<(), String> {
-                if self.fail_every > 0 && self.id > 0 && self.id % self.fail_every == 0 {
+                if self.fail_every > 0 && self.id > 0 && self.id.is_multiple_of(self.fail_every) {
                     Err(format!(
                         "task {} failed (every {} tasks fail)",
                         self.id, self.fail_every
