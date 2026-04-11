@@ -64,7 +64,15 @@ impl AggregatedError {
         assert!(!errors.is_empty(), "AggregatedError cannot be empty");
         Self { errors }
     }
+}
 
+/// Inspection API for `AggregatedError`.
+///
+/// These methods are part of the public interface exposed via the `bench`
+/// feature and used in tests, but are not called on the production code
+/// path of the binary.
+#[cfg_attr(not(feature = "bench"), allow(dead_code))]
+impl AggregatedError {
     /// Returns a reference to the first error.
     ///
     /// This is useful for fail-fast scenarios where you want to inspect
@@ -191,6 +199,44 @@ impl ErrorCollector {
         errors.push(error);
     }
 
+    /// Consumes the collector and returns a Result.
+    ///
+    /// If no errors were collected, returns `Ok(())`. If errors were collected,
+    /// returns `Err(AggregatedError)`.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
+    ///
+    /// let collector = ErrorCollector::new();
+    /// assert!(collector.into_result().is_ok());
+    ///
+    /// let collector = ErrorCollector::new();
+    /// collector.add(ExecutionError::new("task_1".to_string(), "Error".to_string()));
+    /// assert!(collector.into_result().is_err());
+    /// ```
+    pub fn into_result(self) -> Result<(), AggregatedError> {
+        let errors = Arc::try_unwrap(self.errors)
+            .expect("Cannot convert ErrorCollector to Result while clones exist. Ensure all clones are dropped before calling into_result()")
+            .into_inner()
+            .unwrap();
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(AggregatedError::new(errors))
+        }
+    }
+}
+
+/// Introspection API for `ErrorCollector`.
+///
+/// These methods are part of the public interface exposed via the `bench`
+/// feature and used in tests, but are not called on the production code
+/// path of the binary.
+#[cfg_attr(not(feature = "bench"), allow(dead_code))]
+impl ErrorCollector {
     /// Checks if any errors have been collected.
     ///
     /// # Returns
@@ -234,36 +280,6 @@ impl ErrorCollector {
     pub fn is_empty(&self) -> bool {
         let errors = self.errors.lock().unwrap();
         errors.is_empty()
-    }
-
-    /// Consumes the collector and returns a Result.
-    ///
-    /// If no errors were collected, returns `Ok(())`. If errors were collected,
-    /// returns `Err(AggregatedError)`.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// use crate::threading::errors::{ErrorCollector, ExecutionError};
-    ///
-    /// let collector = ErrorCollector::new();
-    /// assert!(collector.into_result().is_ok());
-    ///
-    /// let collector = ErrorCollector::new();
-    /// collector.add(ExecutionError::new("task_1".to_string(), "Error".to_string()));
-    /// assert!(collector.into_result().is_err());
-    /// ```
-    pub fn into_result(self) -> Result<(), AggregatedError> {
-        let errors = Arc::try_unwrap(self.errors)
-            .expect("Cannot convert ErrorCollector to Result while clones exist. Ensure all clones are dropped before calling into_result()")
-            .into_inner()
-            .unwrap();
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(AggregatedError::new(errors))
-        }
     }
 
     /// Returns a snapshot of the current errors without consuming the collector.
