@@ -8,6 +8,7 @@ use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::ArgMatches;
 use glob::glob;
+#[cfg(test)]
 use rayon::prelude::*;
 
 use crate::cmd::diagram::generate::config::Config;
@@ -136,7 +137,7 @@ fn render_sequential(
         );
         if force_generation || last_modification_timestamp > last_generation_timestamp {
             log::info!("generate {:?}", source_path);
-            plantuml.render(source_path, Some(plantuml_args.to_vec()))?;
+            plantuml.render(source_path, Some(plantuml_args))?;
         }
     }
     Ok(())
@@ -148,6 +149,7 @@ fn render_sequential(
 /// their errors are collected, sorted by source path for deterministic output,
 /// and combined into a single error (one failure per line) so that no failure
 /// is silently discarded.
+#[cfg(test)]
 fn render_parallel(
     puml_paths: &[PathBuf],
     plantuml: &PlantUML,
@@ -168,7 +170,7 @@ fn render_parallel(
                 );
                 if force_generation || last_modification_timestamp > last_generation_timestamp {
                     log::info!("generate {:?}", source_path);
-                    plantuml.render(source_path, Some(plantuml_args.to_vec()))?;
+                    plantuml.render(source_path, Some(plantuml_args))?;
                 }
                 Ok(())
             })();
