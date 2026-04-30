@@ -8,7 +8,7 @@ COPY src /usr/src/plantuml-generator/src
 COPY benches /usr/src/plantuml-generator/benches
 RUN cargo build --release --features vendored-openssl
 
-FROM docker.io/ubuntu:22.04
+FROM docker.io/ubuntu:24.04
 ARG git_sha=""
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="tmorin" \
