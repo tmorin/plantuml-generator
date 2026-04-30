@@ -1,8 +1,15 @@
 # Changelog
 
-## [1.15.2](https://github.com/tmorin/plantuml-generator/compare/v1.15.1...f035e391249f8b6496bd7f58b5c8be298dc357ea) (2026-04-11)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.15.2...c701ec240ee3f3ef3c3b66604bff12cec4ce0766) (2026-04-30)
 
 ### Fixes
+
+* **docker:** upgrade runtime base image from ubuntu:22.04 to ubuntu:24.04
+([c701ec2](https://github.com/tmorin/plantuml-generator/commit/c701ec240ee3f3ef3c3b66604bff12cec4ce0766))
+
+### [v1.15.2](https://github.com/tmorin/plantuml-generator/compare/v1.15.1...v1.15.2) (2026-04-11)
+
+#### Fixes
 
 * **docker:** copy benches into build context
 ([d624953](https://github.com/tmorin/plantuml-generator/commit/d62495344aaccbbc8dc4b52519de7690109fdf86))
