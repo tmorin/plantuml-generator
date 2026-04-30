@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.15.2...c701ec240ee3f3ef3c3b66604bff12cec4ce0766) (2026-04-30)
+## [1.15.3](https://github.com/tmorin/plantuml-generator/compare/v1.15.2...c701ec240ee3f3ef3c3b66604bff12cec4ce0766) (2026-04-30)
 
 ### Fixes
 
