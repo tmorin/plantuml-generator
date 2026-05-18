@@ -2,6 +2,7 @@
 /// These tests verify that multiple sequential executions produce identical output
 use sha2::Digest;
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
@@ -25,7 +26,12 @@ fn compute_file_checksum(path: &Path) -> Result<String, std::io::Error> {
         hasher.update(&buffer[..bytes_read]);
     }
 
-    Ok(format!("{:x}", hasher.finalize()))
+    let digest = hasher.finalize();
+    let mut checksum = String::with_capacity(digest.len() * 2);
+    for byte in digest.iter() {
+        write!(&mut checksum, "{:02x}", byte).expect("checksum formatting must succeed");
+    }
+    Ok(checksum)
 }
 
 /// Recursively collect all files in a directory with their relative paths

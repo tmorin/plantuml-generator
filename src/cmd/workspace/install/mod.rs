@@ -1,5 +1,5 @@
 use std::fs::{read_to_string, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
 use zip::ZipArchive;
@@ -117,7 +117,7 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
                                         .context(format!("unable to read zip entry {}", i))
                                 })?;
                                 let outpath = artifact_path
-                                    .join(file.enclosed_name().unwrap_or(Path::new("")));
+                                    .join(file.enclosed_name().unwrap_or_else(PathBuf::new));
                                 if file.is_dir() {
                                     create_directory(&outpath)?;
                                 } else {

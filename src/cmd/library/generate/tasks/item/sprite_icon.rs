@@ -1,7 +1,8 @@
 use std::path::Path;
 
 use anyhow::Result;
-use raster::{BlendMode, Color, Image, PositionMode, ResizeMode};
+use image::imageops::{overlay, resize, FilterType};
+use image::{ImageReader, Rgba, RgbaImage};
 use serde::{Deserialize, Serialize};
 
 use crate::cmd::library::generate::config::Config;
@@ -84,68 +85,64 @@ impl Task for SpriteIconTask {
         // create the destination directory
         create_parent_directory(destination_icon_path)?;
 
-        // create the source image
-        let mut source_image = raster::open(&self.full_source_icon).map_err(|e| {
+        // load the source image
+        let source_img_reader = ImageReader::open(&self.full_source_icon).map_err(|e| {
             anyhow::Error::msg(format!(
                 "unable to open {}: {:?}",
                 &self.full_source_icon, e
             ))
         })?;
 
-        // compute the width of the sprite icon
-        let destination_icon_width =
-            self.destination_icon_height as i32 * source_image.width / source_image.height;
-
-        // resize source image
-        raster::editor::resize(
-            &mut source_image,
-            destination_icon_width,
-            self.destination_icon_height as i32,
-            ResizeMode::ExactHeight,
-        )
-        .map_err(|e| {
+        let source_image = source_img_reader.decode().map_err(|e| {
             anyhow::Error::msg(format!(
-                "unable to resize {}: {:?}",
+                "unable to decode {}: {:?}",
                 &self.full_source_icon, e
             ))
         })?;
 
-        // create the destination image
-        let mut background_image =
-            Image::blank(destination_icon_width, self.destination_icon_height as i32);
+        // compute the width of the sprite icon
+        let destination_icon_width =
+            self.destination_icon_height * source_image.width() / source_image.height();
 
-        // fill destination image with white
-        raster::editor::fill(&mut background_image, Color::white()).map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to fill {}: {:?}",
-                &self.full_destination_icon, e
-            ))
-        })?;
+        // resize source image
+        let resized_image = resize(
+            &source_image.to_rgba8(),
+            destination_icon_width,
+            self.destination_icon_height,
+            FilterType::Lanczos3,
+        );
 
-        // blend resized source and destination
-        let destination_image = raster::editor::blend(
-            &background_image,
-            &source_image,
-            BlendMode::Normal,
-            1.0,
-            PositionMode::Center,
-            0,
-            0,
-        )
-        .map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to blend {} in {}: {:?}",
-                &self.full_source_icon, &self.full_destination_icon, e
-            ))
-        })?;
+        // create the destination image with white background
+        let mut background_image: RgbaImage = RgbaImage::from_pixel(
+            destination_icon_width,
+            self.destination_icon_height,
+            Rgba([255, 255, 255, 255]),
+        );
 
-        // generate the sprite icon
-        raster::save(&destination_image, &self.full_destination_icon).map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to save {}: {:?}",
-                &self.full_destination_icon, e
-            ))
-        })?;
+        // calculate position to center the resized image
+        let x_offset = (destination_icon_width.saturating_sub(resized_image.width())) / 2;
+        let y_offset = (self
+            .destination_icon_height
+            .saturating_sub(resized_image.height()))
+            / 2;
+
+        // blend resized source onto destination
+        overlay(
+            &mut background_image,
+            &resized_image,
+            x_offset as i64,
+            y_offset as i64,
+        );
+
+        // save the sprite icon
+        background_image
+            .save(&self.full_destination_icon)
+            .map_err(|e| {
+                anyhow::Error::msg(format!(
+                    "unable to save {}: {:?}",
+                    &self.full_destination_icon, e
+                ))
+            })?;
         Ok(())
     }
 }
