@@ -423,21 +423,21 @@ mod tests {
         );
 
         // Phase 3 (Render Atomic): Individual documentation files exist
-        let c4model_readme = format!("{}/c4model/README.md", &dist_dir);
+        let c4model_readme = format!("{}/c4model/README.md", dist_dir);
         assert!(
             Path::new(&c4model_readme).exists(),
             "Atomic templates should be rendered in phase 3"
         );
 
         // Phase 4 (Render Composed): Composite files exist
-        let single_puml = format!("{}/c4model/single.puml", &dist_dir);
+        let single_puml = format!("{}/c4model/single.puml", dist_dir);
         assert!(
             Path::new(&single_puml).exists(),
             "Composed templates should be rendered in phase 4"
         );
 
         // Phase 5 (Render Sources): PlantUML diagrams rendered
-        let element_person_png = format!("{}/c4model/Element/Person.Local.png", &dist_dir);
+        let element_person_png = format!("{}/c4model/Element/Person.Local.png", dist_dir);
         assert!(
             Path::new(&element_person_png).exists(),
             "PlantUML diagrams should be rendered in phase 5"
