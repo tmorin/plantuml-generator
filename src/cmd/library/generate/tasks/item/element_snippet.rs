@@ -60,8 +60,10 @@ pub struct ElementSnippetTask {
     /// The label of the element.
     primary_label: String,
     /// The technical label of the element.
+    #[serde(skip_serializing_if = "Option::is_none")]
     technical_label: Option<String>,
     /// The description label of the element.
+    #[serde(skip_serializing_if = "Option::is_none")]
     description_label: Option<String>,
     /// The name of the Tera template
     template: String,
@@ -309,6 +311,7 @@ mod test {
                 }
                 assert!(content.contains(r##"include('PackageA/ModuleB/FamilyC/Item')"##));
                 assert!(content.contains(format!("{}(", generator.procedure_name).as_str()));
+                assert!(content.contains("an optional"));
             }
         }
     }
