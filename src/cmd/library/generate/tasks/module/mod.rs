@@ -15,7 +15,7 @@ pub fn parse_module(
     _package: &Package,
     _module: &Module,
 ) -> Result<Vec<Box<dyn Task>>> {
-    log::debug!("parse module {}", &_module.urn);
+    log::debug!("parse module {}", _module.urn);
     Ok(vec![Box::from(ModuleDocumentationTask::create(
         _config, _library, _module,
     )?)])

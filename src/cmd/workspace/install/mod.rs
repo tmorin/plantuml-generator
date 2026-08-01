@@ -16,8 +16,8 @@ pub fn execute_workspace_install(arg_matches: &ArgMatches) -> anyhow::Result<()>
     let config = &Config::default().update_from_args(arg_matches);
     let do_force_install = arg_matches.get_flag("do_force_install");
     if log::log_enabled!(log::Level::Info) {
-        log::info!("source_directory: {}", &config.source_directory);
-        log::info!("workspace_manifest: {}", &config.workspace_manifest);
+        log::info!("source_directory: {}", config.source_directory);
+        log::info!("workspace_manifest: {}", config.workspace_manifest);
     }
     let source_path = Path::new(config.source_directory.as_str());
     let manifest_path = source_path.join(config.workspace_manifest.as_str());

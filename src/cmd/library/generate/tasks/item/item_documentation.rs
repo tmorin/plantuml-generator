@@ -110,7 +110,7 @@ impl ItemDocumentationTask {
 
 impl Task for ItemDocumentationTask {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
-        log::debug!("{} - ItemDocumentationTask - cleanup", &self.item_urn);
+        log::debug!("{} - ItemDocumentationTask - cleanup", self.item_urn);
         delete_file(self.get_full_documentation_path().as_ref())?;
         Ok(())
     }
@@ -118,7 +118,7 @@ impl Task for ItemDocumentationTask {
     fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
         log::debug!(
             "{} - ItemDocumentationTask - render templates",
-            &self.item_urn
+            self.item_urn
         );
 
         let destination_path = self.get_full_documentation_path();
@@ -141,7 +141,7 @@ impl Task for ItemDocumentationTask {
         _tera
             .render_to(&self.template, &context, destination_file)
             .map_err(|e| {
-                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+                anyhow::Error::new(e).context(format!("unable to render {}", self.template))
             })
     }
 }

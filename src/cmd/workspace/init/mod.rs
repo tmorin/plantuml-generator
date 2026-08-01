@@ -13,9 +13,9 @@ pub fn execute_workspace_init(arg_matches: &ArgMatches) -> Result<()> {
     // resolve the config
     let config = &Config::default().update_from_args(arg_matches);
     if log::log_enabled!(log::Level::Info) {
-        log::info!("cache_directory: {}", &config.cache_directory);
-        log::info!("source_directory: {}", &config.source_directory);
-        log::info!("workspace_manifest: {}", &config.workspace_manifest);
+        log::info!("cache_directory: {}", config.cache_directory);
+        log::info!("source_directory: {}", config.source_directory);
+        log::info!("workspace_manifest: {}", config.workspace_manifest);
     }
     let cache_path = Path::new(config.cache_directory.as_str());
     let source_path = Path::new(config.source_directory.as_str());

@@ -12,7 +12,7 @@ mod library_documentation;
 mod library_summary;
 
 pub fn parse_library(config: &Config, library: &Library) -> Result<Vec<Box<dyn Task>>> {
-    log::debug!("parse library {}", &library.name);
+    log::debug!("parse library {}", library.name);
     Ok(vec![
         Box::from(LibraryBootstrapTask::create(config, library)?),
         Box::from(LibraryDocumentationTask::create(config, library)?),

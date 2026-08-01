@@ -26,12 +26,12 @@ pub fn execute_library_generate(arg_matches: &ArgMatches) -> Result<()> {
     // create the config
     let config = &Config::default().update_from_args(arg_matches);
     if log::log_enabled!(log::Level::Info) {
-        log::info!("output_directory: {}", &config.output_directory);
-        log::info!("cache_directory: {}", &config.cache_directory);
-        log::info!("tera_discovery_pattern: {}", &config.tera_discovery_pattern);
-        log::info!("plantuml_jar: {}", &config.plantuml_jar);
-        log::info!("java_binary: {}", &config.java_binary);
-        log::info!("inkscape_binary: {}", &config.inkscape_binary);
+        log::info!("output_directory: {}", config.output_directory);
+        log::info!("cache_directory: {}", config.cache_directory);
+        log::info!("tera_discovery_pattern: {}", config.tera_discovery_pattern);
+        log::info!("plantuml_jar: {}", config.plantuml_jar);
+        log::info!("java_binary: {}", config.java_binary);
+        log::info!("inkscape_binary: {}", config.inkscape_binary);
     }
 
     // clean the cache directory
