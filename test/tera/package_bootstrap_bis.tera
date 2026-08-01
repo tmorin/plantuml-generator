@@ -4,7 +4,7 @@
 {%- endblock header %}
 {% block content -%}
 ' content
-{%- endblock footer -%}
+{%- endblock content -%}
 {% block footer -%}
 ' footer
 {%- endblock footer %}

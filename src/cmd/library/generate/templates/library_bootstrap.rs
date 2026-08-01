@@ -31,7 +31,7 @@ pub const TEMPLATE: &str = r##"{%- block header %}{% endblock header %}
 !global $FONT_SIZE_LG={{ data.font_size_lg }}
 !global $FONT_COLOR="{{ data.font_color }}"
 !global $FONT_COLOR_LIGHT="{{ data.font_color_light }}"
-{% endblock contants %}
+{% endblock constants %}
 
 ' Styles
 {% block styles %}
