@@ -14,8 +14,8 @@ It provides commands to generate the stuff for PlantUML diagrams like library of
 ## Dependencies
 
 - `libssl-dev`
-- `java`, version > 11
-- `inkscape`, version > 1.2
+- `java`, version >= 11
+- `inkscape`, version >= 1.2
   - tested with `Inkscape 1.2 (1:1.2.1+202207142221+cd75a1ee6d)`
   - only required if used to generate a library
 
@@ -34,7 +34,7 @@ If you prefer to use GraphViz or other layout engines, you can:
 
 By Script
 ```shell
-curl -s "https://raw.githubusercontent.com/tmorin/plantuml-generator/master/scripts/install_pgen.sh"  | bash
+curl -s "https://raw.githubusercontent.com/tmorin/plantuml-generator/main/scripts/install_pgen.sh"  | bash
 ```
 
 By Docker
@@ -63,6 +63,7 @@ The tool provides the following commands:
 - `diagram generate` generates `.puml` discovered recursively in the file system
 - `workspace init` generate a fresh workspace, i.e. a `.pgen-workspace.yaml` file
 - `workspace install` install an artifact in the workspace
+- `completion` generates shell-completion scripts for a given shell
 
 ## Multi-threading
 
