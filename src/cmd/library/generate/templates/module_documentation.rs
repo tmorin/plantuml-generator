@@ -5,7 +5,7 @@ pub const TEMPLATE: &str = r##"# {{ data.module_name }}
 {% set nbr_items = data.items_with_family | length + data.items_without_family | length -%}
 The module contains {{ nbr_items }} items.
 
-{% set families = data.items_with_family | map(attribute="family") | unique | sort -%}
+{% set families = [item.family for item in data.items_with_family] | unique | sort -%}
 {% for family in families -%}
 - [{{ family }}](#family-{{ family | lower }})
 {% endfor %}
