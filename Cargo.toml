@@ -39,7 +39,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 serde_yaml_ok = { version = "0.9" }
 schemars = { version = "1" }
-tera = { version = "1" }
+tera = { version = "2", features = ["glob_fs"] }
 zip = { version = "8" }
 
 [dev-dependencies]
