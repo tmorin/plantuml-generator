@@ -64,8 +64,8 @@ impl Task for SpriteValueTask {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
         log::debug!(
             "{} - SpriteValueTask - cleanup {}",
-            &self.item_urn,
-            &self.full_destination_text
+            self.item_urn,
+            self.full_destination_text
         );
         if CleanupScope::SpriteValue.is_included_in(_scopes) {
             delete_file(Path::new(&self.full_destination_text))?;
@@ -76,8 +76,8 @@ impl Task for SpriteValueTask {
     fn create_resources(&self) -> Result<()> {
         log::debug!(
             "{} - SpriteValueTask - create resource {}",
-            &self.item_urn,
-            &self.full_destination_text
+            self.item_urn,
+            self.full_destination_text
         );
 
         let destination_text_path = Path::new(&self.full_destination_text);
@@ -118,11 +118,10 @@ impl Task for SpriteValueTask {
         // write the sprite value
         let mut writer = fs::File::create(&self.full_destination_text).map_err(|e| {
             anyhow::Error::new(e)
-                .context(format!("unable to create {}", &self.full_destination_text))
+                .context(format!("unable to create {}", self.full_destination_text))
         })?;
         writer.write_all(&output.stdout).map_err(|e| {
-            anyhow::Error::new(e)
-                .context(format!("unable to write {}", &self.full_destination_text))
+            anyhow::Error::new(e).context(format!("unable to write {}", self.full_destination_text))
         })?;
 
         Ok(())

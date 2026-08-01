@@ -89,7 +89,7 @@ fn save_last_generation_timestamp(last_gen_path: &Path, time: SystemTime) -> Res
         .append(false)
         .open(last_gen_path)
         .map_err(|e| {
-            anyhow::Error::new(e).context(format!("unable to open {:?}", &last_gen_path))
+            anyhow::Error::new(e).context(format!("unable to open {:?}", last_gen_path))
         })?;
     last_gen_file.write_all(value.as_bytes()).map_err(|e| {
         anyhow::Error::new(e).context(format!("unable to write {:?}", last_gen_file))
@@ -109,7 +109,7 @@ fn get_puml_paths(config: &Config) -> Vec<PathBuf> {
                 .map_err(|e| {
                     anyhow::Error::new(e).context(format!(
                         "unable to parse the glob pattern ({})",
-                        &glob_pattern
+                        glob_pattern
                     ))
                 })
                 .map(|paths| paths.collect::<Vec<PathBuf>>())
@@ -196,10 +196,10 @@ pub fn execute_diagram_generate(arg_matches: &ArgMatches) -> Result<()> {
     let config = &Config::default().update_from_args(arg_matches);
     let force_generation = arg_matches.get_flag("do_force_generation");
     if log::log_enabled!(log::Level::Info) {
-        log::info!("source_directory: {}", &config.source_directory);
-        log::info!("cache_directory: {}", &config.cache_directory);
-        log::info!("plantuml_jar: {}", &config.plantuml_jar);
-        log::info!("java_binary: {}", &config.java_binary);
+        log::info!("source_directory: {}", config.source_directory);
+        log::info!("cache_directory: {}", config.cache_directory);
+        log::info!("plantuml_jar: {}", config.plantuml_jar);
+        log::info!("java_binary: {}", config.java_binary);
         log::info!("force_generation: {}", force_generation);
     }
     // capture timestamp once at start

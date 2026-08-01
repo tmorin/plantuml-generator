@@ -141,15 +141,15 @@ impl PlantUML {
         create_parent_directory(destination_path)?;
 
         let mut destination_file = File::create(destination_path).map_err(|e| {
-            anyhow::Error::new(e).context(format!("unable to open {}", &self.plantuml_jar))
+            anyhow::Error::new(e).context(format!("unable to open {}", self.plantuml_jar))
         })?;
 
         log::info!("download the PlantUML jar from {}", url);
         reqwest::blocking::get(&url)
-            .map_err(|e| anyhow::Error::new(e).context(format!("unable to download {}", &url)))?
+            .map_err(|e| anyhow::Error::new(e).context(format!("unable to download {}", url)))?
             .copy_to(&mut destination_file)
             .map_err(|e| {
-                anyhow::Error::new(e).context(format!("unable to write {}", &self.plantuml_jar))
+                anyhow::Error::new(e).context(format!("unable to write {}", self.plantuml_jar))
             })?;
 
         Ok(())

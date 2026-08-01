@@ -154,7 +154,7 @@ impl Task for PackageEmbeddedTask {
         _tera
             .render_to(&self.template, &context, destination_file)
             .map_err(|e| {
-                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+                anyhow::Error::new(e).context(format!("unable to render {}", self.template))
             })
     }
 }

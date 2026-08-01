@@ -21,7 +21,7 @@ pub fn parse_package(
     _library: &Library,
     _package: &Package,
 ) -> Result<Vec<Box<dyn Task>>> {
-    log::debug!("parse package {}", &_package.urn);
+    log::debug!("parse package {}", _package.urn);
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
     for example in _package.examples.iter() {

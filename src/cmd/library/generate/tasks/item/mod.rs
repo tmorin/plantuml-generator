@@ -28,7 +28,7 @@ pub fn parse_item(
     _module: &Module,
     _item: &Item,
 ) -> anyhow::Result<Vec<Box<dyn Task>>> {
-    log::debug!("parse item {}", &_item.urn);
+    log::debug!("parse item {}", _item.urn);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 

@@ -182,7 +182,7 @@ impl ItemSourceTask {
 
 impl Task for ItemSourceTask {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
-        log::debug!("{} - ItemIconTask - cleanup", &self.item_urn);
+        log::debug!("{} - ItemIconTask - cleanup", self.item_urn);
         if CleanupScope::ItemSource.is_included_in(_scopes) {
             delete_file(self.get_full_source_path().as_ref())?;
         }
@@ -190,7 +190,7 @@ impl Task for ItemSourceTask {
     }
 
     fn render_atomic_templates(&self, _tera: &Tera) -> Result<()> {
-        log::debug!("{} - ItemIconTask - render templates", &self.item_urn);
+        log::debug!("{} - ItemIconTask - render templates", self.item_urn);
 
         let destination_path = self.get_full_source_path();
 
@@ -227,7 +227,7 @@ impl Task for ItemSourceTask {
         _tera
             .render_to(&self.template, &context, destination_file)
             .map_err(|e| {
-                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+                anyhow::Error::new(e).context(format!("unable to render {}", self.template))
             })
     }
 }

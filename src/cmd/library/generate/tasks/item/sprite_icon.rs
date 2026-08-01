@@ -59,8 +59,8 @@ impl Task for SpriteIconTask {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
         log::debug!(
             "{} - SpriteIconTask - cleanup {}",
-            &self.item_urn,
-            &self.full_destination_icon
+            self.item_urn,
+            self.full_destination_icon
         );
         if CleanupScope::SpriteIcon.is_included_in(_scopes) {
             delete_file(Path::new(&self.full_destination_icon))?;
@@ -71,8 +71,8 @@ impl Task for SpriteIconTask {
     fn create_resources(&self) -> Result<()> {
         log::debug!(
             "{} - SpriteIconTask - create resource {}",
-            &self.item_urn,
-            &self.full_destination_icon
+            self.item_urn,
+            self.full_destination_icon
         );
 
         let destination_icon_path = Path::new(&self.full_destination_icon);
@@ -87,16 +87,13 @@ impl Task for SpriteIconTask {
 
         // load the source image
         let source_img_reader = ImageReader::open(&self.full_source_icon).map_err(|e| {
-            anyhow::Error::msg(format!(
-                "unable to open {}: {:?}",
-                &self.full_source_icon, e
-            ))
+            anyhow::Error::msg(format!("unable to open {}: {:?}", self.full_source_icon, e))
         })?;
 
         let source_image = source_img_reader.decode().map_err(|e| {
             anyhow::Error::msg(format!(
                 "unable to decode {}: {:?}",
-                &self.full_source_icon, e
+                self.full_source_icon, e
             ))
         })?;
 
@@ -140,7 +137,7 @@ impl Task for SpriteIconTask {
             .map_err(|e| {
                 anyhow::Error::msg(format!(
                     "unable to save {}: {:?}",
-                    &self.full_destination_icon, e
+                    self.full_destination_icon, e
                 ))
             })?;
         Ok(())

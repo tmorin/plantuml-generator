@@ -178,9 +178,9 @@ impl Task for ElementSnippetTask {
     fn cleanup(&self, _scopes: &[CleanupScope]) -> Result<()> {
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - cleanup",
-            &self.item_urn,
-            &self.element_shape,
-            &self.snippet_mode,
+            self.item_urn,
+            self.element_shape,
+            self.snippet_mode,
         );
         if CleanupScope::SnippetSource.is_included_in(_scopes) {
             delete_file(Path::new(&self.full_destination_source_path))?;
@@ -203,9 +203,9 @@ impl Task for ElementSnippetTask {
     fn render_atomic_templates_snippets(&self, tera: &Tera) -> Result<()> {
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - render templates",
-            &self.item_urn,
-            &self.element_shape,
-            &self.snippet_mode,
+            self.item_urn,
+            self.element_shape,
+            self.snippet_mode,
         );
 
         let destination_path = Path::new(&self.full_destination_source_path);
@@ -227,7 +227,7 @@ impl Task for ElementSnippetTask {
         context.insert("data", &self);
         tera.render_to(&self.template, &context, destination_file)
             .map_err(|e| {
-                anyhow::Error::new(e).context(format!("unable to render {}", &self.template))
+                anyhow::Error::new(e).context(format!("unable to render {}", self.template))
             })
     }
 
@@ -238,9 +238,9 @@ impl Task for ElementSnippetTask {
 
         log::debug!(
             "{}/{}/{} - ElementSnippetTask - render sources",
-            &self.item_urn,
-            &self.element_shape,
-            &self.snippet_mode,
+            self.item_urn,
+            self.element_shape,
+            self.snippet_mode,
         );
 
         let destination_path = Path::new(&self.full_destination_image_path);
