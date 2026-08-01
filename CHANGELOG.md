@@ -1,8 +1,26 @@
 # Changelog
 
-## [1.15.3](https://github.com/tmorin/plantuml-generator/compare/v1.15.2...c701ec240ee3f3ef3c3b66604bff12cec4ce0766) (2026-04-30)
+## [Unreleased](https://github.com/tmorin/plantuml-generator/compare/v1.15.3...81d3809a3dc51be781e028f94051af0e537df587) (2026-08-01)
 
 ### Fixes
+
+* **tera:** restore default() fallback for null optional labels
+([81d3809](https://github.com/tmorin/plantuml-generator/commit/81d3809a3dc51be781e028f94051af0e537df587))
+* **tera:** correct mismatched endblock names
+([af6df1d](https://github.com/tmorin/plantuml-generator/commit/af6df1d315d21105c95805672fab667f256f003e))
+* **tera:** replace removed filter/map builtins with comprehensions
+([f73c739](https://github.com/tmorin/plantuml-generator/commit/f73c739f1666537d4427c028c3e8d84f4a153757))
+* remove redundant references flagged by clippy
+([32e8946](https://github.com/tmorin/plantuml-generator/commit/32e894687b7b22c92ec194c52f30090924a5b3a6))
+* tmorin/plantuml-generator#106 - upgrade the dependencies\n\nResolved by
+Copilot agent.\nIssue:
+https://api.github.com/repos/tmorin/plantuml-generator/issues/106
+([e8891ea](https://github.com/tmorin/plantuml-generator/commit/e8891ea957ad831bbf6265f9ac1846bb754704b3)),
+closes [#106](https://github.com/tmorin/plantuml-generator/issues/106)
+
+### [v1.15.3](https://github.com/tmorin/plantuml-generator/compare/v1.15.2...v1.15.3) (2026-04-30)
+
+#### Fixes
 
 * **docker:** upgrade runtime base image from ubuntu:22.04 to ubuntu:24.04
 ([c701ec2](https://github.com/tmorin/plantuml-generator/commit/c701ec240ee3f3ef3c3b66604bff12cec4ce0766))
